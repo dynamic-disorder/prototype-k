@@ -8,6 +8,7 @@
 *.config    text eol=crlf
 *.props     text eol=crlf
 *.targets   text eol=crlf
+.gitignore  text eol=crlf
 
 # Cross-platform / tooling files (LF)
 *.md        text eol=lf
