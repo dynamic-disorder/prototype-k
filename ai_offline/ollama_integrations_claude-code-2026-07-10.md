@@ -132,4 +132,14 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
 * **Manage Hybrid Thinking Models:** Since `gemma4:12b` is a hybrid reasoning model, type `/effort low` or `/effort medium` inside the Claude Code interface if you want to speed up execution and reduce the time spent generating internal chain-of-thought tokens.
 * **Maintain Workspace Hygiene:** Keep your `.gitignore` or `.claudeignore` file meticulously updated. Preventing the local LLM from scanning heavy assets or build directories (`node_modules`, `bin/`, `dist/`) completely protects your local GPU VRAM from cache choking.
 
+---
+
+### 🛠️ Troubleshooting
+
+#### Bug: Output Token Maximum Exceeded (e.g., `gemma4:12b`)
+
+* **Symptom:** Claude Code crashes with `API Error: Claude's response exceeded the 64000 output token maximum`.
+* **Cause:** Local hybrid reasoning models like `gemma4:12b` can waste thousands of generated tokens on internal `<think>` reasoning loops, exhausting the output limit before the actual code response is printed.
+* **Fix:** Add `CLAUDE_CODE_DISABLE_THINKING=1` (or `MAX_THINKING_TOKENS=0`) to your Windows Environment Variables. This stops the model from wasting tokens on prolonged chain-of-thought processing, saving the full token allowance for direct code generation.
+
 ```
