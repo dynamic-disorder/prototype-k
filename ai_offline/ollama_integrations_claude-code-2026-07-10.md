@@ -36,14 +36,28 @@ irm [https://claude.ai/install.ps1](https://claude.ai/install.ps1) | iex
 
 * **`qwen2.5-coder:32b` (Fits but Too Slow):** While the model weights fit into the 24GB VRAM pool, Claude Code's extensive workspace context scans cause the KV Cache to expand and spill over into the 2.00GHz Xeon CPU. This triggers extreme prompt processing delays (taking upwards of 19+ minutes on high effort settings).
 * **`ministral-3:14b` (Failed/Crashed):** Tested on this setup but failed to complete its assigned task inside Claude Code, resulting in an outright execution freeze or application crash.
+* **`ministral-3:8b` (Deep Context Failure):** Works fluently initially, but hits a failure wall around the **32k token horizon**. Under deep multi-file sessions, it fails to emit proper EOS/Stop tokens within Claude Code, entering an infinite loop that exhausts the maximum output limits ("Baking" for over 4 minutes).
 
-#### 🎯 Performance Strategy
+#### 🎯 Performance Strategy & Claude Code Requirements
 
-To keep execution 100% inside GPU VRAM and prevent slow CPU offloading, **stick to models under 15B parameters.** This guarantees a massive VRAM headroom buffer (12GB to 16GB free space) dedicated completely to Claude Code's large multi-file text contexts.
+To run Claude Code locally without system stalling, your system must respect **VRAM Headroom Requirements**. Claude Code does not just load the static model; it aggressively builds context memory maps (KV Cache) from your project files.
+
+* **Safe Tier (Under 15B parameters):** Leaves a massive **12GB to 16GB VRAM buffer** on your dual cards. This allows heavy repository context indexing to stay entirely inside lightning-fast GPU memory.
+* **Upper Limit Tier (24B parameters):** Leaves a **9.5GB VRAM buffer**. It operates right on the edge of safety—capable of working fluently on medium/structured projects without CPU offloading but requires tight context management.
 
 ---
 
 ### Verified Fluent Models (Proven with Full Tooling Support)
+
+#### mistral-small3.2 (Advanced 24B Sweet Spot)
+
+Mistral AI's 24B parameter update. Purpose-built with enhanced function calling and highly robust instruction following designed explicitly to stop infinite generations and repetition errors. At ~14GB VRAM utilization, it runs optimally inside the dual 3060 setup while maintaining a ~9.5GB cushion for deep context analysis.
+
+```text
+ollama pull mistral-small3.2
+ollama launch claude --model mistral-small3.2
+
+```
 
 #### gemma4:12b (Recommended Frontier Model)
 
@@ -63,16 +77,6 @@ URL: https://ollama.com/library/qwen3.5
 ```text
 ollama pull qwen3.5:9b
 ollama launch claude --model qwen3.5:9b
-
-```
-
-#### ministral-3:8b (Efficient Agentic Baseline)
-
-The compact counterpart to the 14B variant. It fixes the stability issues encountered with the larger version, providing quick, tool-supported functions while preserving maximum memory headroom.
-
-```text
-ollama pull ministral-3:8b
-ollama launch claude --model ministral-3:8b
 
 ```
 
@@ -136,10 +140,16 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
 
 ### 🛠️ Troubleshooting
 
-#### Bug: Output Token Maximum Exceeded (e.g., `gemma4:12b`)
+#### Bug: Output Token Maximum Exceeded / "Baking" Loops (e.g., `gemma4:12b`, `ministral-3:8b`)
 
-* **Symptom:** Claude Code crashes with `API Error: Claude's response exceeded the 64000 output token maximum`.
-* **Cause:** Local hybrid reasoning models like `gemma4:12b` can waste thousands of generated tokens on internal `<think>` reasoning loops, exhausting the output limit before the actual code response is printed.
-* **Fix:** Add `CLAUDE_CODE_DISABLE_THINKING=1` (or `MAX_THINKING_TOKENS=0`) to your Windows Environment Variables. This stops the model from wasting tokens on prolonged chain-of-thought processing, saving the full token allowance for direct code generation.
+* **Symptom:** Claude Code stalls for minutes ("Baked for 4m+") and crashes with `API Error: Claude's response exceeded the 64000 output token maximum`.
+* **Cause 1 (Thinking Models - `gemma4`):** The model wastes thousands of generated tokens on internal `<think>` reasoning paths, exhausting the output allowance.
+* **Cause 2 (Smaller Models - `ministral-3:8b` around ~32k tokens):** The model misses or fails to emit the correct EOS/Stop tokens within Claude Code's complex environment, getting trapped in an infinite loop of repeating empty sequences or tool headers until hitting the 64k limit.
+* **Fixes:**
+1. Add `CLAUDE_CODE_DISABLE_THINKING=1` or `MAX_THINKING_TOKENS=0` to Windows Environment Variables to suppress thinking loops.
+2. Explicitly append formatting commands to the end of long prompts: *"...Do the task in one direct response and stop writing immediately once completed."*
+3. If a <10B model keeps getting stuck on deep context sessions (>30k tokens), pivot up to the robust **`mistral-small3.2`** or **`gemma4:12b`** for cleaner token boundary handling.
+
+
 
 ```
