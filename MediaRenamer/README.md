@@ -1,44 +1,28 @@
-help me to create such a C# app? I would like to mark the videos and images with the time stamp found else use the file creation timestamp. 
+# Media Renaming Tool [WPF][EXIF]
 
-Can you generate a WPF app where the logics is separated from the presentation layer (WPF) but not with the overkilling MVVM?
---
-Nice, this is a perfect use case for a small, clean WPF tool with a thin UI and a reusable core.
+Timestamp-based renaming utility that preserves or restores original creation time from media files (images with EXIF data) while keeping metadata intact.
 
-I’ll give you:
+## Project Structure
 
-Solution structure
-
-Core library (logic)
-
-WPF app (simple code‑behind, no heavy MVVM)
-
-Image EXIF + fallback timestamp
-
-Easy extension point for video metadata later
---
-Solution structure:
-
+```
 MediaRenamer.sln
-  MediaRenamer.Core        // .NET 8 class library
-    Models/
-    Services/
-  MediaRenamer.Wpf         // .NET 8 WPF app
-    App.xaml / App.xaml.cs
-    MainWindow.xaml / MainWindow.xaml.cs
-	
-NuGet (Core):
+├── MediaRenamer.Core/           # .NET shared class library (logic layer)
+│   ├── Models/                  # Data models for file metadata, renaming rules
+│   └── Services/                # Metadata extraction services (EXIF, timestamps)
+│
+└── MediaRenamer.Wpf/            # WPF client application (.NET 8.0 Windows App SDK or .NET WinForms-style hybrid if needed)
+    ├── App.xaml                 # Application startup and window navigation logic
+    └── MainWindow.xaml          # Main user interface layout with renaming controls, file list view
 
-MetadataExtractor (for EXIF)
 
-Note: add reference from MediaRenamer.Wpf to MediaRenamer.Core, and add System.Windows.Forms reference for FolderBrowserDialog (or replace with a WPF file dialog if you prefer).
+## NuGet Dependencies (Core Library)
 
-Where to plug in video metadata
-Right now, videos just fall back to file timestamps. To extend:
+- **MetadataExtractor** — EXIF image metadata extraction from JPG/PNG/TIFF files. Add reference `MediaRenamer.Wpf → MediaRenamer.Core` and optionally add `System.Windows.Forms` for the built-in `FolderBrowserDialog` (or substitute with custom WPF file picker).
 
-Create VideoMetadataProvider implementing IMetadataProvider (using ffprobe to read creation_time).
 
-Create CompositeMetadataProvider that tries image EXIF, then video metadata, then returns null.
+## Extending Video Metadata Support
 
-Wire CompositeMetadataProvider into FileRenamer instead of ExifMetadataProvider.
+Out-of-the-box, video metadata extraction falls back to filesystem creation time. To enhance support:
 
-If you want, next step we can focus only on video metadata via ffprobe and I’ll give you a small, robust implementation for that piece.
+1. **Create a video provider** — Implement `IMetadataProvider`. Use ffmpeg (`ffprobe`) to read `creation_time` from MP4/MOV/AVI files (see [CompositeMetadataProvider](#composite-provider-pattern) for reference).
+2. **Combine providers** — Add a `[Inject] public CompositeMetadataProvider(IMetadataProvider image, IMetadataProvider video);` aggregator that tries EXIF first then falls through to the video provider or filesystem fallback; wire it into your `FileRenamer`.
