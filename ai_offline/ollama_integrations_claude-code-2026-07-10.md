@@ -49,16 +49,6 @@ To run Claude Code locally without system stalling, your system must respect **V
 
 ### Verified Fluent Models (Proven with Full Tooling Support)
 
-#### mistral-small3.2 (Advanced 24B Sweet Spot)
-
-Mistral AI's 24B parameter update. Purpose-built with enhanced function calling and highly robust instruction following designed explicitly to stop infinite generations and repetition errors. At ~14GB VRAM utilization, it runs optimally inside the dual 3060 setup while maintaining a ~9.5GB cushion for deep context analysis.
-
-```text
-ollama pull mistral-small3.2
-ollama launch claude --model mistral-small3.2
-
-```
-
 #### gemma4:12b (Recommended Frontier Model)
 
 Google DeepMind's unified, encoder-free frontier model. Engineered optimally for local agentic workflows and multi-step reasoning. It leaves an enormous VRAM buffer on your dual GPUs, runs lightning-fast, and natively handles complex tool layouts smoothly.
@@ -137,8 +127,14 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
 * **Maintain Workspace Hygiene:** Keep your `.gitignore` or `.claudeignore` file meticulously updated. Preventing the local LLM from scanning heavy assets or build directories (`node_modules`, `bin/`, `dist/`) completely protects your local GPU VRAM from cache choking.
 
 ---
-
 ### 🛠️ Troubleshooting
+
+### Does not seems to support Claude Code Tooling
+
+That is the classic "agent loop trap." What you are seeing is the model trying to hold a polite conversation about the task instead of actually spitting out the precise structured tool call that Claude Code expects. When it gives you that text, Claude Code's engine doesn't see a tool request, so it just feeds the text back to the model, causing an infinite loop of empty promises.
+
+* mistral-small3.2
+* deepseek-r1:14b
 
 #### Bug: Output Token Maximum Exceeded / "Baking" Loops (e.g., `gemma4:12b`, `ministral-3:8b`)
 
@@ -148,7 +144,7 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
 * **Fixes:**
 1. Add `CLAUDE_CODE_DISABLE_THINKING=1` or `MAX_THINKING_TOKENS=0` to Windows Environment Variables to suppress thinking loops.
 2. Explicitly append formatting commands to the end of long prompts: *"...Do the task in one direct response and stop writing immediately once completed."*
-3. If a <10B model keeps getting stuck on deep context sessions (>30k tokens), pivot up to the robust **`mistral-small3.2`** or **`gemma4:12b`** for cleaner token boundary handling.
+3. If a <10B model keeps getting stuck on deep context sessions (>30k tokens), pivot up to the robust **`qwen3.5:9b`** or **`gemma4:12b`** for cleaner token boundary handling.
 
 
 
