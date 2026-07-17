@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+
 using NSubstitute;
-using Shouldly;
 
 using OllamaTranslatorApi;
 using OllamaTranslatorApi.Core;
 using OllamaTranslatorApi.Csv;
 using OllamaTranslatorApi.Models;
+
+using Shouldly;
 
 namespace OllamaTranslatorApi.Tests;
 

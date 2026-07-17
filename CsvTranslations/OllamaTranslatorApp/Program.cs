@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
-using OllamaTranslatorApi.Core;
+
 using OllamaTranslatorApi.Configuration;
+using OllamaTranslatorApi.Core;
 using OllamaTranslatorApi.Csv;
 using OllamaTranslatorApi.Text;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 

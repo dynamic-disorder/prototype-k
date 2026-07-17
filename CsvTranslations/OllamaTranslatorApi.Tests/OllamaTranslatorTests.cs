@@ -3,11 +3,14 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+
 using NSubstitute;
-using Shouldly;
+
+using OllamaTranslatorApi.Configuration;
 using OllamaTranslatorApi.Core;
 using OllamaTranslatorApi.Models;
-using OllamaTranslatorApi.Configuration;
+
+using Shouldly;
 
 namespace OllamaTranslatorApi.Tests;
 

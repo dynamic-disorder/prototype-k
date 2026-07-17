@@ -1,9 +1,12 @@
 ﻿using System.Globalization;
 using System.Linq;
 using System.Text;
-using TextToSpeechApp;
-using TranslationTools;
+
 using CliUtils;
+
+using TextToSpeechApp;
+
+using TranslationTools;
 
 internal sealed class Program
 {

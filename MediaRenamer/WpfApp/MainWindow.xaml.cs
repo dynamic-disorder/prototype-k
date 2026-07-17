@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -8,10 +10,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+
 using MediaRenamer.Core.Models;
 using MediaRenamer.Core.Services;
-using System.Collections.ObjectModel;
-using System.IO;
 
 namespace MediaRenamer.WpfApp;
 

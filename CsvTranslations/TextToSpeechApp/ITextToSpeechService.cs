@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
+
 using TranslationTools;
+
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
 

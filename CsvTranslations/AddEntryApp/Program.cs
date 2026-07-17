@@ -1,9 +1,12 @@
 using System.Text;
 using System.Text.Json;
+
+using CliUtils;
+
 using OllamaTranslatorApi.Core;
 using OllamaTranslatorApi.Models;
+
 using TranslationTools;
-using CliUtils;
 
 namespace AddEntryApp;
 

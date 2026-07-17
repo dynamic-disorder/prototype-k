@@ -1,9 +1,12 @@
+using System.Globalization;
+
+using CliUtils;
+
+using TranslationTools;
+
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
-using TranslationTools;
-using System.Globalization;
-using CliUtils;
 
 namespace TextToSpeechApp;
 

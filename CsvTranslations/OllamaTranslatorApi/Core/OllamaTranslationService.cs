@@ -1,9 +1,13 @@
 using System.Text;
+
 using CliUtils;
+
 using Newtonsoft.Json;
-using TranslationTools;
+
 using OllamaTranslatorApi.Models;
 using OllamaTranslatorApi.Utilities;
+
+using TranslationTools;
 
 namespace OllamaTranslatorApi.Core;
 

@@ -1,10 +1,12 @@
 using System.Text;
+
 using NSubstitute;
-using Shouldly;
 
 using OllamaTranslatorApi.Core;
-using OllamaTranslatorApi.Text;
 using OllamaTranslatorApi.Models;
+using OllamaTranslatorApi.Text;
+
+using Shouldly;
 
 namespace OllamaTranslatorApp.Tests;
 

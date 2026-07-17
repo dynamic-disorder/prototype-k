@@ -1,9 +1,10 @@
 using CliUtils;
 
-using Spectre.Console;
+using OllamaTranslatorApi.Configuration;
 using OllamaTranslatorApi.Csv;
 using OllamaTranslatorApi.Models;
-using OllamaTranslatorApi.Configuration;
+
+using Spectre.Console;
 
 namespace OllamaTranslatorApi.Core;
 

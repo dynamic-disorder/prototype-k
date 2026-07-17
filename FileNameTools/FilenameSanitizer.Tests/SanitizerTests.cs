@@ -1,7 +1,10 @@
-using NSubstitute;
-using Shouldly;
-using Xunit;
 using System.Collections.Generic;
+
+using NSubstitute;
+
+using Shouldly;
+
+using Xunit;
 
 namespace FilenameSanitizer.Tests;
 

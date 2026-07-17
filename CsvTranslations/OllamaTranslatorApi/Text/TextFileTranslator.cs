@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using CliUtils;
+
 using OllamaTranslatorApi.Core;
 using OllamaTranslatorApi.Models;
 

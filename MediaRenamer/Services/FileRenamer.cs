@@ -1,5 +1,6 @@
-using MediaRenamer.Core.Models;
 using System.IO;
+
+using MediaRenamer.Core.Models;
 
 namespace MediaRenamer.Core.Services;
 

@@ -1,4 +1,5 @@
 using System.Globalization;
+
 using Spectre.Console;
 
 namespace CliUtils;

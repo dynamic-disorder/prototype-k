@@ -1,5 +1,7 @@
 using NSubstitute;
+
 using Shouldly;
+
 using Xunit;
 
 namespace FilenameSanitizer.Tests;
