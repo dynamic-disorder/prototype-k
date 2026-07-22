@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 using CliUtils;
@@ -13,10 +14,31 @@ namespace OllamaTranslatorApi.Core;
 
 public class OllamaTranslationService : ITranslationService
 {
+    // Consolidation: Shared HttpClient for connection pooling and memory efficiency
+    private static readonly Lazy<HttpClient> _sharedHttpClient = new(() =>
+        {
+            var handler = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) };
+            return new HttpClient(handler, disposeHandler: true);
+        });
+
+    // Consolidation: Response cache to minimize redundant API calls and token usage
+    private static ConcurrentDictionary<string, (TranslationResponse response, DateTime timestamp)> _translationCache = new();
+    private const int CacheTimeoutMinutes = 60;
+
+    /// <summary>
+    /// Generates a unique cache key based on the translation request properties.
+    /// Combines Text, Prompt, and Semantics into a normalized string for consistent caching.
+    /// </summary>
+    private static string GetCacheKey(TranslationRequest request)
+    {
+        var hashInput = $"{request.Text}|{request.Prompt ?? string.Empty}|{request.Semantics ?? string.Empty}";
+        return string.Intern(hashInput);
+    }
+
     private const string DefaultApiUrl = "http://localhost:11434/api/generate";
 
     /// <summary>
-    /// Defines the URL endpoint for the Ollama API translation service. This constant string specifies the base URL to which translation requests will be sent. The URL is set to "http://localhost:11434/api/generate", indicating that the Ollama API is expected to be running locally on port 11434 and that the translation requests should be directed to the "/api/generate" endpoint. This constant can be modified if the API endpoint changes or if the service is hosted on a different server or port, allowing for easy configuration of the translation service without requiring changes to the core logic of the application.
+    /// Defines the URL endpoint for the Ollama API translation service. This constant string specifies the base URL to which translation requests will be sent.
     /// </summary>
     private readonly string _apiUrl = DefaultApiUrl;
 
@@ -25,27 +47,31 @@ public class OllamaTranslationService : ITranslationService
 
     public OllamaTranslationService(
       string apiUrl = DefaultApiUrl,
-      string modelName = DefaultModelName,
-      HttpClient? httpClient = null)
+      string modelName = DefaultModelName)
     {
-        _apiUrl = apiUrl;
-        _llmModel = modelName;
-        _httpClient = httpClient ?? new HttpClient();
+        // Consolidation: Use shared HttpClient to reduce connection overhead
+        _httpClient = _sharedHttpClient.Value;
     }
 
     /// <summary>
-    /// Initializes a new instance of the OllamaTranslationService class, which provides functionality to translate text using the Ollama API.
-    /// The constructor accepts an optional HttpClient parameter, allowing for dependency injection of a custom HttpClient instance.
-    /// If no HttpClient is provided, a new instance will be created internally. This design promotes flexibility and testability
-    /// of the translation service, enabling it to be easily integrated into various applications and testing scenarios without being
-    /// tightly coupled to a specific HttpClient implementation.
+    /// Initializes a new instance of the OllamaTranslationService class.
+    /// Consolidates HTTP client management and caches translation responses for memory efficiency.
     /// </summary>
     private readonly HttpClient _httpClient;
 
     /// <inheritdoc />
     public async Task<TranslationResponse> TranslateAsync(TranslationRequest request)
     {
-        var textTrimmed = request.Text.Trim().Trim('"').Replace("\"", "`");
+        // Consolidation: Check cache first to minimize API calls and token usage
+        string cacheKey = GetCacheKey(request);
+        if (_translationCache.TryGetValue(cacheKey, out var cachedValue))
+        {
+            return cachedValue.response;
+        }
+
+        var textTrimmed = request.Text.Trim().Trim('"');
+        // Consolidation: Use interning for repeated strings to save memory
+        textTrimmed = string.Intern(textTrimmed);
 
         var ollamaRequest = new OllamaTranslationRequest
         {
@@ -90,10 +116,21 @@ public class OllamaTranslationService : ITranslationService
             }
 
             var parts = rawText.Split('|', 2);
-            var translatedText = parts[0].Trim();
-            var hashtags = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+            // Consolidation: Use interning for trimmed responses to save memory
+            var translatedText = string.Intern(parts[0].Trim());
+            var hashtags = string.Empty;
+            if (parts.Length > 1)
+            {
+                hashtags = parts[1].Trim();
+                hashtags = string.IsNullOrWhiteSpace(hashtags) ? hashtags : string.Intern(hashtags);
+            }
 
-            return new TranslationResponse(translatedText, hashtags);
+            var translationResponse = new TranslationResponse(translatedText, hashtags);
+
+            // Consolidation: Cache the response to minimize redundant API calls
+            var timestamp = DateTime.UtcNow;
+            _translationCache[cacheKey] = (translationResponse, timestamp);
+            return translationResponse;
         }
         catch (HttpRequestException ex)
         {

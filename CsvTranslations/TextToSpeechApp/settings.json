@@ -1,3 +1,8 @@
 {
-  "translation_filepath": "This is moved into environment variable translation_filepath"
+  "translation_filepath": "..\\translations.csv",
+  "TtsProvider": "Windows",
+  "PiperVoices": {
+    "English": "en_US-lessac-medium",
+    "Finnish": "fi_FI-harri-low"
+  }
 }

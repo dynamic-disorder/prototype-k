@@ -1,10 +1,12 @@
 ﻿using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 
 using CliUtils;
 
 using TextToSpeechApp;
+using TextToSpeechCore;
 
 using TranslationTools;
 
@@ -101,7 +103,31 @@ internal sealed class Program
             return;
         }
 
-        await RunRecitingLoop(entryList);
+        TtsSettings settings = LoadTtsSettings();
+
+        await RunRecitingLoop(entryList, settings);
+    }
+
+    // Refactoring completed: Use factory pattern with settings injection
+    private static TtsSettings LoadTtsSettings()
+    {
+        var filePath = Path.Combine(AppContext.BaseDirectory, "settings.json");
+        if (File.Exists(filePath))
+        {
+            try
+            {
+                string jsonContent = File.ReadAllText(filePath);
+                return JsonSerializer.Deserialize<TtsSettings>(jsonContent) ?? new();
+            }
+            catch (Exception ex)
+            {
+                ConsoleColorHelper.WriteError($"Failed to load settings: {ex.Message}");
+                return new();
+            }
+        }
+
+        ConsoleColorHelper.WriteWarning("settings.json not found. Using default settings.");
+        return new();
     }
 
     /// <summary>
@@ -232,10 +258,28 @@ internal sealed class Program
     /// responds to console key input to pause or stop.
     /// </summary>
     /// <param name="entryList">The list of translation entries to recite.</param>
+    /// <param name="settings">The loaded TTS settings selecting the provider to use.</param>
     /// <returns>A task that represents the asynchronous reciting operation.</returns>
-    private static async Task RunRecitingLoop(TranslationEntryList entryList)
+    private static async Task RunRecitingLoop(TranslationEntryList entryList, TtsSettings settings)
     {
-        using var textToSpeechService = new TextToSpeechService(entryList.VoiceLanguages, entryList.Entries);
+        using ITextToSpeechService textToSpeechService = TtsServiceFactory.Create(settings, entryList.VoiceLanguages, entryList.Entries);
+
+        List<string> initOutputs = await textToSpeechService.InitializeAsync(entryList.VoiceLanguages);
+        foreach (var output in initOutputs)
+        {
+            if (output.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
+            {
+                ConsoleColorHelper.WriteWarning(output);
+            }
+            else if (output.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+            {
+                ConsoleColorHelper.WriteError(output);
+            }
+            else
+            {
+                ConsoleColorHelper.WriteInfo(output);
+            }
+        }
 
         var entriesLoadedAmount = entryList.Count;
         var textStartingRecitingLoop = "Reciting " + entriesLoadedAmount + " entries, randomly.";

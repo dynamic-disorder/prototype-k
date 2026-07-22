@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+    <ProjectReference Include="..\TextToSpeechCore\TextToSpeechCore.csproj" />
     <ProjectReference Include="..\..\CliUtils\CliUtils.csproj" />
   </ItemGroup>
 

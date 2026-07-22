@@ -30,35 +30,24 @@ internal sealed class Program
 
 public sealed class TranslateSettings : CommandSettings
 {
-    [CommandOption("-f|--folder <FOLDER>")]
+    [CommandArgument(0, "source file")]
+    public string Source { get; init; }
+
+    [CommandArgument(1, "target file")]
+    public string Target { get; init; }
+
+    [CommandOption("-f|--folder")]
     [Description("Translate all supported files inside the specified folder.")]
     public string? Folder { get; init; }
-
-    [CommandOption("<source>")]
-    [Description("Source file path to translate.")]
-    public string? Source { get; init; }
-
-    [CommandOption("<target>")]
-    [Description("Target output file path.")]
-    public string? Target { get; init; }
 
     public override ValidationResult Validate()
     {
         if (!string.IsNullOrWhiteSpace(Folder))
         {
-            if (!string.IsNullOrWhiteSpace(Source) || !string.IsNullOrWhiteSpace(Target))
-            {
-                return ValidationResult.Error("Use either --folder or a source and target file path, not both.");
-            }
-
             return ValidationResult.Success();
         }
 
-        if (string.IsNullOrWhiteSpace(Source) || string.IsNullOrWhiteSpace(Target))
-        {
-            return ValidationResult.Error("A source and target path are required when --folder is not specified.");
-        }
-
+        // Source and Target are required CommandArguments, validation is done by Spectre.Console
         return ValidationResult.Success();
     }
 }
@@ -110,7 +99,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
 
         return new List<TranslationRequest>
         {
-            new(settings.Source!, settings.Target!)
+            new(settings.Source, settings.Target)
         };
     }
 

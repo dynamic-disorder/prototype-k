@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OllamaTranslatorApi.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CliUtils", "..\CliUtils\CliUtils.csproj", "{87734355-6CAD-458F-A54A-019264CD9772}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextToSpeechCore", "TextToSpeechCore\TextToSpeechCore.csproj", "{A324F765-11B8-4737-81E1-F8356CF2CCDF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +147,18 @@ Global
 		{87734355-6CAD-458F-A54A-019264CD9772}.Release|x64.Build.0 = Release|Any CPU
 		{87734355-6CAD-458F-A54A-019264CD9772}.Release|x86.ActiveCfg = Release|Any CPU
 		{87734355-6CAD-458F-A54A-019264CD9772}.Release|x86.Build.0 = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|x64.Build.0 = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Debug|x86.Build.0 = Debug|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|x64.ActiveCfg = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|x64.Build.0 = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|x86.ActiveCfg = Release|Any CPU
+		{A324F765-11B8-4737-81E1-F8356CF2CCDF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

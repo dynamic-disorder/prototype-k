@@ -1,6 +1,6 @@
 using System.Globalization;
 
-using CliUtils;
+using TextToSpeechCore;
 
 using TranslationTools;
 
@@ -11,13 +11,11 @@ using Windows.Media.SpeechSynthesis;
 namespace TextToSpeechApp;
 
 /// <summary>
-///     Provides text-to-speech functionality using specified language voices.
+///     Provides text-to-speech services for multiple languages using the Windows
+///     <see cref="SpeechSynthesizer"/>/<see cref="MediaPlayer"/> APIs, and manages
+///     the associated synthesizers and media players.
 /// </summary>
-/// <summary>
-///     Provides text-to-speech services for multiple languages and manages
-///     associated synthesizers and media players.
-/// </summary>
-internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
+internal sealed class WindowsTextToSpeechService : IDisposable, ITextToSpeechService
 {
     private static string CreateFullWidthSeparator()
     {
@@ -34,53 +32,36 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
     private readonly List<TextEntryRow> _rowEntries;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="TextToSpeechService"/> class
+    ///     Initializes a new instance of the <see cref="WindowsTextToSpeechService"/> class
     ///     using the supplied <see cref="VoiceLanguageList"/>.
     /// </summary>
     /// <param name="voiceLanguages">The collection of voice languages to initialize.</param>
-    public TextToSpeechService(VoiceLanguageList voiceLanguages)
+    public WindowsTextToSpeechService(VoiceLanguageList voiceLanguages)
     {
         VoiceLanguages = voiceLanguages;
-
-        var outputs = Initialize(voiceLanguages);
-        foreach (var output in outputs)
-        {
-            if (output.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
-            {
-                ConsoleColorHelper.WriteWarning(output);
-            }
-            else if (output.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
-            {
-                ConsoleColorHelper.WriteError(output);
-            }
-            else
-            {
-                ConsoleColorHelper.WriteInfo(output);
-            }
-        }
-
-        _rowEntries ??= [];
+        _rowEntries = [];
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="TextToSpeechService"/> class
+    ///     Initializes a new instance of the <see cref="WindowsTextToSpeechService"/> class
     ///     using the supplied <see cref="VoiceLanguageList"/> and pre-populated rows.
     /// </summary>
     /// <param name="voiceLanguages">The collection of voice languages to initialize.</param>
     /// <param name="rowEntries">A list of <see cref="TextEntryRow"/> entries to use.</param>
-    public TextToSpeechService(VoiceLanguageList voiceLanguages, List<TextEntryRow> rowEntries) : this(voiceLanguages)
+    public WindowsTextToSpeechService(VoiceLanguageList voiceLanguages, List<TextEntryRow> rowEntries) : this(voiceLanguages)
     {
         _rowEntries = rowEntries;
     }
 
-    /// <inheritdoc/>>
+    /// <inheritdoc/>
     public VoiceLanguageList VoiceLanguages { get; }
 
-    /// <inheritdoc/>
-    public Dictionary<string, SpeechSynthesizer> SpeechSynthesizers { get; } = new();
+    // Removed rowEntries parameter from WindowsTextToSpeechService signature
+    // to match TextToSpeechCore interface requirements.
 
-    /// <inheritdoc/>
-    public Dictionary<string, MediaPlayer> MediaPlayers { get; } = new();
+    private Dictionary<string, SpeechSynthesizer> SpeechSynthesizers { get; } = new();
+
+    private Dictionary<string, MediaPlayer> MediaPlayers { get; } = new();
 
     /// <inheritdoc cref="IDisposable.Dispose" />
     public void Dispose()
@@ -98,9 +79,8 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
         GC.SuppressFinalize(this);
     }
 
-
     /// <inheritdoc/>
-    public List<string> Initialize(VoiceLanguageList languageList)
+    public Task<List<string>> InitializeAsync(VoiceLanguageList languageList)
     {
         var output = new List<string>();
         List<InstalledVoice> installedVoices = ListInstalledVoices();
@@ -133,16 +113,13 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
             output.AddRange(outputs);
         }
 
-        return output;
+        return Task.FromResult(output);
     }
 
     /// <summary>
-    ///     Initializes a new instance of the TextToSpeechService class with the specified language.
-    /// </summary>
-    /// <param name="language">The language to use for speech synthesis (e.g., "en-US", "fi-FI")</param>
-    /// <summary>
     ///     Creates and configures the speech synthesizer and media player for a single language.
     /// </summary>
+    /// <param name="language">The language to use for speech synthesis.</param>
     private List<string> InitializeVoiceLanguage(VoiceLanguage language)
     {
         var output = new List<string>();
@@ -191,8 +168,11 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
         return installedVoices;
     }
 
-    /// <inheritdoc/>
-    public VoiceInformation? GetVoiceInformation(CultureInfo languageCulture)
+    /// <summary>
+    ///     Finds the installed Windows voice best matching the supplied language culture.
+    /// </summary>
+    /// <param name="languageCulture">Example: en-GB</param>
+    private static VoiceInformation? GetVoiceInformation(CultureInfo languageCulture)
     {
         // Select voice by language tag (e.g., "en-US", "fi-FI")
         var twoLetterIsoLanguageName = languageCulture.TwoLetterISOLanguageName;
@@ -214,11 +194,10 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
     }
 
     /// <summary>
-    /// Get generic language.
+    ///     Get generic language.
     /// </summary>
     /// <param name="language">Example: en-GB</param>
     /// <param name="twoLetterIsoLanguageName">Example: en</param>
-    /// <returns></returns>
     private static bool GenericLanguageMatch(string language, string twoLetterIsoLanguageName)
     {
         var isMatch = language.StartsWith(twoLetterIsoLanguageName, StringComparison.OrdinalIgnoreCase);
@@ -247,21 +226,11 @@ internal sealed class TextToSpeechService : IDisposable, ITextToSpeechService
         await tsc.Task;
     }
 
-    /// <summary>
-    ///     Speaks the text contained in the supplied <see cref="TextEntry"/>.
-    /// </summary>
-    /// <param name="entry">The text entry to speak.</param>
-    /// <returns>A task that completes when playback finishes.</returns>
-    internal async Task SpeakEntryAsync(TextEntry entry)
+    /// <inheritdoc/>
+    public async Task SpeakEntryAsync(TextEntry entry)
     {
         var text = entry.Text;
 
         await SpeakTextAsync(text, entry.Language);
     }
-}
-
-public class InstalledVoice(string displayName, string twoLetterIsoLanguageName)
-{
-    public string DisplayName { get; set; } = displayName;
-    public string TwoLetterIsoLanguageName { get; set; } = twoLetterIsoLanguageName;
 }

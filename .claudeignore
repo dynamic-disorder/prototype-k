@@ -26,6 +26,7 @@
 **/*.tar.gz
 **/*.7z
 **/*.bak
+**/*.csv
 
 # IDE metadata
 **/.idea/

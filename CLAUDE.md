@@ -1,62 +1,46 @@
-# Public Hobby Projects Repository
+# CLAUDE.md
 
-This repository contains multiple independent hobby projects: utilities, translation tools, filename sanitizers, and offline AI experiments.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Platform:** Windows 11 primary development environment
-**Tech Stack:** .NET 9.0, C#, Docker, PowerShell, Bash
-**Nature:** Personal hobby projects maintained in spare time, not production-grade
+## Project Overview
+This repository contains several independent hobby projects and experiments:
+- **FileNameTools**: A cross-platform utility for sanitizing filenames.
+- **CsvTranslations**: Tools for CSV data processing, including integration with local LLMs via Ollama.
+- **MediaRenamer**: A WPF application that renames media files based on EXIF metadata.
+- **ai_offline**: Docker containers and configurations for running a local AI stack (Ollama + Open WebUI).
 
-## Repository Structure
+## Architecture & Structure
+The project is organized as a mono-repo where each subdirectory functions as an independent unit:
+- Each major project (**FileNameTools**, **CsvTranslations**, **MediaRenamer**) maintains its own `.sln` file and resides in its own directory.
+- Specific local configurations (e.g., specific .NET versions or license keys) are often kept within the respective project folders.
+- The `local_dev/` folder contains internal documentation for tools, technical analysis, and Claude Code integration guidance.
 
-This is a multi-project repository with subdirectories that have their own .claude configurations:
+## Development Commands
+To maintain context, it is recommended to navigate into the specific project directory before running commands.
 
-- **FileNameTools/**: Cross-platform filename sanitization utility (.NET)
-  - Has own .claude config with filename-specific rules
-  - Build: `cd FileNameTools; dotnet build FileNameTools.sln`
+### Project Directory Summary
+| Project | Path | Build / Run |
+| :--- | :--- | :--- |
+| **FileNameTools** | `FileNameTools/` | `dotnet build`, `dotnet test` |
+| **CsvTranslations** | `CsvTranslations/` | `dotnet build`, `dotnet test` |
+| **MediaRenamer** | `MediaRenamer/` | `dotnet build` (WPF UI) |
+| **ai_offline** | `ai_offline/ollama_with_open_webui/` | `docker compose -f docker-compose-ollama-with-open-webui.legacy.yml up -d` |
 
-- **translations_csv/**: CSV-based translation tools and Ollama AI integration (.NET)
-  - Has own .claude config with Windows-specific rules
-  - Build: `cd translations_csv; dotnet build translations_csv.sln`
-
-- **ai_offline/ollama_with_open_webui/**: Docker stack for local Ollama with WebUI
-  - Has own CLAUDE.md with Docker-specific guidance
-  - Run: `cd ai_offline/ollama_with_open_webui; docker compose -f docker-compose-ollama-with-open-webui.legacy.yml up -d`
-
-- **local_dev/**: Development documentation and guides
-  - Claude Code guide, TTS analysis, local tooling docs
-
-## Common Commands
-
-When working at repository root:
+### General Commands (Root)
 ```bash
-# View all solutions
-find . -name "*.sln" -type f
+# List all available solutions in the repo
+find . -name "*.sln"
 
-# Git status across entire repo
+# Check status of all projects
 git status
-
-# Check all subdirectory CLAUDE.md files
-cat FileNameTools/CLAUDE.md
-cat translations_csv/CLAUDE.md
-cat ai_offline/ollama_with_open_webui/CLAUDE.md
 ```
 
-## Windows Development Notes
+## Development Environment
+- **Platform**: Primary development is done on Windows 11.
+- **Runtime**: Targets .NET 9.0. Ensure the appropriate .NET SDK and hosting bundles are available for targeted project types (e.g., `win-x64` for WPF).
+- **Shell**: Git Bash provides standard Unix shells; PowerShell is used for local automation scripts.
 
-- Line endings: CRLF for .NET code, markdown, and text files (enforced via .gitattributes)
-- Shell scripts: LF even on Windows (Docker compatibility)
-- PowerShell preferred over CMD for scripting
-- Build commands use `dotnet` CLI
-- Requires .NET 9 SDK / targeting pack to build `net9.0` projects; newer SDKs may still need the net9 targeting pack installed
-- Git bash environment available (Unix shell syntax)
-
-## Project-Specific Work
-
-When working in subdirectories (FileNameTools, translations_csv), Claude Code automatically loads their local .claude configurations and CLAUDE.md files. Root-level settings apply across all projects, subdirectory settings override for specific contexts.
-
-## Important
-
-- **This is a hobby repository** - maintained in spare time, not production-ready
-- **No external dependencies at root** - each project is independent
-- **Check subdirectory docs** - each project has its own build/run instructions
-- **See @README.md** for license and contact information
+## Style & Guidelines
+- **Line Endings**: CRLF is preferred for `.cs`, `.md`, and `.json`. LF is required for `.sh` and Docker files.
+- **Naming**: Follow existing naming conventions within each module (see `local_dev/` for details on specific logic requirements).
+- **Documentation**: Refer to the nested `CLAUDE.md` files within subdirectories for project-specific rules when working in those folders.
