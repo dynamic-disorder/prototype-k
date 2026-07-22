@@ -1,0 +1,7 @@
+FROM north-mini-code-1.0:q4_K_M
+
+PARAMETER num_ctx 64000
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+
+SYSTEM "You are a concise terminal coding assistant. Keep prose brief. Never reprint full unchanged files."
