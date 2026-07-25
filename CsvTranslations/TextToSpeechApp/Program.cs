@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -103,31 +103,76 @@ internal sealed class Program
             return;
         }
 
-        TtsSettings settings = LoadTtsSettings();
+        TtsSettings settings = LoadTtsSettings(args);
 
         await RunRecitingLoop(entryList, settings);
     }
 
     // Refactoring completed: Use factory pattern with settings injection
-    private static TtsSettings LoadTtsSettings()
+    private static TtsSettings LoadTtsSettings(string[] args)
     {
         var filePath = Path.Combine(AppContext.BaseDirectory, "settings.json");
+        TtsSettings settings;
+
         if (File.Exists(filePath))
         {
             try
             {
                 string jsonContent = File.ReadAllText(filePath);
-                return JsonSerializer.Deserialize<TtsSettings>(jsonContent) ?? new();
+                settings = JsonSerializer.Deserialize<TtsSettings>(jsonContent) ?? new();
             }
             catch (Exception ex)
             {
                 ConsoleColorHelper.WriteError($"Failed to load settings: {ex.Message}");
-                return new();
+                settings = new();
+            }
+        }
+        else
+        {
+            ConsoleColorHelper.WriteWarning("settings.json not found. Using default settings.");
+            settings = new();
+        }
+
+        // Apply --tts command-line override, if present
+        foreach (var arg in args)
+        {
+            const string prefixLong = "--tts:";
+            const string prefixShort = "-tts:";
+
+            string? providerValue = null;
+            if (arg.StartsWith(prefixLong, StringComparison.OrdinalIgnoreCase))
+            {
+                providerValue = arg[prefixLong.Length..];
+            }
+            else if (arg.StartsWith(prefixShort, StringComparison.OrdinalIgnoreCase))
+            {
+                providerValue = arg[prefixShort.Length..];
+            }
+
+            if (providerValue != null)
+            {
+                // Normalise to title case for a clean settings value
+                var normalised = providerValue.Length switch
+                {
+                    0 => null,
+                    _ => char.ToUpper(providerValue[0], CultureInfo.InvariantCulture) + providerValue[1..].ToLower(CultureInfo.InvariantCulture)
+                };
+
+                if (normalised is "Windows" or "Piper")
+                {
+                    settings.TtsProvider = normalised;
+                    ConsoleColorHelper.WriteInfo($"TTS provider overridden via command line: {normalised}");
+                }
+                else
+                {
+                    ConsoleColorHelper.WriteWarning($"Unknown TTS provider '{providerValue}'. Valid values: Windows, Piper. Using settings default: {settings.TtsProvider}");
+                }
+
+                break; // Only process the first --tts argument
             }
         }
 
-        ConsoleColorHelper.WriteWarning("settings.json not found. Using default settings.");
-        return new();
+        return settings;
     }
 
     /// <summary>
@@ -143,6 +188,11 @@ internal sealed class Program
         if (args.Contains("--help") || args.Contains("-h"))
         {
             Console.WriteLine("Usage: TextToSpeechApp [path to translations CSV file]");
+            Console.WriteLine("  [path]                Path to a translation CSV file");
+            Console.WriteLine("  [line number]         Starting line number (1-based)");
+            Console.WriteLine("  --tts:{provider}      TTS provider to use: Windows or Piper (case-insensitive)");
+            Console.WriteLine("  -tts:{provider}       Shorthand for --tts:");
+            Console.WriteLine("  --help, -h            Show this help message");
             Environment.Exit(0);
         }
 
@@ -157,6 +207,14 @@ internal sealed class Program
         Console.WriteLine("Arguments passed. Processing...");
         foreach (var arg in args)
         {
+            // Skip TTS provider arguments — they are handled by LoadTtsSettings
+            if (arg.StartsWith("--tts:", StringComparison.OrdinalIgnoreCase) ||
+                arg.StartsWith("-tts:", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("  (TTS provider argument, processed separately)");
+                continue;
+            }
+
             Console.WriteLine(arg);
 
             if (arg.Contains(".csv", StringComparison.InvariantCultureIgnoreCase))
