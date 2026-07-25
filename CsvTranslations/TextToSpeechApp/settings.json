@@ -1,8 +1,19 @@
 {
   "translation_filepath": "..\\translations.csv",
   "TtsProvider": "Windows",
-  "PiperVoices": {
-    "English": "en_US-lessac-medium",
-    "Finnish": "fi_FI-harri-low"
+  "TtsProviders": {
+    "Windows": {
+      "PiperVoices": {
+        "English": "en_US-lessac-medium",
+        "Finnish": "fi_FI-harri-low"
+      }
+    },
+    "Piper": {
+      "PiperVoices": {
+        "English": "en_GB-northern_english_male-medium",
+        "Finnish": "fi_FI-harri-medium",
+        "Vietnamese": "vi_VN-vivos-x_low"
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../Directory.Build.TTS.props" />
 
   <PropertyGroup>
@@ -24,5 +24,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <!-- Make internal types visible to the test project -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>TextToSpeechApp.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>
