@@ -1,4 +1,4 @@
-﻿# Ignore build artifacts and IDE folders
+# Ignore build artifacts and IDE folders
 **/obj/
 **/bin/
 *.user
@@ -34,3 +34,7 @@ __pycache__/
 # Cline personal/local files
 .clinerules
 .aider*
+
+# Piper TTS runtime artifacts (downloaded on first run)
+CsvTranslations/TextToSpeechApp/models/
+CsvTranslations/TextToSpeechApp/piper/
