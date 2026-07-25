@@ -5,9 +5,10 @@ using Shouldly;
 namespace TextToSpeechApp.Tests;
 
 /// <summary>
-/// Tests for <see cref="TtsSettings"/> JSON deserialization.
+/// Tests for <see cref="TtsSettings"/> JSON deserialization and
+/// <see cref="TtsSettings.TryParseTtsArg"/> CLI argument parsing.
 /// Verifies TtsProvider selector, TtsProviders dictionary mapping,
-/// PiperVoices accuracy, and default-value fallback under various inputs.
+/// PiperVoices accuracy, default-value fallback, and --tts: argument handling.
 /// </summary>
 public sealed class TtsSettingsTests
 {
@@ -236,5 +237,65 @@ public sealed class TtsSettingsTests
         var config = sut.TtsProviders["Windows"];
         config.ShouldNotBeNull();
         config.PiperVoices.ShouldBeEmpty();
+    }
+
+    // ---------- TryParseTtsArg tests ----------
+
+    [Theory]
+    [InlineData("--tts:piper", "Piper")]
+    [InlineData("--tts:windows", "Windows")]
+    [InlineData("-tts:piper", "Piper")]
+    [InlineData("-tts:windows", "Windows")]
+    [InlineData("--tts:Piper", "Piper")]
+    [InlineData("--tts:PiPeR", "Piper")]
+    [InlineData("-tts:WINDOWS", "Windows")]
+    [InlineData("--tts:pIpEr", "Piper")]
+    public void TryParseTtsArg_ValidProvider_ReturnsTrueAndTitleCasedProvider(string arg, string expected)
+    {
+        // When: Parsing the argument
+        var result = TtsSettings.TryParseTtsArg(arg, out var provider);
+
+        // Then: The provider is recognised and normalised to title case
+        result.ShouldBeTrue();
+        provider.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("--tts:")]
+    [InlineData("-tts:")]
+    [InlineData("--tts:invalid")]
+    [InlineData("--tts:unknown")]
+    [InlineData("-tts:badvalue")]
+    public void TryParseTtsArg_EmptyOrUnknownValue_ReturnsTrueWithNullProvider(string arg)
+    {
+        // Given: A --tts argument with an empty or unknown provider value
+
+        // When: Parsing the argument
+        var result = TtsSettings.TryParseTtsArg(arg, out var provider);
+
+        // Then: The argument is recognised as a TTS arg, but no valid provider was found
+        result.ShouldBeTrue();
+        provider.ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("somefile.csv")]
+    [InlineData("--help")]
+    [InlineData("-h")]
+    [InlineData("--tts")]
+    [InlineData("-tts")]
+    [InlineData("randomstring")]
+    [InlineData("100")]
+    public void TryParseTtsArg_NonTtsArgument_ReturnsFalse(string arg)
+    {
+        // Given: An argument that is not a TTS provider argument
+
+        // When: Parsing the argument
+        var result = TtsSettings.TryParseTtsArg(arg, out var provider);
+
+        // Then: It is not recognised as a TTS argument
+        result.ShouldBeFalse();
+        provider.ShouldBeNull();
     }
 }

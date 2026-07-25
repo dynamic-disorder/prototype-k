@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace TextToSpeechApp;
 
 /// <summary>
@@ -32,4 +34,56 @@ internal sealed class TtsSettings
     ///     <see cref="TtsProvider"/>.
     /// </summary>
     public Dictionary<string, TtsProviderConfig> TtsProviders { get; set; } = new();
+
+    /// <summary>
+    ///     Attempts to parse a command-line argument as a TTS provider override
+    ///     (<c>--tts:Value</c> or <c>-tts:Value</c>, case-insensitive).
+    /// </summary>
+    /// <param name="arg">The command-line argument to parse.</param>
+    /// <param name="provider">
+    ///     When this method returns <c>true</c>, contains the normalised provider name
+    ///     (<c>"Windows"</c> or <c>"Piper"</c>), title-cased.
+    ///     When this method returns <c>false</c>, <c>null</c>.
+    /// </param>
+    /// <returns>
+    ///     <c>true</c> if <paramref name="arg"/> is a recognised TTS argument
+    ///     with a valid provider name; otherwise <c>false</c>.
+    /// </returns>
+    public static bool TryParseTtsArg(string arg, out string? provider)
+    {
+        provider = null;
+
+        const string prefixLong = "--tts:";
+        const string prefixShort = "-tts:";
+
+        string? rawValue = null;
+        if (arg.StartsWith(prefixLong, StringComparison.OrdinalIgnoreCase))
+        {
+            rawValue = arg[prefixLong.Length..];
+        }
+        else if (arg.StartsWith(prefixShort, StringComparison.OrdinalIgnoreCase))
+        {
+            rawValue = arg[prefixShort.Length..];
+        }
+
+        if (rawValue == null)
+        {
+            return false;
+        }
+
+        // Normalise to title case for a clean settings value
+        var normalised = rawValue.Length switch
+        {
+            0 => null,
+            _ => char.ToUpper(rawValue[0], CultureInfo.InvariantCulture) + rawValue[1..].ToLower(CultureInfo.InvariantCulture)
+        };
+
+        if (normalised is "Windows" or "Piper")
+        {
+            provider = normalised;
+            return true;
+        }
+
+        return true; // Recognised as a TTS arg but value was unknown
+    }
 }

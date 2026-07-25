@@ -136,40 +136,22 @@ internal sealed class Program
         // Apply --tts command-line override, if present
         foreach (var arg in args)
         {
-            const string prefixLong = "--tts:";
-            const string prefixShort = "-tts:";
-
-            string? providerValue = null;
-            if (arg.StartsWith(prefixLong, StringComparison.OrdinalIgnoreCase))
+            if (!TtsSettings.TryParseTtsArg(arg, out var provider))
             {
-                providerValue = arg[prefixLong.Length..];
-            }
-            else if (arg.StartsWith(prefixShort, StringComparison.OrdinalIgnoreCase))
-            {
-                providerValue = arg[prefixShort.Length..];
+                continue; // Not a TTS argument
             }
 
-            if (providerValue != null)
+            if (provider != null)
             {
-                // Normalise to title case for a clean settings value
-                var normalised = providerValue.Length switch
-                {
-                    0 => null,
-                    _ => char.ToUpper(providerValue[0], CultureInfo.InvariantCulture) + providerValue[1..].ToLower(CultureInfo.InvariantCulture)
-                };
-
-                if (normalised is "Windows" or "Piper")
-                {
-                    settings.TtsProvider = normalised;
-                    ConsoleColorHelper.WriteInfo($"TTS provider overridden via command line: {normalised}");
-                }
-                else
-                {
-                    ConsoleColorHelper.WriteWarning($"Unknown TTS provider '{providerValue}'. Valid values: Windows, Piper. Using settings default: {settings.TtsProvider}");
-                }
-
-                break; // Only process the first --tts argument
+                settings.TtsProvider = provider;
+                ConsoleColorHelper.WriteInfo($"TTS provider overridden via command line: {provider}");
             }
+            else
+            {
+                ConsoleColorHelper.WriteWarning($"Unknown TTS provider in argument '{arg}'. Valid values: Windows, Piper. Using settings default: {settings.TtsProvider}");
+            }
+
+            break; // Only process the first --tts argument
         }
 
         return settings;
