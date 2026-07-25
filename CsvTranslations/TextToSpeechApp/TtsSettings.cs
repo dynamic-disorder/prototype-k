@@ -14,6 +14,12 @@ internal sealed class TtsProviderConfig
     ///     Only used when the provider is <c>"Piper"</c>.
     /// </summary>
     public Dictionary<string, string> PiperVoices { get; set; } = new();
+
+    /// <summary>
+    ///     Informational comment describing the provider configuration.
+    ///     Not used by the application logic.
+    /// </summary>
+    public string? Comment { get; set; }
 }
 
 /// <summary>

@@ -92,10 +92,7 @@ The application supports two TTS providers via a profile system in `settings.jso
   "TtsProvider": "Windows",
   "TtsProviders": {
     "Windows": {
-      "PiperVoices": {
-        "English": "en_US-lessac-medium",
-        "Finnish": "fi_FI-harri-low"
-      }
+      "Comment": "Windows provider assumes supported SAPI voices are installed on the system. Example: Microsoft George (en), Microsoft Hazel (en), Microsoft Susan (en), Microsoft Heidi (fi), Microsoft An (vi)"
     },
     "Piper": {
       "PiperVoices": {

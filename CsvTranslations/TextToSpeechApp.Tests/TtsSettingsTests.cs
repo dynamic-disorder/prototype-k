@@ -8,7 +8,7 @@ namespace TextToSpeechApp.Tests;
 /// Tests for <see cref="TtsSettings"/> JSON deserialization and
 /// <see cref="TtsSettings.TryParseTtsArg"/> CLI argument parsing.
 /// Verifies TtsProvider selector, TtsProviders dictionary mapping,
-/// PiperVoices accuracy, default-value fallback, and --tts: argument handling.
+/// PiperVoices accuracy, Comment field, default-value fallback, and --tts: argument handling.
 /// </summary>
 public sealed class TtsSettingsTests
 {
@@ -21,10 +21,6 @@ public sealed class TtsSettingsTests
               "TtsProvider": "Piper",
               "TtsProviders": {
                 "Windows": {
-                  "PiperVoices": {
-                    "English": "en_US-lessac-medium",
-                    "Finnish": "fi_FI-harri-low"
-                  }
                 },
                 "Piper": {
                   "PiperVoices": {
@@ -47,18 +43,14 @@ public sealed class TtsSettingsTests
     }
 
     [Fact]
-    public void Deserialize_ActiveWindows_ShouldReturnWindowsVoiceMap()
+    public void Deserialize_ActiveWindows_ShouldNotHavePiperVoices()
     {
-        // Given: JSON with Windows as the active provider
+        // Given: JSON with Windows as the active provider (no PiperVoices on Windows)
         const string json = """
             {
               "TtsProvider": "Windows",
               "TtsProviders": {
                 "Windows": {
-                  "PiperVoices": {
-                    "English": "en_US-lessac-medium",
-                    "Finnish": "fi_FI-harri-low"
-                  }
                 },
                 "Piper": {
                   "PiperVoices": {
@@ -72,17 +64,39 @@ public sealed class TtsSettingsTests
             """;
 
         // When: Deserializing the JSON
-        var expectedEnglish = "en_US-lessac-medium";
-        var expectedFinnish = "fi_FI-harri-low";
         var sut = JsonSerializer.Deserialize<TtsSettings>(json);
 
-        // Then: The Windows provider voices match the expected values
+        // Then: Windows provider has no PiperVoices (PiperVoices is only for Piper)
         sut.ShouldNotBeNull();
         sut.TtsProvider.ShouldBe("Windows");
 
         var windowsConfig = sut.TtsProviders["Windows"];
-        windowsConfig.PiperVoices["English"].ShouldBe(expectedEnglish);
-        windowsConfig.PiperVoices["Finnish"].ShouldBe(expectedFinnish);
+        windowsConfig.PiperVoices.ShouldBeEmpty();
+        windowsConfig.Comment.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Deserialize_WindowsWithComment_ShouldPreserveComment()
+    {
+        // Given: JSON with a Comment on the Windows provider
+        const string json = """
+            {
+              "TtsProvider": "Windows",
+              "TtsProviders": {
+                "Windows": {
+                  "Comment": "Windows speech voices are installed on the system."
+                }
+              }
+            }
+            """;
+
+        // When: Deserializing the JSON
+        var sut = JsonSerializer.Deserialize<TtsSettings>(json);
+
+        // Then: The Comment is preserved
+        sut.ShouldNotBeNull();
+        var windowsConfig = sut.TtsProviders["Windows"];
+        windowsConfig.Comment.ShouldBe("Windows speech voices are installed on the system.");
     }
 
     [Fact]
@@ -94,10 +108,6 @@ public sealed class TtsSettingsTests
               "TtsProvider": "Piper",
               "TtsProviders": {
                 "Windows": {
-                  "PiperVoices": {
-                    "English": "en_US-lessac-medium",
-                    "Finnish": "fi_FI-harri-low"
-                  }
                 },
                 "Piper": {
                   "PiperVoices": {
@@ -162,29 +172,25 @@ public sealed class TtsSettingsTests
     [Fact]
     public void Deserialize_WindowsProviderOnly_ShouldWork()
     {
-        // Given: JSON with only the Windows provider defined
+        // Given: JSON with only the Windows provider defined (no PiperVoices)
         const string json = """
             {
               "TtsProvider": "Windows",
               "TtsProviders": {
                 "Windows": {
-                  "PiperVoices": {
-                    "English": "en_US-lessac-medium"
-                  }
                 }
               }
             }
             """;
 
         // When: Deserializing the JSON
-        var expectedVoice = "en_US-lessac-medium";
         var sut = JsonSerializer.Deserialize<TtsSettings>(json);
 
-        // Then: The Windows provider is present with the correct voice
+        // Then: The Windows provider is present with no PiperVoices
         sut.ShouldNotBeNull();
         sut.TtsProvider.ShouldBe("Windows");
         sut.TtsProviders.ContainsKey("Windows").ShouldBeTrue();
-        sut.TtsProviders["Windows"].PiperVoices["English"].ShouldBe(expectedVoice);
+        sut.TtsProviders["Windows"].PiperVoices.ShouldBeEmpty();
     }
 
     [Fact]
