@@ -25,7 +25,7 @@ public class FileNameNormalizerTests
         SetUpSut();
     }
 
-    private IFilenameSanitizer SetUpSut()
+    private FileNameNormalizer SetUpSut()
     {
         var sut = new FileNameNormalizer(TestFolder, _sanitizer, _fileSystem);
         return sut;

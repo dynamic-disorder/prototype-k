@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 
 using MediaRenamer.Core.Models;
@@ -25,7 +26,7 @@ public class FileRenamer
             var info = new MediaFileInfo(file, metaTs);
             var ts = info.GetBestTimestamp();
 
-            var baseName = ts.ToString(pattern);
+            var baseName = ts.ToString(pattern, CultureInfo.InvariantCulture);
             var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
 
             var newName = baseName + ext;
@@ -47,7 +48,9 @@ public class FileRenamer
         return result;
     }
 
+#pragma warning disable CA1822 // Mark members as static - kept as instance method for API consistency
     public void ApplyRename(IEnumerable<RenamePlanItem> plan, bool dryRun)
+#pragma warning restore CA1822
     {
         foreach (var item in plan)
         {

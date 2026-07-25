@@ -17,7 +17,7 @@ namespace OllamaTranslatorApi.Tests;
 public sealed class OllamaTranslatorTests
 {
     private readonly ITranslationService _translationService;
-    private readonly IOllamaTranslator _sut;
+    private readonly OllamaTranslator _sut;
 
     public OllamaTranslatorTests()
     {

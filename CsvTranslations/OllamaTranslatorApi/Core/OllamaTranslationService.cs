@@ -189,12 +189,12 @@ public class OllamaTranslationService : ITranslationService
         foreach (var line in lines)
         {
             var trimmedLine = line.Trim();
-            if (trimmedLine.StartsWith("*") || trimmedLine.StartsWith("-"))
+            if (trimmedLine.StartsWith('*') || trimmedLine.StartsWith('-'))
             {
                 trimmedLine = trimmedLine.TrimStart('*', '-', ' ').Trim();
                 if (!trimmedLine.Contains("stalactite") && !trimmedLine.Contains("stalagmite") && 
                     !trimmedLine.Contains("ceiling") && !trimmedLine.Contains("ground") &&
-                    !trimmedLine.ToLowerInvariant().Contains("you likely"))
+                    !trimmedLine.Contains("you likely", StringComparison.OrdinalIgnoreCase))
                 {
                     return $"{trimmedLine} | #noun #logic";
                 }

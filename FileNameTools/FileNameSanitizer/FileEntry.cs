@@ -1,4 +1,4 @@
-namespace FileNameSanitizer;
+namespace FilenameSanitizer;
 
 /// <summary>
 ///     Represents a file entry with its original path and sanitized final path.

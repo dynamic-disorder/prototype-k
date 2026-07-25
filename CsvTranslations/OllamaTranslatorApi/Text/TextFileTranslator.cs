@@ -121,7 +121,7 @@ public class TextFileTranslator
     /// <summary>
     /// Gets the appropriate narrative prompt based on context usage and custom prompt.
     /// </summary>
-    private string GetNarrativePrompt(string? customPrompt, bool useContext)
+    private static string GetNarrativePrompt(string? customPrompt, bool useContext)
     {
         // If a custom prompt is provided, use it
         if (!string.IsNullOrEmpty(customPrompt))

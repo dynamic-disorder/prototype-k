@@ -10,7 +10,7 @@ public class StringTrimConverter : DefaultTypeConverter
     {
     }
 
-    public override string? ConvertToString(object value, IWriterRow row, MemberMapData memberMapData)
+    public override string? ConvertToString(object? value, IWriterRow row, MemberMapData memberMapData)
     {
         if (value == null)
         {
@@ -22,11 +22,11 @@ public class StringTrimConverter : DefaultTypeConverter
             throw new InvalidOperationException($"StringTrimConverter can only be applied to string properties. Invalid value: {value}");
         }
 
-        return "\"" + value.ToString().Trim() + "\"";
+        return "\"" + value.ToString()!.Trim() + "\"";
     }
 
-    public override object ConvertFromString(string text, IReaderRow row, MemberMapData memberMapData)
+    public override object ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
     {
-        return text.Trim('\"');
+        return text?.Trim('\"') ?? string.Empty;
     }
 }

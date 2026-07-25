@@ -189,9 +189,10 @@ public sealed class CsvFileTranslatorTests
         finally
         {
             CleanupTestFiles(inputPath);
-            if (Directory.Exists(Path.GetDirectoryName(outputDir)))
+            var parentDir = Path.GetDirectoryName(outputDir);
+            if (parentDir is not null && Directory.Exists(parentDir))
             {
-                Directory.Delete(Path.GetDirectoryName(outputDir), true);
+                Directory.Delete(parentDir, true);
             }
         }
     }
@@ -233,7 +234,7 @@ public sealed class CsvFileTranslatorTests
         return new CsvFileTranslator(_ollamaTranslator);
     }
 
-    private (ITranslationService, List<TranslationRequest>) CreateTranslationServiceWithRequestCapture()
+    private static (ITranslationService, List<TranslationRequest>) CreateTranslationServiceWithRequestCapture()
     {
         var translationService = Substitute.For<ITranslationService>();
         var capturedRequests = new List<TranslationRequest>();
@@ -251,7 +252,7 @@ public sealed class CsvFileTranslatorTests
         return (translationService, capturedRequests);
     }
 
-    private void CleanupTestFiles(params string[] paths)
+    private static void CleanupTestFiles(params string[] paths)
     {
         foreach (var path in paths)
         {

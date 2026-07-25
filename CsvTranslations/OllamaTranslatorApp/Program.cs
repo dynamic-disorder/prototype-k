@@ -31,10 +31,10 @@ internal sealed class Program
 public sealed class TranslateSettings : CommandSettings
 {
     [CommandArgument(0, "source file")]
-    public string Source { get; init; }
+    public string Source { get; init; } = string.Empty;
 
     [CommandArgument(1, "target file")]
-    public string Target { get; init; }
+    public string Target { get; init; } = string.Empty;
 
     [CommandOption("-f|--folder")]
     [Description("Translate all supported files inside the specified folder.")]

@@ -86,7 +86,7 @@ internal sealed class Program
     /// <param name="folder">The folder path provided by the user.</param>
     /// <param name="filenameSanitizer">An instance of `IFilenameSanitizer` used to record errors in the logger.</param>
     /// <returns>The resolved folder path when valid; otherwise <c>null</c> when the folder is missing or inaccessible.</returns>
-    private static string? ResolveAndValidateFolder(string folder, IFilenameSanitizer filenameSanitizer)
+    private static string? ResolveAndValidateFolder(string folder, FileNameNormalizer filenameSanitizer)
     {
         if (folder == ".")
         {
@@ -111,7 +111,7 @@ internal sealed class Program
     /// <param name="folder">The target folder to operate on (used only for informational logging).</param>
     /// <param name="semiCommaSeparatedPatterns">Optional semicolon-separated patterns to remove from filenames.</param>
     /// <param name="filenameSanitizer">The filename sanitizer instance used to perform actions and record logs.</param>
-    private static void ProcessSanitization(string folder, string semiCommaSeparatedPatterns, IFilenameSanitizer filenameSanitizer)
+    private static void ProcessSanitization(string folder, string semiCommaSeparatedPatterns, FileNameNormalizer filenameSanitizer)
     {
         if (!string.IsNullOrEmpty(semiCommaSeparatedPatterns))
         {
