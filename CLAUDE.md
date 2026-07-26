@@ -1,46 +1,28 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Mono-repo of independent .NET 9 hobby projects. Each major project has its own `.sln` and project-specific `CLAUDE.md` / `README.md` with build/test/run commands.
 
-## Project Overview
-This repository contains several independent hobby projects and experiments:
-- **FileNameTools**: A cross-platform utility for sanitizing filenames.
-- **CsvTranslations**: Tools for CSV data processing, including integration with local LLMs via Ollama.
-- **MediaRenamer**: A WPF application that renames media files based on EXIF metadata.
-- **ai_offline**: Docker containers and configurations for running a local AI stack (Ollama + Open WebUI).
+## Projects
 
-## Architecture & Structure
-The project is organized as a mono-repo where each subdirectory functions as an independent unit:
-- Each major project (**FileNameTools**, **CsvTranslations**, **MediaRenamer**) maintains its own `.sln` file and resides in its own directory.
-- Specific local configurations (e.g., specific .NET versions or license keys) are often kept within the respective project folders.
-- The `local_dev/` folder contains internal documentation for tools, technical analysis, and Claude Code integration guidance.
+| Project | Path | Type | Summary |
+| :------ | :--- | :--- | :------ |
+| **CliUtils** | `CliUtils/` | Library | Shared console utilities (Spectre.Console wrappers, colored logging) |
+| **FileNameTools** | `FileNameTools/` | Solution | Filename sanitization (Unicode NFKD, pattern rules, JSON config). See [CLAUDE.md](FileNameTools/CLAUDE.md) |
+| **CsvTranslations** | `CsvTranslations/` | Solution | English-Finnish dictionary tools (Ollama translation, TTS, CSV mgmt). See [CLAUDE.md](CsvTranslations/CLAUDE.md) |
+| **MediaRenamer** | `MediaRenamer/` | WPF | Rename media files by EXIF metadata |
+| **ai_offline** | `ai_offline/` | Docker | Ollama + Open WebUI stack. Docker Compose, GPU setup, guides |
 
-## Development Commands
-To maintain context, it is recommended to navigate into the specific project directory before running commands.
+## Support Folders
 
-### Project Directory Summary
-| Project | Path | Build / Run |
-| :--- | :--- | :--- |
-| **FileNameTools** | `FileNameTools/` | `dotnet build`, `dotnet test` |
-| **CsvTranslations** | `CsvTranslations/` | `dotnet build`, `dotnet test` |
-| **MediaRenamer** | `MediaRenamer/` | `dotnet build` (WPF UI) |
-| **ai_offline** | `ai_offline/ollama_with_open_webui/` | `docker compose -f docker-compose-ollama-with-open-webui.legacy.yml up -d` |
+| Folder | Purpose |
+| :----- | :------ |
+| `local_dev/` | Dev artifacts, analyses, scripts, docs |
+| `memory/` | Personal notes, reference configs |
+| `translations_csv/` | Standalone English-Finnish CSV dictionary |
+| `local_user_files/` | Ephemeral files (git-ignored) |
 
-### General Commands (Root)
-```bash
-# List all available solutions in the repo
-find . -name "*.sln"
+## Environment & Style
 
-# Check status of all projects
-git status
-```
-
-## Development Environment
-- **Platform**: Primary development is done on Windows 11.
-- **Runtime**: Targets .NET 9.0. Ensure the appropriate .NET SDK and hosting bundles are available for targeted project types (e.g., `win-x64` for WPF).
-- **Shell**: Git Bash provides standard Unix shells; PowerShell is used for local automation scripts.
-
-## Style & Guidelines
-- **Line Endings**: CRLF is preferred for `.cs`, `.md`, and `.json`. LF is required for `.sh` and Docker files.
-- **Naming**: Follow existing naming conventions within each module (see `local_dev/` for details on specific logic requirements).
-- **Documentation**: Refer to the nested `CLAUDE.md` files within subdirectories for project-specific rules when working in those folders.
+- **Platform**: Windows 11, .NET 9.0 SDK
+- **Shell**: PowerShell (preferred), Git Bash available
+- **Line endings**: CRLF for `.cs`/`.md`/`.json`, LF for `.sh`/Dockerfiles
