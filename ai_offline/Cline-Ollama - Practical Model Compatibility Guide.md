@@ -182,11 +182,14 @@ If it hallucinates → wrong model.
 
 ---
 
-If you want, I can also prepare:
+## **Worth considering**
 
-- a ready‑to‑paste Cline model config  
-- a system prompt optimized for Qwen2.5‑Coder  
-- a README section explaining how to choose models for Cline  
-- a workflow guide for your translation corpus tools  
+Because you have two GPUs, Ollama can split a model across both of them using Tensor Parallelism. This effectively gives you a single pool of ~22-23GB of VRAM (after accounting for system overhead).
 
-Just tell me what you’d like next.
+Here is what you can run on Ollama at excellent speeds (20–40 tokens per second):
+
+Llama 3.1 / Qwen 2.5 8B (Quantized Q4 or Q6): Runs entirely on a single 12GB GPU with room to spare. Blazing fast.
+
+Llama 3.1 / Mistral Large 22B (Quantized Q4): Will fit perfectly across both your 3060s (using about 14GB total). Very fast.
+
+Llama 3.1 70B (Quantized Q3 or Q4): This is where things get interesting. A Q4 version of 70B is about ~40GB in size. Your 24GB of combined VRAM isn't enough to hold it, so Ollama will automatically load part of it into your GPUs and offload the rest to your 48GB of system RAM (CPU). It will run slower (maybe 2–5 tokens per second), but it will run without crashing, and it will still be much faster than AirLLM.
