@@ -2,13 +2,15 @@ using System.Text.Json;
 
 using Shouldly;
 
+using TextToSpeechCore;
+
 namespace TextToSpeechApp.Tests;
 
 /// <summary>
 /// Tests for <see cref="TtsSettings"/> JSON deserialization and
 /// <see cref="TtsSettings.TryParseTtsArg"/> CLI argument parsing.
 /// Verifies TtsProvider selector, TtsProviders dictionary mapping,
-/// PiperVoices accuracy, Comment field, default-value fallback, and --tts: argument handling.
+/// PiperVoices detailed config accuracy, Comment field, default-value fallback, and --tts: argument handling.
 /// </summary>
 public sealed class TtsSettingsTests
 {
@@ -24,9 +26,27 @@ public sealed class TtsSettingsTests
                 },
                 "Piper": {
                   "PiperVoices": {
-                    "English": "en_GB-northern_english_male-medium",
-                    "Finnish": "fi_FI-harri-medium",
-                    "Vietnamese": "vi_VN-vivos-x_low"
+                    "English": {
+                      "LanguageCode": "en_GB",
+                      "ModelCard": "northern_english_male",
+                      "ModelQuality": "medium",
+                      "SpeakerName": "default",
+                      "SpeakerId": "1"
+                    },
+                    "Finnish": {
+                      "LanguageCode": "fi_FI",
+                      "ModelCard": "harri",
+                      "ModelQuality": "medium",
+                      "SpeakerName": "default",
+                      "SpeakerId": "1"
+                    },
+                    "Vietnamese": {
+                      "LanguageCode": "vi_VN",
+                      "ModelCard": "vivos",
+                      "ModelQuality": "x_low",
+                      "SpeakerName": "VIVOSDEV09",
+                      "SpeakerId": "54"
+                    }
                   }
                 }
               }
@@ -54,9 +74,11 @@ public sealed class TtsSettingsTests
                 },
                 "Piper": {
                   "PiperVoices": {
-                    "English": "en_GB-northern_english_male-medium",
-                    "Finnish": "fi_FI-harri-medium",
-                    "Vietnamese": "vi_VN-vivos-x_low"
+                    "English": {
+                      "LanguageCode": "en_GB",
+                      "ModelCard": "northern_english_male",
+                      "ModelQuality": "medium"
+                    }
                   }
                 }
               }
@@ -100,9 +122,9 @@ public sealed class TtsSettingsTests
     }
 
     [Fact]
-    public void Deserialize_ActivePiper_ShouldReturnPiperVoiceMap()
+    public void Deserialize_ActivePiper_ShouldReturnPiperVoiceConfigs()
     {
-        // Given: JSON with Piper as the active provider
+        // Given: JSON with Piper as the active provider with detailed voice configs
         const string json = """
             {
               "TtsProvider": "Piper",
@@ -111,9 +133,27 @@ public sealed class TtsSettingsTests
                 },
                 "Piper": {
                   "PiperVoices": {
-                    "English": "en_GB-northern_english_male-medium",
-                    "Finnish": "fi_FI-harri-medium",
-                    "Vietnamese": "vi_VN-vivos-x_low"
+                    "English": {
+                      "LanguageCode": "en_GB",
+                      "ModelCard": "northern_english_male",
+                      "ModelQuality": "medium",
+                      "SpeakerName": "default",
+                      "SpeakerId": "1"
+                    },
+                    "Finnish": {
+                      "LanguageCode": "fi_FI",
+                      "ModelCard": "harri",
+                      "ModelQuality": "medium",
+                      "SpeakerName": "default",
+                      "SpeakerId": "1"
+                    },
+                    "Vietnamese": {
+                      "LanguageCode": "vi_VN",
+                      "ModelCard": "vivos",
+                      "ModelQuality": "x_low",
+                      "SpeakerName": "VIVOSDEV09",
+                      "SpeakerId": "54"
+                    }
                   }
                 }
               }
@@ -121,18 +161,69 @@ public sealed class TtsSettingsTests
             """;
 
         // When: Deserializing the JSON
-        var expectedEnglish = "en_GB-northern_english_male-medium";
-        var expectedFinnish = "fi_FI-harri-medium";
-        var expectedVietnamese = "vi_VN-vivos-x_low";
         var sut = JsonSerializer.Deserialize<TtsSettings>(json);
 
-        // Then: The Piper provider voices match the expected values
+        // Then: The Piper provider voice configs match the expected values
         sut.ShouldNotBeNull();
 
         var piperConfig = sut.TtsProviders["Piper"];
-        piperConfig.PiperVoices["English"].ShouldBe(expectedEnglish);
-        piperConfig.PiperVoices["Finnish"].ShouldBe(expectedFinnish);
-        piperConfig.PiperVoices["Vietnamese"].ShouldBe(expectedVietnamese);
+
+        var english = piperConfig.PiperVoices["English"];
+        english.LanguageCode.ShouldBe("en_GB");
+        english.ModelCard.ShouldBe("northern_english_male");
+        english.ModelQuality.ShouldBe("medium");
+        english.SpeakerName.ShouldBe("default");
+        english.SpeakerId.ShouldBe("1");
+        english.BuildModelKey().ShouldBe("en_GB-northern_english_male-medium");
+
+        var finnish = piperConfig.PiperVoices["Finnish"];
+        finnish.LanguageCode.ShouldBe("fi_FI");
+        finnish.ModelCard.ShouldBe("harri");
+        finnish.ModelQuality.ShouldBe("medium");
+        finnish.SpeakerName.ShouldBe("default");
+        finnish.SpeakerId.ShouldBe("1");
+        finnish.BuildModelKey().ShouldBe("fi_FI-harri-medium");
+
+        var vietnamese = piperConfig.PiperVoices["Vietnamese"];
+        vietnamese.LanguageCode.ShouldBe("vi_VN");
+        vietnamese.ModelCard.ShouldBe("vivos");
+        vietnamese.ModelQuality.ShouldBe("x_low");
+        vietnamese.SpeakerName.ShouldBe("VIVOSDEV09");
+        vietnamese.SpeakerId.ShouldBe("54");
+        vietnamese.BuildModelKey().ShouldBe("vi_VN-vivos-x_low");
+    }
+
+    [Fact]
+    public void Deserialize_ActivePiper_ShouldHandleMissingSpeakerFields()
+    {
+        // Given: JSON with Piper voice configs that omit optional speaker fields
+        const string json = """
+            {
+              "TtsProvider": "Piper",
+              "TtsProviders": {
+                "Piper": {
+                  "PiperVoices": {
+                    "Vietnamese": {
+                      "LanguageCode": "vi_VN",
+                      "ModelCard": "vivos",
+                      "ModelQuality": "x_low"
+                    }
+                  }
+                }
+              }
+            }
+            """;
+
+        // When: Deserializing the JSON
+        var sut = JsonSerializer.Deserialize<TtsSettings>(json);
+
+        // Then: Speaker fields default to null and the model key is correctly composed
+        sut.ShouldNotBeNull();
+        var piperConfig = sut.TtsProviders["Piper"];
+        var vietnamese = piperConfig.PiperVoices["Vietnamese"];
+        vietnamese.SpeakerName.ShouldBeNull();
+        vietnamese.SpeakerId.ShouldBeNull();
+        vietnamese.BuildModelKey().ShouldBe("vi_VN-vivos-x_low");
     }
 
     [Fact]
@@ -203,9 +294,21 @@ public sealed class TtsSettingsTests
               "TtsProviders": {
                 "Piper": {
                   "PiperVoices": {
-                    "English": "en_GB-northern_english_male-medium",
-                    "Finnish": "fi_FI-harri-medium",
-                    "Vietnamese": "vi_VN-vivos-x_low"
+                    "English": {
+                      "LanguageCode": "en_GB",
+                      "ModelCard": "northern_english_male",
+                      "ModelQuality": "medium"
+                    },
+                    "Finnish": {
+                      "LanguageCode": "fi_FI",
+                      "ModelCard": "harri",
+                      "ModelQuality": "medium"
+                    },
+                    "Vietnamese": {
+                      "LanguageCode": "vi_VN",
+                      "ModelCard": "vivos",
+                      "ModelQuality": "x_low"
+                    }
                   }
                 }
               }
@@ -215,7 +318,7 @@ public sealed class TtsSettingsTests
         // When: Deserializing the JSON
         var sut = JsonSerializer.Deserialize<TtsSettings>(json);
 
-        // Then: The Piper provider is present with three voice mappings
+        // Then: The Piper provider is present with three voice configurations
         sut.ShouldNotBeNull();
         sut.TtsProvider.ShouldBe("Piper");
         sut.TtsProviders.ContainsKey("Piper").ShouldBeTrue();

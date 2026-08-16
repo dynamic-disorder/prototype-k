@@ -145,6 +145,11 @@ internal sealed class Program
             {
                 settings.TtsProvider = provider;
                 ConsoleColorHelper.WriteInfo($"TTS provider overridden via command line: {provider}");
+
+                if (provider.Equals("Piper", StringComparison.OrdinalIgnoreCase))
+                {
+                    ConsoleColorHelper.WriteInfo(" .. loading. Please wait ... takes a few minutes.");
+                }
             }
             else
             {

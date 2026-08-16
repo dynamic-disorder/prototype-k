@@ -96,9 +96,27 @@ The application supports two TTS providers via a profile system in `settings.jso
     },
     "Piper": {
       "PiperVoices": {
-        "English": "en_GB-northern_english_male-medium",
-        "Finnish": "fi_FI-harri-medium",
-        "Vietnamese": "vi_VN-vivos-x_low"
+        "English": {
+          "LanguageCode": "en_GB",
+          "ModelCard": "northern_english_male",
+          "ModelQuality": "medium",
+          "SpeakerName": "default",
+          "SpeakerId": "1"
+        },
+        "Finnish": {
+          "LanguageCode": "fi_FI",
+          "ModelCard": "harri",
+          "ModelQuality": "medium",
+          "SpeakerName": "default",
+          "SpeakerId": "1"
+        },
+        "Vietnamese": {
+          "LanguageCode": "vi_VN",
+          "ModelCard": "vivos",
+          "ModelQuality": "x_low",
+          "SpeakerName": "VIVOSDEV09",
+          "SpeakerId": "54"
+        }
       }
     }
   }
@@ -108,7 +126,13 @@ The application supports two TTS providers via a profile system in `settings.jso
 - **TtsProvider**: The active provider selector — set to `"Windows"` or `"Piper"`
 - **TtsProviders**: A dictionary of named provider configurations
   - The dictionary **key** is the provider name (no duplicate `TtsProvider` field inside)
-  - **PiperVoices**: Maps a language name to a Piper voice model key (only used by Piper)
+  - **PiperVoices**: Maps a language name to a detailed Piper voice configuration (only used by Piper):
+    - **LanguageCode**: Piper language code (e.g. `"vi_VN"`, `"fi_FI"`, `"en_GB"`)
+    - **ModelCard**: Model card / dataset name (e.g. `"vivos"`, `"harri"`)
+    - **ModelQuality**: Voice model quality (e.g. `"x_low"`, `"medium"`, `"high"`)
+    - **SpeakerName**: Optional speaker name (e.g. `"VIVOSDEV09"`) resolved via the model's `speaker_id_map`
+    - **SpeakerId**: Optional numeric speaker id (e.g. `"54"` → `--speaker 54`); preferred over `SpeakerName` when valid
+  - The Piper model key is composed as `LanguageCode-ModelCard-ModelQuality` (e.g. `"vi_VN-vivos-x_low"`)
 
 To switch providers, change `"TtsProvider"` from `"Windows"` to `"Piper"` (or use `--tts:piper` at the command line).
 

@@ -5,11 +5,29 @@
     "Windows": {
       "Comment": "Windows provider assumes supported SAPI voices are installed on the system. Example: Microsoft George (en), Microsoft Hazel (en), Microsoft Susan (en), Microsoft Heidi (fi), Microsoft An (vi)"
     },
-    "Piper": {
+    "Piper": {      
       "PiperVoices": {
-        "English": "en_GB-northern_english_male-medium",
-        "Finnish": "fi_FI-harri-medium",
-        "Vietnamese": "vi_VN-vivos-x_low"
+        "English": { 
+          "LanguageCode": "en_GB",
+          "ModelCard": "northern_english_male",
+          "ModelQuality": "medium",
+          "SpeakerName": "default",
+          "SpeakerId": "1"
+        },
+        "Finnish": {          
+          "LanguageCode": "fi_FI",
+          "ModelCard": "harri",
+          "ModelQuality": "medium",
+          "SpeakerName": "default",
+          "SpeakerId": "1"
+        },
+        "Vietnamese": {          
+          "LanguageCode": "vi_VN",
+          "ModelCard": "vivos",
+          "ModelQuality": "x_low",
+          "SpeakerName": "VIVOSDEV09",
+          "SpeakerId": "54"
+        }
       }
     }
   }

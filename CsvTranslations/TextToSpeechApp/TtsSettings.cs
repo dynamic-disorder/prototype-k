@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using TextToSpeechCore;
+
 namespace TextToSpeechApp;
 
 /// <summary>
@@ -9,11 +11,11 @@ namespace TextToSpeechApp;
 internal sealed class TtsProviderConfig
 {
     /// <summary>
-    ///     Maps a <see cref="TranslationTools.VoiceLanguage.LanguageName"/> to a PiperSharp
-    ///     HuggingFace voice model key (e.g. <c>"English"</c> -> <c>"en_US-lessac-medium"</c>).
-    ///     Only used when the provider is <c>"Piper"</c>.
+    ///     Maps a <see cref="TranslationTools.VoiceLanguage.LanguageName"/> to a detailed
+    ///     <see cref="PiperVoiceConfig"/> for the corresponding Piper voice. Only used when
+    ///     the provider is <c>"Piper"</c>.
     /// </summary>
-    public Dictionary<string, string> PiperVoices { get; set; } = new();
+    public Dictionary<string, PiperVoiceConfig> PiperVoices { get; set; } = new();
 
     /// <summary>
     ///     Informational comment describing the provider configuration.
