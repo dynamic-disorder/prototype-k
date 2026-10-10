@@ -98,24 +98,26 @@ public class OllamaTranslator : IOllamaTranslator
         }
 
         _resolvedPrompt = ResolvePrompt(prompt);
-        var translatedEntries = new List<CsvEntry>();
-        var lockObj = new object();
+
+        // Results are stored by input index so the returned list keeps the caller's order.
+        // Appending them in completion order (the previous behaviour) shuffled the lines of
+        // multi-line files, because the batch runs in parallel.
+        var translatedEntries = new CsvEntry[entries.Count];
         int totalEntries = entries.Count;
-        int counter = 0;
-        await Parallel.ForEachAsync(entries, new ParallelOptions { MaxDegreeOfParallelism = maxParallelTasks },
-            async (entry, token) =>
+        int completedCount = 0;
+
+        await Parallel.ForAsync(0, entries.Count, new ParallelOptions { MaxDegreeOfParallelism = maxParallelTasks },
+            async (index, token) =>
             {
                 await Task.Delay(100, token); // Small delay to prevent overwhelming the API, a delay without blocking.
 
+                CsvEntry entry = entries[index];
                 CsvEntry result;
                 try
                 {
                     result = await TranslateEntryAsync(entry, _resolvedPrompt);
-                    ConsoleColorHelper.WriteTranslation(counter, totalEntries, entry.SourceText, result.TargetText);
-                    lock (lockObj)
-                    {
-                        counter++;
-                    }
+                    ConsoleColorHelper.WriteTranslation(
+                        Interlocked.Increment(ref completedCount) - 1, totalEntries, entry.SourceText, result.TargetText);
                 }
                 catch (Exception ex)
                 {
@@ -123,13 +125,10 @@ public class OllamaTranslator : IOllamaTranslator
                     result = entry;
                 }
 
-                lock (lockObj)
-                {
-                    translatedEntries.Add(result);
-                }
+                translatedEntries[index] = result;
             });
 
-        return translatedEntries;
+        return [.. translatedEntries];
     }
 
     /// <inheritdoc/>

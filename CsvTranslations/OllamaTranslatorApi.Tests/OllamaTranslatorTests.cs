@@ -216,12 +216,59 @@ public sealed class OllamaTranslatorTests
         // When: batch translating
         var translated = await _sut.BatchTranslateAsync(entries);
 
-        // Then: all entries are translated (order not guaranteed with parallel execution)
+        // Then: all entries are translated, in the caller's order
         translated.ShouldNotBeNull();
         translated.Count.ShouldBe(3);
+        translated.Select(e => e.SourceText).ShouldBe(["Hello", "World", "Test"]);
         translated.ShouldContain(e => e.SourceText == "Hello" && e.TargetText == "Hola");
         translated.ShouldContain(e => e.SourceText == "World" && e.TargetText == "Mundo");
         translated.ShouldContain(e => e.SourceText == "Test" && e.TargetText == "Prueba");
+    }
+
+    [Fact]
+    public async Task BatchTranslateAsync_TranslationsFinishOutOfOrder_StillPreservesInputOrder()
+    {
+        // Given: entries whose translations complete in reverse order -- the first entry is
+        // the slowest. Appending results as they complete (the old behaviour) returned the
+        // list backwards, which reordered the lines of multi-line files.
+        var service = new DelayAwareTranslationService(new Dictionary<string, (int DelayMs, string Translation)>
+        {
+            ["First"] = (300, "Ensimmäinen"),
+            ["Second"] = (200, "Toinen"),
+            ["Third"] = (100, "Kolmas")
+        });
+        var sut = new OllamaTranslator(service);
+        var entries = new List<CsvEntry>
+        {
+            new() { SourceText = "First" },
+            new() { SourceText = "Second" },
+            new() { SourceText = "Third" }
+        };
+
+        // When: batch translating all three in parallel
+        var translated = await sut.BatchTranslateAsync(entries);
+
+        // Then: the result order matches the input order, not the completion order
+        translated.Select(e => e.SourceText).ShouldBe(["First", "Second", "Third"]);
+        translated.Select(e => e.TargetText).ShouldBe(["Ensimmäinen", "Toinen", "Kolmas"]);
+    }
+
+    [Fact]
+    public async Task BatchTranslateAsync_ManyEntries_PreservesInputOrder()
+    {
+        // Given: more entries than the parallelism limit, so batches complete at different times
+        var service = new DelayAwareTranslationService(
+            Enumerable.Range(1, 20).ToDictionary(i => $"Text {i}", i => (DelayMs: (20 - i) * 10, Translation: $"käännös {i}")));
+        var sut = new OllamaTranslator(service);
+        var entries = Enumerable.Range(1, 20)
+            .Select(i => new CsvEntry { SourceText = $"Text {i}" })
+            .ToList();
+
+        // When: translating with the default parallelism
+        var translated = await sut.BatchTranslateAsync(entries);
+
+        // Then: the entries come back in the original order
+        translated.Select(e => e.SourceText).ShouldBe(entries.Select(e => e.SourceText));
     }
 
     [Fact]
@@ -381,5 +428,28 @@ public sealed class OllamaTranslatorTests
         {
             // ignore cleanup failures in tests
         }
+    }
+
+    /// <summary>
+    ///     A translation service that delays each response by a per-text amount, so a test can
+    ///     force translations to complete in an order different from the input order.
+    /// </summary>
+    private sealed class DelayAwareTranslationService : ITranslationService
+    {
+        private readonly Dictionary<string, (int DelayMs, string Translation)> _behaviour;
+
+        public DelayAwareTranslationService(Dictionary<string, (int DelayMs, string Translation)> behaviour)
+        {
+            _behaviour = behaviour;
+        }
+
+        public async Task<TranslationResponse> TranslateAsync(TranslationRequest request)
+        {
+            (int delayMs, string translation) = _behaviour[request.Text];
+            await Task.Delay(delayMs);
+            return new TranslationResponse(translation);
+        }
+
+        public string GetLlmModelName() => "DelayAware";
     }
 }
