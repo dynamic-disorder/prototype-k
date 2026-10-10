@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Override for Windows TTS projects -->
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <UseWinRT>true</UseWinRT>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,9 @@
+# Build artifacts and IDE folders
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# NuGet packages - minimal tier C# defaults only
+[Pp][Rr][Oo]j.e[cctt]/packages/*
+!*build/**/packages/*

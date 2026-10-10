@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Project-specific properties only -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="TextFileSplitterApp.syntax.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TextFileSplitterApp.syntax.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+    <ProjectReference Include="..\..\CliUtils\CliUtils.csproj" />
+    <ProjectReference Include="..\OllamaTranslatorApi\OllamaTranslatorApi.csproj" />
+  </ItemGroup>
+
+</Project>
+

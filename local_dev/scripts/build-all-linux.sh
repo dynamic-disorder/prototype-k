@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+#
+# Builds (and optionally tests) every .NET solution in this mono-repo on
+# Linux/macOS, then reports a per-solution summary.
+#
+#   ./local_dev/scripts/build-all-linux.sh                 # Debug build, all solutions
+#   ./local_dev/scripts/build-all-linux.sh -c Release      # Release build
+#   ./local_dev/scripts/build-all-linux.sh --test          # build, then run tests
+#   ./local_dev/scripts/build-all-linux.sh --test -c Release
+#
+# Notes
+#  * Windows-only projects (WPF, net9.0-windows10.0.19041.0) still *compile*
+#    here because Directory.Build.props sets EnableWindowsTargeting=true.
+#    They remain unrunnable on Linux — that is expected, not a failure.
+#  * net9.0 test assemblies need the .NET 9 runtime. When only a newer runtime
+#    is installed the script falls back to DOTNET_ROLL_FORWARD=LatestMajor
+#    instead of failing, and says so.
+#
+set -uo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$repo_root" || exit 1
+
+configuration="Debug"
+run_tests=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -c|--configuration)
+      [[ $# -ge 2 ]] || { echo "error: $1 requires a value" >&2; exit 2; }
+      configuration="$2"; shift 2 ;;
+    --test) run_tests=true; shift ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    *) echo "error: unknown argument '$1'" >&2; exit 2 ;;
+  esac
+done
+
+# net9.0 assemblies cannot execute on a net10-only install without roll-forward.
+if ! dotnet --list-runtimes 2>/dev/null | grep -q 'Microsoft\.NETCore\.App 9\.'; then
+  export DOTNET_ROLL_FORWARD=LatestMajor
+  echo "note: no .NET 9 runtime found — using DOTNET_ROLL_FORWARD=LatestMajor for test execution."
+  echo
+fi
+
+mapfile -t solutions < <(find . -maxdepth 2 -name '*.sln' -not -path './local_user_files/*' | sort)
+if [[ ${#solutions[@]} -eq 0 ]]; then
+  echo "error: no .sln files found under $repo_root" >&2
+  exit 1
+fi
+
+build_failures=()
+test_failures=()
+results=()
+
+for sln in "${solutions[@]}"; do
+  echo "════════ ${sln#./} (build, $configuration) ════════"
+  if dotnet build "$sln" -c "$configuration" --nologo; then
+    results+=("build  OK    ${sln#./}")
+  else
+    results+=("build  FAIL  ${sln#./}")
+    build_failures+=("$sln")
+    continue
+  fi
+
+  [[ "$run_tests" == true ]] || continue
+
+  echo "──────── ${sln#./} (test) ────────"
+  if dotnet test "$sln" -c "$configuration" --no-build --nologo; then
+    results+=("test   OK    ${sln#./}")
+  else
+    results+=("test   FAIL  ${sln#./}")
+    test_failures+=("$sln")
+  fi
+done
+
+echo
+echo "════════ summary ════════"
+printf '%s\n' "${results[@]}"
+
+if [[ ${#build_failures[@]} -gt 0 || ${#test_failures[@]} -gt 0 ]]; then
+  echo
+  [[ ${#build_failures[@]} -gt 0 ]] && echo "build failures: ${build_failures[*]}"
+  [[ ${#test_failures[@]} -gt 0 ]] && echo "test failures:  ${test_failures[*]}"
+  exit 1
+fi
+
+echo
+echo "All solutions built successfully${run_tests:+ and passed tests}."

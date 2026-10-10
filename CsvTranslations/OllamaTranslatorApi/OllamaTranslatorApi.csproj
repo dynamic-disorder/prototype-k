@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Project-specific properties only -->
+    <RootNamespace>OllamaTranslatorApi</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\CliUtils\CliUtils.csproj" />
+    <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Core functionality -->
+    <Compile Include="Core\IOllamaTranslator.cs" />
+    <Compile Include="Core\ITranslationService.cs" />
+    <Compile Include="Core\OllamaTranslationService.cs" />
+    <Compile Include="Core\OllamaTranslator.cs" />
+    
+    <!-- CSV translation -->
+    <Compile Include="Csv\CsvFileTranslator.cs" />
+    <Compile Include="Csv\StringTrimConverter.cs" />
+    <Compile Include="Csv\TranslationCsvFileHandler.cs" />
+    
+    <!-- Text file translation -->
+    <Compile Include="Text\TextFileTranslator.cs" />
+    <Compile Include="Text\FreeTextTranslator.cs" />
+    
+    <!-- Models -->
+    <Compile Include="Models\CsvEntry.cs" />
+    <Compile Include="Models\OllamaResponse.cs" />
+    <Compile Include="Models\OllamaResponseObject.cs" />
+    <Compile Include="Models\OllamaTranslationRequest.cs" />
+    <Compile Include="Models\TranslationRequest.cs" />
+    <Compile Include="Models\TranslationResponse.cs" />
+    
+    <!-- Configuration -->
+    <Compile Include="Configuration\OllamaApiConfig.cs" />
+    <Compile Include="Configuration\OllamaTranslatorSettings.cs" />
+    
+    <!-- Utilities -->
+    <Compile Include="Utilities\OllamaTranslatorStatic.cs" />
+    <Compile Include="Utilities\OllamaTranslatorStaticExample.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,64 @@
+# Ollama services. Start this stack before the OpenWebUI stack.
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ${OLLAMA_MODELS_PATH}:/root/.ollama/models
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_NO_VERIFY=true
+      - OLLAMA_KEEP_ALIVE=30m
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+    networks:
+      - ai_network
+
+  ollama-cli:
+    image: ollama/ollama
+    entrypoint: ["tail", "-f", "/dev/null"]
+    volumes:
+      - ollama_data:/root/.ollama
+      - ${OLLAMA_MODELS_PATH}:/root/.ollama/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+    networks:
+      - ai_network
+
+  ollama-proxy:
+    build:
+      context: ../OllamaProxy
+      dockerfile: Dockerfile
+    container_name: ollama-proxy
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    networks:
+      - ai_network
+
+networks:
+  ai_network:
+    name: ai_network
+    driver: bridge
+    attachable: true
+
+volumes:
+  ollama_data:

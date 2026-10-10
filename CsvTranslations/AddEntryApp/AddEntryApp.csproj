@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Project-specific properties only -->
+    <OutputType>Exe</OutputType>
+    <RootNamespace>AddEntryApp</RootNamespace>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+    <ProjectReference Include="..\OllamaTranslatorApi\OllamaTranslatorApi.csproj" />
+    <ProjectReference Include="..\..\CliUtils\CliUtils.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\translations.csv" Link="translations.csv" />
+  </ItemGroup>
+</Project>
+

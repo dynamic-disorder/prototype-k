@@ -1,0 +1,73 @@
+# Cline Configuration Rules
+## Shell & Commands
+- **Primary shell**: PowerShell on Windows (default)
+- **Git Bash**: Available in Windows development environments via Git installation (`git --version` to verify)
+- **Prefer PowerShell cmdlets** over Unix commands when available
+- **Error handling**: Use `-ErrorAction` parameter, not `||` operator
+- **Command style**: `Get-ChildItem -Filter *.cs -Recurse | Select-String "pattern"`
+
+## Project Structure
+- Multi-project repository with independent solutions
+- **Development support folders**:
+  - `local_dev/`: Development artifacts, analyses, tooling, scripts, documentation (not git-ignored)
+  - `local_user_files/`: Ephemeral/user-specific files (git-ignored)
+- Respect project boundaries defined in `.claude/rules/repository-structure.md`
+
+## File Operations
+- **Line endings**: CRLF for .NET code, Markdown, text files (Windows convention)
+- **Shell scripts**: LF line endings (Docker compatibility)
+- **Automatic normalization**: `.claude/hooks/normalize-line-endings.ps1` converts LF→CRLF on Windows
+- **PowerShell utilities**: Stored in `.claude/scripts/` (not root directory)
+  - `check_line_endings.ps1`, `fix_line_endings.ps1`, `fix_string_literals.ps1`, etc.
+- Follow `.editorconfig` for code formatting
+
+## Build System
+- .NET 9.0 projects
+- Build with `dotnet build` using solution files in subdirectories
+- Use VS Code tasks in `.vscode/tasks.json` for common operations
+
+## Claude Code Integration
+- Respect `.claude/` configuration and CLAUDE.md files
+- Use available skills defined in `.claude/skills/`
+- **Hooks**: PowerShell hooks (`.ps1`) on Windows
+  - PostToolUse: `.claude/hooks/normalize-line-endings.ps1` (fixes line endings)
+  - PreToolUse: `.claude/hooks/pre-commit-build-check.sh` (bash, cross-platform)
+- Adhere to `.claude/settings.json` permissions
+
+## Development Workflow
+1. Check if change belongs to specific subproject
+2. Build relevant solution to ensure no breakage
+3. Run existing tests if available
+4. Update documentation if needed
+
+## Areas to Focus
+- **High priority**: C# .NET, file name sanitization, CSV translation tools, Ollama AI integration, Docker for AI offline
+- **Be careful with**: Production-like configurations, hobby project nature, test changes before committing
+
+## Troubleshooting
+
+### VS Code Cache Issues (Cline)
+When Visual Studio Code cache appears to be introducing issues (providing not-up-to-date data, stale file contents, or incorrect project state—affects mainly Cline), execute the cache cleaner:
+
+```powershell
+cd local_dev/scripts
+python vscode_cache_cleaner.py
+```
+
+The script will:
+1. Close VS Code if running
+2. Remove cache folders (Cache, CachedData, Code Cache, GPUCache, logs, CachedExtensions)
+3. Preserve your settings and installed extensions
+
+After running, restart VS Code to regenerate fresh caches.
+
+## Command Examples
+```powershell
+# Preferred PowerShell style
+Get-ChildItem -Path . -Filter *.cs -Recurse | Select-String "pattern"
+
+# Acceptable Unix style (when necessary)
+grep -r "pattern" *.cs
+
+# Avoid mixed syntax (fails in PowerShell)
+# grep --version 2>&1 || echo "not available"

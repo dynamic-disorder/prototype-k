@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build OllamaTranslatorApi",
+      "type": "shell",
+      "command": "dotnet build translations_csv/OllamaTranslatorApi/OllamaTranslatorApi.csproj",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Build All Translations Projects",
+      "type": "shell",
+      "command": "dotnet build translations_csv/translations_csv.sln",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Test OllamaTranslatorApi",
+      "type": "shell",
+      "command": "dotnet test translations_csv/OllamaTranslatorApi.Tests/OllamaTranslatorApi.Tests.csproj",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Clean Build",
+      "type": "shell",
+      "command": "dotnet clean translations_csv/translations_csv.sln",
+      "group": "clean",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      }
+    },
+    {
+      "label": "Restore Packages",
+      "type": "shell",
+      "command": "dotnet restore translations_csv/translations_csv.sln",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      }
+    }
+  ]
+}

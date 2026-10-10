@@ -1,0 +1,28 @@
+# Open WebUI service. Start the Ollama stack first.
+services:
+  open-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openwebui-harness:local
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    restart: unless-stopped
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=your_secure_key_here
+    volumes:
+      - open_webui_data:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - ai_network
+
+networks:
+  ai_network:
+    name: ai_network
+    external: true
+
+volumes:
+  open_webui_data:

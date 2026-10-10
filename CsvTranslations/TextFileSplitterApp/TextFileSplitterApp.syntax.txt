@@ -1,0 +1,40 @@
+TextFileSplitter - Splits large text files into smaller files with configurable line limits
+
+USAGE:
+  TextFileSplitter <input_file_path> <max_lines_per_file> [--csv] [--hashtags|--semantics]
+  TextFileSplitter /help  (or --help, -h, /?, -?)
+
+ARGUMENTS:
+  <input_file_path>    Path to the text file to split
+  <max_lines_per_file> Maximum number of lines per output file (250-25000)
+  --csv                Optional flag to format split files as CSV translation entries
+  --hashtags           Generate CSV header with Hashtags column when header missing SourceText/TargetText
+  --semantics          Generate CSV header with Semantics column when header missing SourceText/TargetText
+
+HELP OPTIONS:
+  /help, --help, -h, /?, -?  Display this help information
+
+EXAMPLES:
+  # Split a file with 1000 lines per chunk
+  TextFileSplitter "C:\data\large_file.txt" 1000
+
+  # Split and format as CSV entries
+  TextFileSplitter "C:\data\translations.txt" 500 --csv
+
+  # Split CSV file with missing headers, generate Hashtags header
+  TextFileSplitter "C:\data\noheader.csv" 500 --csv --hashtags
+
+  # Split CSV file with missing headers, generate Semantics header
+  TextFileSplitter "C:\data\noheader.csv" 500 --csv --semantics
+
+  # Run from project directory
+  dotnet run "..\translations.csv" 1000 --csv
+
+FEATURES:
+  • Preview splitting information before confirmation
+  • Configurable split size (250-25,000 lines per file)
+  • CSV formatting option with <entry> tags
+  • Output files numbered sequentially: input_001.txt, input_002.txt, etc.
+  • Automatic CSV header generation for missing SourceText/TargetText columns
+
+For more details, see TextFileSplitterApp.README.md

@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Project-specific properties only -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="csv_files\input.csv" />
+    <None Remove="csv_files\output.csv" />
+    <None Remove="ollama-settings.json" />
+    <None Remove="OllamaTranslatorApp.syntax.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="csv_files\input.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="csv_files\output.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="csv_files\csv_files.README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ollama-settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CliUtils\CliUtils.csproj" />
+    <ProjectReference Include="..\OllamaTranslatorApi\OllamaTranslatorApi.csproj" />
+    <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="OllamaTranslatorApp.syntax.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
+

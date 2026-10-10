@@ -1,0 +1,1 @@
+On windows, setx OLLAMA_MODELS "D:\ollama_model"

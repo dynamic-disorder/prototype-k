@@ -1,0 +1,15 @@
+Usage:
+  OllamaTranslatorApp <source.csv> <target.csv>
+
+Arguments:
+  <source.csv>   File path to the input CSV file
+  <target.csv>   File path where the translated CSV will be saved
+
+Options:
+  --help, -h     Show this help message
+  --folder       The folder containing source .csv files
+
+Example:
+  OllamaTranslatorApp --help
+  OllamaTranslatorApp --folder my_folder
+  OllamaTranslatorApp input.csv output.csv

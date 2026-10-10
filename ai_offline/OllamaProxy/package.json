@@ -1,0 +1,15 @@
+{
+  "name": "ollama-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OpenAI-compatible proxy for Ollama",
+  "main": "ollama-proxy.js",
+  "scripts": {
+    "start": "node ollama-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.6.11"
+  }
+}
