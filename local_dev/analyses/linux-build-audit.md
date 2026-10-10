@@ -108,6 +108,10 @@ project still fails on 36 further errors — see below.
 
 ## Open issues (not fixed)
 
+> **Status update (2026-10-10, later the same day):** issues **1, 3, 4, 5 and 6** below are
+> now **resolved** — see *Resolution: .NET 10 migration* at the end of this document. Only
+> issue 2 (pattern mode) remains open.
+
 | # | Issue | Evidence |
 | :- | :---- | :------- |
 | 1 | `OllamaTranslatorApp.Tests` does not compile | 20× `TranslationRequest` has no `SourcePath`/`TargetPath` (API refactored to `TranslationRequest(Text, Prompt, Semantics)`), 14× `'Program' is inaccessible` (missing `InternalsVisibleTo("OllamaTranslatorApp.Tests")` in `OllamaTranslatorApp.csproj`), plus `CS1929`/`CS1503`. Needs a rewrite, not a patch. |
@@ -246,3 +250,67 @@ file is `CsvTranslations/translations.csv`, which `.gitattributes` deliberately 
 - Prefer `Path.Combine`/`Path.GetTempPath()` over literal `C:\...` paths in tests.
 - Windows-only targets are fine, but must be cross-buildable (`EnableWindowsTargeting`).
 - Guard `Console.ReadKey()` with `Console.IsInputRedirected` in any CLI.
+
+## Resolution: .NET 10 migration (2026-10-10)
+
+Every project moved to .NET 10 (latest stable; .NET 11 was still RC at the time). This closed
+most of the open issues above.
+
+| # | Was | Now |
+| :- | :-- | :-- |
+| 1 | `OllamaTranslatorApp.Tests` did not compile (36 errors) | Rewritten against the real API; **31/31 pass** |
+| 3 | `TranslationTools.Tests` had no test sources | **68 real tests**, all pass |
+| 4 | No .NET 9 runtime installed | N/A — everything targets `net10.0`, which *is* installed; no roll-forward needed |
+| 5 | `FilenameSanitizerCli` was the only `net10.0` project | Repo is uniformly `net10.0` (`net10.0-windows` for MediaRenamer/TextToSpeechCore, `net10.0-windows10.0.19041.0` for the WinRT TTS app) |
+| 6 | Two test projects outside `CsvTranslations.sln` | `OllamaTranslatorApp.Tests` **added** to the solution; `TextToSpeechApp.Tests` deliberately still out (see below) |
+
+Target frameworks after the migration:
+
+| Project(s) | TFM |
+| :--------- | :-- |
+| CliUtils, all CsvTranslations libs/apps, FilenameTools | `net10.0` |
+| `MediaRenamer` (Models/Services/WpfApp) | `net10.0-windows` |
+| `TextToSpeechCore` | `net10.0-windows` |
+| `TextToSpeechApp`, `TextToSpeechApp.Tests` | `net10.0-windows10.0.19041.0` |
+
+Notable package work:
+
+- **WinRT/Speech dependency migrated cleanly.** `net10.0-windows10.0.19041.0` still resolves
+  the same `Microsoft.Windows.SDK.NET.Ref 10.0.19041.57` projection pack, so
+  `Windows.Media.SpeechSynthesis` needed no code changes.
+- **NAudio 2.2.1 → 3.1.0.** NAudio 3.x split the monolithic package per platform and
+  `NAudio.WinMM` (which holds the playback class) only ships a Windows TFM, so
+  `TextToSpeechCore` had to become `net10.0-windows`, and the renamed
+  `WaveOutEvent` → `WaveOut` API was adopted (`WaveOutEvent` survives only as `[Obsolete]`).
+  PiperSharp 1.0.7 was verified member-by-member to still bind against NAudio 3.1.0.
+- `PiperSharp` 1.0.7 also lifts transitive `SharpCompress` 0.36.0 → 0.50.1, clearing `NU1902`.
+- `Spectre.Console(.Cli)` 0.49.1 → 0.57.2 required adding a `CancellationToken` parameter to
+  `AsyncCommand<T>.ExecuteAsync` overrides.
+
+Test projects now wired into `CsvTranslations.sln`: `OllamaTranslatorApi.Tests` (25),
+`TranslationTools.Tests` (68), `OllamaTranslatorApp.Tests` (31) = **124 tests**, plus
+`FilenameSanitizer.Tests` (78) = **202** repo-wide, all green in Debug and Release.
+
+### Why `TextToSpeechApp.Tests` stays out of the solution
+
+It targets `net10.0-windows10.0.19041.0` with `RuntimeIdentifier=win-x64`. It *builds* on
+Linux via `EnableWindowsTargeting`, but adding it to the solution would make
+`dotnet test CsvTranslations.sln` try to **execute** a Windows-only assembly here, failing the
+Linux gate. Build it explicitly by `.csproj` path instead.
+
+### Trap found: reference assemblies hide `internal` members
+
+Making a helper `internal` and relying on `InternalsVisibleTo` does **not** let a friend
+assembly compile against it, because Roslyn's reference assembly (`obj/**/ref/*.dll`) keeps
+public members of internal types but drops `internal` members. `ildump` showed
+`Program` exposing only `public Main` in the ref assembly. The working repo pattern is an
+`internal` type with **`public`** members (as `TtsSettings` does) — the containing type still
+keeps them out of the real public surface.
+
+### Known functional bug found while fixing the tests (not fixed)
+
+`OllamaTranslator.BatchTranslateAsync` collects results from `Parallel.ForEachAsync` under a
+lock, so **output line order is not preserved** relative to the input. Multi-line text
+translation can therefore write translated lines in a different order than the source.
+Tests assert order-insensitively. Fixing it means ordering results by input index.
+
