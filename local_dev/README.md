@@ -13,6 +13,41 @@ Do not include secrets, credentials, or external network calls in this folder.
 
 ## Available Development Scripts
 
+### Repository & Environment Locations (`repo-env.sh`, `repo-env.ps1`, `repo_paths.py`)
+
+Nothing in this repository should hard-code a machine path. These resolve the repository root from
+their **own** location and report the environment, so scripts work from any working directory on any
+machine.
+
+```bash
+source local_dev/scripts/repo-env.sh      # REPO_ROOT, HOST_OS, DOTNET, HAS_NODE, SOLUTIONS, …
+./local_dev/scripts/repo-env.sh           # human-readable summary
+./local_dev/scripts/repo-env.sh --json    # machine-readable
+```
+
+```powershell
+. .\local_dev\scripts\repo-env.ps1        # $RepoRoot, $HostOS, $Dotnet, $HasNode, $Solutions, …
+.\local_dev\scripts\repo-env.ps1 -Json
+```
+
+```python
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "local_dev" / "scripts"))
+from repo_paths import repo_root, translations_csv, local_user_files, solution
+```
+
+Provided: `REPO_ROOT` / `$RepoRoot`, `REPO_NAME`, `HOST_OS` (linux/macos/windows), `IS_WINDOWS`,
+`LOCAL_DEV`, `LOCAL_USER_FILES`, `DOTNET`, the capability flags `HAS_NODE`, `HAS_PWSH`,
+`HAS_PYTHON3`, `HAS_JQ`, and `SOLUTIONS` — which is **discovered**, not a maintained list.
+
+**Notes**:
+- `build-all-linux.sh` sources `repo-env.sh`; use `repo-env.sh` from any new script rather than
+  re-deriving the root.
+- Node scripts resolve the root themselves via `import.meta.url`, so they need no shell.
+- `repo-env.ps1` targets both Windows PowerShell 5.1 and PowerShell 7+.
+
 ### Cross-Platform Build & Test (`build-all-linux.sh`)
 
 Builds every `.sln` in the repository on Linux/macOS and prints a per-solution summary.

@@ -13,6 +13,9 @@
 - `local_user_files/`: ephemeral, machine-local scratch (git-ignored).
 
 ## Conventions
+- Never hard-code a machine path. Resolve it with `local_dev/scripts/repo-env.sh` (bash, source it),
+  `repo-env.ps1` (PowerShell) or `repo_paths.py` (Python) — they derive the repository root from
+  their own location.
 - `.editorconfig` is the single source of truth for formatting and style.
 - LF everywhere — in the repository *and* the working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`). Do not reintroduce CRLF, and do not add automatic line-ending normalisation.
 - Node scripts are cross-platform and dependency-free: `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`.

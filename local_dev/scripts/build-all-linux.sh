@@ -18,8 +18,14 @@
 #
 set -uo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$repo_root" || exit 1
+# Repository location and environment come from the shared resolver, so nothing here is
+# hard-coded — see repo-env.sh.
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=repo-env.sh
+. "$script_dir/repo-env.sh"
+cd "$REPO_ROOT" || exit 1
+
+dotnet_bin="${DOTNET:-dotnet}"
 
 configuration="Debug"
 run_tests=false
@@ -35,7 +41,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Every project targets net10.0; running the test hosts needs the .NET 10 runtime.
-if ! dotnet --list-runtimes 2>/dev/null | grep -q 'Microsoft\.NETCore\.App 10\.'; then
+if ! "$dotnet_bin" --list-runtimes 2>/dev/null | grep -q 'Microsoft\.NETCore\.App 10\.'; then
   export DOTNET_ROLL_FORWARD=LatestMajor
   echo "note: no .NET 10 runtime found — using DOTNET_ROLL_FORWARD=LatestMajor for test execution."
   echo
@@ -43,7 +49,7 @@ fi
 
 mapfile -t solutions < <(find . -maxdepth 2 -name '*.sln' -not -path './local_user_files/*' | sort)
 if [[ ${#solutions[@]} -eq 0 ]]; then
-  echo "error: no .sln files found under $repo_root" >&2
+  echo "error: no .sln files found under $REPO_ROOT" >&2
   exit 1
 fi
 
@@ -53,7 +59,7 @@ results=()
 
 for sln in "${solutions[@]}"; do
   echo "════════ ${sln#./} (build, $configuration) ════════"
-  if dotnet build "$sln" -c "$configuration" --nologo; then
+  if "$dotnet_bin" build "$sln" -c "$configuration" --nologo; then
     results+=("build  OK    ${sln#./}")
   else
     results+=("build  FAIL  ${sln#./}")
@@ -64,7 +70,7 @@ for sln in "${solutions[@]}"; do
   [[ "$run_tests" == true ]] || continue
 
   echo "──────── ${sln#./} (test) ────────"
-  if dotnet test "$sln" -c "$configuration" --no-build --nologo; then
+  if "$dotnet_bin" test "$sln" -c "$configuration" --no-build --nologo; then
     results+=("test   OK    ${sln#./}")
   else
     results+=("test   FAIL  ${sln#./}")

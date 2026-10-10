@@ -45,6 +45,7 @@ Where to find authoritative context (read this index first, then open only the f
 - **Per-project context**: `<Project>/CLAUDE.md` — authoritative commands/conventions/gotchas for each project
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md` — per-solution results, root causes, open issues, cross-platform checklist
 - **Build script**: `local_dev/scripts/build-all-linux.sh` — build/test every solution on Linux
+- **Paths & environment**: `local_dev/scripts/repo-env.sh` (bash), `repo-env.ps1` (PowerShell), `repo_paths.py` (Python) — resolve the repository root and probe the environment. **Never hard-code a machine path**; source the resolver instead. Details in `local_dev/README.md`.
 - **Conventions**: `.editorconfig` is the source of truth for formatting and style, alongside each `<Project>/CLAUDE.md`. Repo-specific C# and test guidance also lives in the local skills under `.claude/skills/` — read them locally, but they are git-ignored and not versioned.
 - **Git-ignored local files**: `local_dev/git-ignored-local-files.md` — why `.claude/` is excluded (personal, unsanitised config), what else lives outside version control, and how to persist it once reviewed
 - **Copilot instructions**: `.github/copilot-instructions.md` (+ subfolder files)
