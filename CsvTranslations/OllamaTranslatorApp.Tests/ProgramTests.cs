@@ -1,349 +1,206 @@
-using NSubstitute;
-
 using OllamaTranslatorApi.Core;
-using OllamaTranslatorApi.Csv;
-using OllamaTranslatorApi.Models;
-using OllamaTranslatorApi.Text;
 
 using Shouldly;
 
 namespace OllamaTranslatorApp.Tests;
 
 /// <summary>
-/// Tests for <see cref="Program"/> translation routing logic.
-/// Verifies file extension detection, translator selection, and error handling for CSV and text files.
+///     Tests for the real <see cref="Program" /> helpers: target-path generation, request
+///     validation, source/folder expansion, and CSV-vs-text routing.
 /// </summary>
+/// <remarks>
+///     These helpers were previously exercised only by a hand-copied duplicate of their
+///     logic. They are <c>internal static</c> so the tests can call the actual code;
+///     <c>OllamaTranslatorApp.csproj</c> exposes internals to this assembly.
+/// </remarks>
 public sealed class ProgramTests
 {
-    private readonly OllamaTranslator _ollamaTranslator;
-    private readonly CsvFileTranslator _csvFileTranslator;
-    private readonly TextFileTranslator _textFileTranslator;
+    // ---------------------------------------------------------------- GenerateTargetFilePath
 
-    public ProgramTests()
+    [Theory]
+    [InlineData("test.csv", ".translated.csv")]
+    [InlineData("test.txt", ".translated.txt")]
+    [InlineData("test.md", ".translated.txt")]
+    [InlineData("test.text", ".translated.txt")]
+    [InlineData("test.TXT", ".translated.txt")]
+    public void GenerateTargetFilePath_SupportedExtensions_ReturnsCorrectExtension(string inputName, string expectedSuffix)
     {
-        _ollamaTranslator = Substitute.For<OllamaTranslator>(null, null);
-        _csvFileTranslator = Substitute.For<CsvFileTranslator>(_ollamaTranslator);
-        _textFileTranslator = Substitute.For<TextFileTranslator>(_ollamaTranslator, false);
+        string result = TranslateCommand.GenerateTargetFilePath(inputName);
+
+        Path.GetFileName(result).ShouldBe(Path.GetFileNameWithoutExtension(inputName) + expectedSuffix);
     }
 
     [Fact]
-    public async Task TranslateFileAsync_CsvExtension_UsesCsvFileTranslator()
+    public void GenerateTargetFilePath_WithDirectory_PreservesDirectory()
     {
-        // Given: A CSV file path and mocked translators
-        var sourcePath = "test.csv";
-        var targetPath = "test.translated.csv";
-        var expectedResult = "Done: 5 results saved to test.translated.csv";
-        _csvFileTranslator.TranslateFileAsync(sourcePath, targetPath)
-            .Returns(expectedResult);
+        string source = Path.Combine("some", "dir", "story.txt");
 
-        // When: Translating the file
-        var actual = await ProgramTestsHelper.TranslateFileAsyncWithMocks(
-            sourcePath, targetPath, _ollamaTranslator, _csvFileTranslator, _textFileTranslator);
+        string result = TranslateCommand.GenerateTargetFilePath(source);
 
-        // Then: CSV translator was used and returned expected result
-        actual.ShouldBe(expectedResult);
-        await _csvFileTranslator.Received(1).TranslateFileAsync(sourcePath, targetPath);
-        await _textFileTranslator.DidNotReceiveWithAnyArgs().TranslateFileAsync(default!, default!);
+        result.ShouldBe(Path.Combine("some", "dir", "story.translated.txt"));
     }
 
     [Fact]
-    public async Task TranslateFileAsync_TxtExtension_UsesTextFileTranslator()
+    public void GenerateTargetFilePath_CsvInDirectory_KeepsCsvSuffix()
     {
-        // Given: A text file path and mocked translators
-        var sourcePath = "story.txt";
-        var targetPath = "story.translated.txt";
-        var expectedResult = "Done: 10 lines translated and saved to story.translated.txt";
-        _textFileTranslator.TranslateFileAsync(sourcePath, targetPath, null)
-            .Returns(expectedResult);
+        string source = Path.Combine("data", "words.csv");
 
-        // When: Translating the file
-        var actual = await ProgramTestsHelper.TranslateFileAsyncWithMocks(
-            sourcePath, targetPath, _ollamaTranslator, _csvFileTranslator, _textFileTranslator);
+        string result = TranslateCommand.GenerateTargetFilePath(source);
 
-        // Then: Text translator was used and returned expected result
-        actual.ShouldBe(expectedResult);
-        await _textFileTranslator.Received(1).TranslateFileAsync(sourcePath, targetPath, null);
-        await _csvFileTranslator.DidNotReceiveWithAnyArgs().TranslateFileAsync(default!, default!);
+        result.ShouldBe(Path.Combine("data", "words.translated.csv"));
+    }
+
+    // ------------------------------------------------------------- ValidateTranslationFileRequest
+
+    [Fact]
+    public void ValidateTranslationFileRequest_ExistingSupportedFile_ReturnsTrue()
+    {
+        using var workspace = new TempWorkspace();
+        string source = workspace.WriteFile("story.txt", "Hello");
+
+        TranslateCommand.ValidateTranslationFileRequest(new TranslationFileRequest(source, workspace.Combine("out.txt")))
+            .ShouldBeTrue();
     }
 
     [Fact]
-    public async Task TranslateFileAsync_MdExtension_UsesTextFileTranslator()
+    public void ValidateTranslationFileRequest_ExistingUnknownExtension_ReturnsTrueWithWarning()
     {
-        // Given: A markdown file path
-        var sourcePath = "document.md";
-        var targetPath = "document.translated.txt";
-        var expectedResult = "Done: 15 lines translated and saved to document.translated.txt";
-        _textFileTranslator.TranslateFileAsync(sourcePath, targetPath, null)
-            .Returns(expectedResult);
+        using var workspace = new TempWorkspace();
+        string source = workspace.WriteFile("story.xyz", "Hello");
 
-        // When: Translating the file
-        var actual = await ProgramTestsHelper.TranslateFileAsyncWithMocks(
-            sourcePath, targetPath, _ollamaTranslator, _csvFileTranslator, _textFileTranslator);
-
-        // Then: Text translator was used for markdown file
-        actual.ShouldBe(expectedResult);
-        await _textFileTranslator.Received(1).TranslateFileAsync(sourcePath, targetPath, null);
+        TranslateCommand.ValidateTranslationFileRequest(new TranslationFileRequest(source, workspace.Combine("out.xyz")))
+            .ShouldBeTrue();
     }
 
     [Fact]
-    public async Task TranslateFileAsync_TextExtension_UsesTextFileTranslator()
+    public void ValidateTranslationFileRequest_MissingSourceFile_ReturnsFalse()
     {
-        // Given: A .text file path
-        var sourcePath = "notes.text";
-        var targetPath = "notes.translated.txt";
-        var expectedResult = "Done: 8 lines translated and saved to notes.translated.txt";
-        _textFileTranslator.TranslateFileAsync(sourcePath, targetPath, null)
-            .Returns(expectedResult);
+        using var workspace = new TempWorkspace();
 
-        // When: Translating the file
-        var actual = await ProgramTestsHelper.TranslateFileAsyncWithMocks(
-            sourcePath, targetPath, _ollamaTranslator, _csvFileTranslator, _textFileTranslator);
-
-        // Then: Text translator was used for .text file
-        actual.ShouldBe(expectedResult);
-        await _textFileTranslator.Received(1).TranslateFileAsync(sourcePath, targetPath, null);
+        TranslateCommand.ValidateTranslationFileRequest(new TranslationFileRequest(workspace.Combine("nope.txt"), "out.txt"))
+            .ShouldBeFalse();
     }
 
     [Theory]
-    [InlineData(".csv", ".translated.csv")]
-    [InlineData(".txt", ".translated.txt")]
-    [InlineData(".md", ".translated.txt")]
-    [InlineData(".text", ".translated.txt")]
-    public void GenerateTargetFilePath_SupportedExtensions_ReturnsCorrectExtension(string inputExtension, string expectedExtension)
+    [InlineData("", "out.txt")]
+    [InlineData("   ", "out.txt")]
+    [InlineData("in.txt", "")]
+    [InlineData("in.txt", "   ")]
+    public void ValidateTranslationFileRequest_BlankPath_ReturnsFalse(string sourcePath, string targetPath)
     {
-        // Given: A file path with the specified extension
-        var sourcePath = $"test{inputExtension}";
-        
-        // When: Generating target file path
-        var result = ProgramTestsHelper.GenerateTargetFilePath(sourcePath);
-        
-        // Then: Target extension matches expected
-        result.ShouldEndWith(expectedExtension);
+        TranslateCommand.ValidateTranslationFileRequest(new TranslationFileRequest(sourcePath, targetPath))
+            .ShouldBeFalse();
     }
 
-    [Fact]
-    public void ValidateTranslationRequest_ValidCsvFile_ReturnsTrue()
-    {
-        // Given: A valid CSV file that exists
-        var request = new Program.TranslationRequest("test.csv", "output.translated.csv");
-        
-        // When: Validating the request
-        var result = ProgramTestsHelper.ValidateTranslationRequest(request);
-        
-        // Then: Validation passes
-        result.ShouldBeTrue();
-    }
+    // ---------------------------------------------------------------- BuildTranslationFileRequests
 
     [Fact]
-    public void ValidateTranslationRequest_ValidTextFile_ReturnsTrue()
+    public void BuildTranslationFileRequests_SingleFilePair_ReturnsOneRequest()
     {
-        // Given: A valid text file that exists
-        var request = new Program.TranslationRequest("story.txt", "story.translated.txt");
-        
-        // When: Validating the request
-        var result = ProgramTestsHelper.ValidateTranslationRequest(request);
-        
-        // Then: Validation passes
-        result.ShouldBeTrue();
-    }
+        var settings = new TranslateSettings { Source = "source.txt", Target = "target.txt" };
 
-    [Fact]
-    public void ValidateTranslationRequest_EmptySourcePath_ReturnsFalse()
-    {
-        // Given: An empty source path
-        var request = new Program.TranslationRequest("", "output.txt");
-        
-        // When: Validating the request
-        var result = ProgramTestsHelper.ValidateTranslationRequest(request);
-        
-        // Then: Validation fails
-        result.ShouldBeFalse();
-    }
+        List<TranslationFileRequest> requests = TranslateCommand.BuildTranslationFileRequests(settings);
 
-    [Fact]
-    public void ValidateTranslationRequest_EmptyTargetPath_ReturnsFalse()
-    {
-        // Given: An empty target path
-        var request = new Program.TranslationRequest("input.txt", "");
-        
-        // When: Validating the request
-        var result = ProgramTestsHelper.ValidateTranslationRequest(request);
-        
-        // Then: Validation fails
-        result.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void ValidateTranslationRequest_UnsupportedExtension_ReturnsTrueWithWarning()
-    {
-        // Given: A file with unsupported extension
-        var request = new Program.TranslationRequest("test.xyz", "test.translated.xyz");
-        
-        // When: Validating the request
-        var result = ProgramTestsHelper.ValidateTranslationRequest(request);
-        
-        // Then: Validation passes (with warning)
-        result.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void ParseCommandLineArguments_SingleFilePair_ReturnsOneRequest()
-    {
-        // Given: Command line arguments with source and target files
-        var args = new[] { "source.txt", "target.txt" };
-        
-        // When: Parsing arguments
-        var requests = ProgramTestsHelper.ParseCommandLineArguments(args);
-        
-        // Then: One translation request is created
         requests.Count.ShouldBe(1);
         requests[0].SourcePath.ShouldBe("source.txt");
         requests[0].TargetPath.ShouldBe("target.txt");
     }
 
     [Fact]
-    public void ParseCommandLineArguments_FolderOption_ProcessesFilesInFolder()
+    public void BuildTranslationFileRequests_Folder_ExpandsSupportedFilesOnly()
     {
-        // Given: Command line with --folder option and existing folder
-        var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempFolder);
-        
-        try
-        {
-            // Create test files
-            File.WriteAllText(Path.Combine(tempFolder, "test.csv"), "csv content");
-            File.WriteAllText(Path.Combine(tempFolder, "story.txt"), "text content");
-            File.WriteAllText(Path.Combine(tempFolder, "doc.md"), "markdown content");
-            File.WriteAllText(Path.Combine(tempFolder, "notes.text"), "text content");
-            
-            var args = new[] { "--folder", tempFolder };
-            
-            // When: Parsing arguments
-            var requests = ProgramTestsHelper.ParseCommandLineArguments(args);
-            
-            // Then: All four files are processed
-            requests.Count.ShouldBe(4);
-            requests.ShouldContain(r => r.SourcePath.EndsWith("test.csv"));
-            requests.ShouldContain(r => r.SourcePath.EndsWith("story.txt"));
-            requests.ShouldContain(r => r.SourcePath.EndsWith("doc.md"));
-            requests.ShouldContain(r => r.SourcePath.EndsWith("notes.text"));
-        }
-        finally
-        {
-            Directory.Delete(tempFolder, true);
-        }
+        using var workspace = new TempWorkspace();
+        workspace.WriteFile("words.csv", "a,b");
+        workspace.WriteFile("story.txt", "a");
+        workspace.WriteFile("doc.md", "a");
+        workspace.WriteFile("notes.text", "a");
+        workspace.WriteFile("ignored.json", "{}");
+
+        List<TranslationFileRequest> requests = TranslateCommand.BuildTranslationFileRequests(
+            new TranslateSettings { Folder = workspace.Path });
+
+        requests.Count.ShouldBe(4);
+        requests.ShouldContain(r => r.SourcePath.EndsWith("words.csv", StringComparison.Ordinal));
+        requests.ShouldContain(r => r.SourcePath.EndsWith("story.txt", StringComparison.Ordinal));
+        requests.ShouldContain(r => r.SourcePath.EndsWith("doc.md", StringComparison.Ordinal));
+        requests.ShouldContain(r => r.SourcePath.EndsWith("notes.text", StringComparison.Ordinal));
     }
-}
 
-    /// <summary>
-    /// Helper class to expose private Program methods for testing.
-    /// </summary>
-    internal static class ProgramTestsHelper
+    [Fact]
+    public void BuildTranslationFileRequests_Folder_GeneratesTargetPathsBesideSources()
     {
-        // These methods simulate Program logic for testing
-        // They are defined here to keep the test class clean
-        
-        public static async Task<string> TranslateFileAsyncWithMocks(
-            string sourcePath, string targetPath,
-            OllamaTranslator ollamaTranslator,
-            CsvFileTranslator csvFileTranslator,
-            TextFileTranslator textFileTranslator)
-        {
-            // This would normally use dependency injection or a testable design
-            // For now, we'll simulate the behavior
-            var extension = Path.GetExtension(sourcePath).ToLowerInvariant();
-            
-            if (extension == ".csv")
-            {
-                return await csvFileTranslator.TranslateFileAsync(sourcePath, targetPath);
-            }
-            else
-            {
-                return await textFileTranslator.TranslateFileAsync(sourcePath, targetPath);
-            }
-        }
-        
-        public static string GenerateTargetFilePath(string sourceFilePath)
-        {
-            var directory = Path.GetDirectoryName(sourceFilePath);
-            var filenameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
-            var extension = Path.GetExtension(sourceFilePath).ToLowerInvariant();
-            
-            // Use appropriate extension for output
-            var targetExtension = extension == ".csv" ? ".translated.csv" : ".translated.txt";
-            var targetFilename = $"{filenameWithoutExtension}{targetExtension}";
+        using var workspace = new TempWorkspace();
+        workspace.WriteFile("story.txt", "a");
 
-            return Path.Combine(directory ?? string.Empty, targetFilename);
-        }
-        
-        public static bool ValidateTranslationRequest(TranslationRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.SourcePath) || string.IsNullOrWhiteSpace(request.TargetPath))
-            {
-                return false;
-            }
+        TranslationFileRequest request = TranslateCommand.BuildTranslationFileRequests(
+            new TranslateSettings { Folder = workspace.Path }).Single();
 
-            if (!File.Exists(request.SourcePath))
-            {
-                return false;
-            }
+        request.TargetPath.ShouldBe(workspace.Combine("story.translated.txt"));
+    }
 
-            var sourceExtension = Path.GetExtension(request.SourcePath).ToLowerInvariant();
-            var supportedExtensions = new[] { ".csv", ".txt", ".md", ".text" };
-            
-            if (!supportedExtensions.Contains(sourceExtension))
-            {
-                // Warning but still true
-                return true;
-            }
+    [Fact]
+    public void BuildTranslationFileRequests_MissingFolder_ReturnsEmpty()
+    {
+        using var workspace = new TempWorkspace();
 
-            return true;
-        }
-        
-        public static List<TranslationRequest> ParseCommandLineArguments(string[] args)
-        {
-            var requests = new List<TranslationRequest>();
+        List<TranslationFileRequest> requests = TranslateCommand.BuildTranslationFileRequests(
+            new TranslateSettings { Folder = workspace.Combine("does-not-exist") });
 
-        if (args[0] == "--folder")
-        {
-            if (args.Length < 2)
-            {
-                return requests;
-            }
+        requests.ShouldBeEmpty();
+    }
 
-            var folderPath = args[1];
-            if (!Directory.Exists(folderPath))
-            {
-                return requests;
-            }
+    // ------------------------------------------------------------------------ TranslateFileAsync
 
-            // Get all supported file types
-            var textFiles = Directory.GetFiles(folderPath, "*.txt")
-                .Concat(Directory.GetFiles(folderPath, "*.md"))
-                .Concat(Directory.GetFiles(folderPath, "*.text"))
-                .ToList();
-            var csvFiles = Directory.GetFiles(folderPath, "*.csv");
-            
-            var allFiles = textFiles.Concat(csvFiles).ToList();
+    [Fact]
+    public async Task TranslateFileAsync_TextFile_RoutesToTextTranslator()
+    {
+        using var workspace = new TempWorkspace();
+        string source = workspace.WriteFile("story.txt", "Hello\nWorld");
+        string target = workspace.Combine("story.translated.txt");
+        var translator = new OllamaTranslator(new TestTranslationService());
 
-            foreach (var file in allFiles)
-            {
-                var targetPath = GenerateTargetFilePath(file);
-                requests.Add(new Program.TranslationRequest(file, targetPath));
-            }
-        }
-        else
-        {
-            if (args.Length != 2)
-            {
-                return requests;
-            }
+        string result = await TranslateCommand.TranslateFileAsync(translator, source, target);
 
-            var sourcePath = args[0];
-            var targetPath = args[1];
-            requests.Add(new Program.TranslationRequest(sourcePath, targetPath));
-        }
+        result.ShouldContain("lines translated");
+        File.Exists(target).ShouldBeTrue();
 
-        return requests;
+        string[] lines = await File.ReadAllLinesAsync(target);
+        lines.ShouldBe(["Hola", "Mundo"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task TranslateFileAsync_CsvFile_RoutesToCsvTranslator()
+    {
+        using var workspace = new TempWorkspace();
+        // CSV fixtures need CRLF: CsvHelper is configured with NewLine = "\r\n".
+        string source = workspace.WriteFile(
+            "input.csv",
+            "\"SourceText\",\"TargetText\"\n\"Hello\",\"\"\n\"World\",\"\"\n",
+            newLine: "\r\n");
+        string target = workspace.Combine("input.translated.csv");
+        var translator = new OllamaTranslator(new TestTranslationService());
+
+        string result = await TranslateCommand.TranslateFileAsync(translator, source, target);
+
+        result.ShouldContain("results saved");
+        File.Exists(target).ShouldBeTrue();
+
+        string written = await File.ReadAllTextAsync(target);
+        written.ShouldContain("Hola");
+        written.ShouldContain("Mundo");
+    }
+
+    [Fact]
+    public async Task TranslateFileAsync_MarkdownFile_RoutesToTextTranslator()
+    {
+        using var workspace = new TempWorkspace();
+        string source = workspace.WriteFile("doc.md", "Hello");
+        string target = workspace.Combine("doc.translated.txt");
+        var translator = new OllamaTranslator(new TestTranslationService());
+
+        string result = await TranslateCommand.TranslateFileAsync(translator, source, target);
+
+        result.ShouldContain("lines translated");
+        (await File.ReadAllTextAsync(target)).Trim().ShouldBe("Hola");
     }
 }
