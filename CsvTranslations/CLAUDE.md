@@ -105,15 +105,20 @@ See `.claude/commands/build.md` for automated build/test command.
 
 Use Claude Code slash commands for distribution:
 
-- **`/publish-net10`** — Publish supported apps as self-contained `.exe` bundles
-  - Creates standalone executable files with bundled .NET 10 runtime
-  - Larger file sizes but no .NET 10 installation required on target machines
+- **`/publish`** — Publish supported apps as self-contained `.exe` bundles
+  (renamed from `/publish-net10`; the command is version-agnostic, see below)
+  - Creates standalone executable files with bundled .NET runtime
+  - Larger file sizes but no .NET installation required on target machines
   - Output: `publish/<App>/<runtime>/<configuration>/<app>.exe` (git-ignored)
   - Runs on Linux and Windows, since it only drives `dotnet publish`
 
-- **`/install-net10-runtime`** — Install .NET 10 runtime on target machines
+- **`/install-net10-runtime`** — Install the .NET 10 runtime on target machines
   - Semi-automatic installer for end-user deployment
   - Smaller distribution size; requires .NET 10 to be installed before running apps
+  - Stays version-specific: installing a runtime genuinely is about one version
+
+`/publish` is deliberately not named after a .NET version — `/publish-net9` → `/publish-net10` →
+… was pure churn, since the wrapper takes the target framework from the projects.
 
 Wrappers, both in the repository root:
 

@@ -14,7 +14,7 @@ Nothing here is in git. Recreating these means re-doing the edit.
 | Path | What it is | Changed in this work |
 | :--- | :--------- | :------------------- |
 | `.claude/commands/install-net10-runtime/SKILL.md` | `/install-net10-runtime` slash command | Renamed from `install-net9-runtime/`; front-matter `name`, .NET 10 wording, points at `install-net10-runtime.ps1` |
-| `.claude/commands/publish-net10/SKILL.md` | `/publish-net10` slash command | Renamed from `publish-net9/`; front-matter `name`, .NET 10 wording; now points at the Node wrapper `publish-selfcontained.mjs` |
+| `.claude/commands/publish/SKILL.md` | `/publish` slash command | Renamed `publish-net9/` → `publish-net10/` → `publish/`; now version-agnostic and points at the Node wrapper `publish-selfcontained.mjs` |
 | `.claude/rules/csharp-build-verification.md` | Build-verification conventions | `net9.0` execution bullet → `net10.0` / no roll-forward; corrected the stale claim that `core.ignorecase=true` (it is `false`) |
 | `CsvTranslations/OllamaTranslatorApp/Properties/launchSettings.json` | VS launch profile | `workingDirectory` `bin\Debug\net9.0` → `net10.0` |
 
