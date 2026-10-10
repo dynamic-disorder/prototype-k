@@ -69,7 +69,7 @@ public sealed class SplitSettings : CommandSettings
 
 public sealed class SplitCommand : AsyncCommand<SplitSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, SplitSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, SplitSettings settings, CancellationToken cancellationToken)
     {
         var splitter = new TextFileSplitter();
         var splitRequest = await GetSplitRequestAsync(splitter, settings);

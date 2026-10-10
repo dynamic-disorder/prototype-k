@@ -12,6 +12,14 @@ using Spectre.Console.Cli;
 
 namespace OllamaTranslatorApp;
 
+/// <summary>
+///     Entry point and CLI wiring. The testable helpers below are <c>public</c> members of
+///     this <c>internal</c> class on purpose: reference assemblies keep public members of
+///     internal types but strip <c>internal</c> ones, so <c>internal</c> helpers would be
+///     invisible to <c>OllamaTranslatorApp.Tests</c> (granted access via
+///     <c>InternalsVisibleTo</c>) even though they exist in the built assembly.
+///     The containing type is internal, so nothing is exposed outside the friend assembly.
+/// </summary>
 internal sealed class Program
 {
     public static int Main(string[] args)
@@ -54,9 +62,9 @@ public sealed class TranslateSettings : CommandSettings
 
 public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, TranslateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TranslateSettings settings, CancellationToken cancellationToken)
     {
-        var translationRequests = BuildTranslationRequests(settings);
+        var translationRequests = BuildTranslationFileRequests(settings);
         if (translationRequests.Count == 0)
         {
             AnsiConsole.MarkupLine("[red]Error:[/] No valid translation requests found.");
@@ -67,12 +75,12 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
         var settingsModel = OllamaTranslatorSettings.LoadFromFile(settingsPath);
         var aiTranslator = new OllamaTranslator(settings: settingsModel);
 
-        await ProcessTranslationRequestsAsync(aiTranslator, translationRequests);
+        await ProcessTranslationFileRequestsAsync(aiTranslator, translationRequests);
 
         return 0;
     }
 
-    private static List<TranslationRequest> BuildTranslationRequests(TranslateSettings settings)
+    public static List<TranslationFileRequest> BuildTranslationFileRequests(TranslateSettings settings)
     {
         if (!string.IsNullOrWhiteSpace(settings.Folder))
         {
@@ -80,7 +88,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
             if (!Directory.Exists(folderPath))
             {
                 AnsiConsole.MarkupLine($"[red]Error:[/] Folder '[grey]{Markup.Escape(folderPath)}[/]' does not exist.");
-                return new List<TranslationRequest>();
+                return new List<TranslationFileRequest>();
             }
 
             var textFiles = Directory.GetFiles(folderPath, "*.txt")
@@ -93,17 +101,17 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
             AnsiConsole.MarkupLine($"[cyan]Found {allFiles.Count} files in folder '[grey]{Markup.Escape(folderPath)}[/]' ({csvFiles.Length} CSV, {textFiles.Count} text).[/]");
 
             return allFiles
-                .Select(file => new TranslationRequest(file, GenerateTargetFilePath(file)))
+                .Select(file => new TranslationFileRequest(file, GenerateTargetFilePath(file)))
                 .ToList();
         }
 
-        return new List<TranslationRequest>
+        return new List<TranslationFileRequest>
         {
             new(settings.Source, settings.Target)
         };
     }
 
-    private static string GenerateTargetFilePath(string sourceFilePath)
+    public static string GenerateTargetFilePath(string sourceFilePath)
     {
         var directory = Path.GetDirectoryName(sourceFilePath);
         var filenameWithoutExtension = Path.GetFileNameWithoutExtension(sourceFilePath);
@@ -114,7 +122,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
         return Path.Combine(directory ?? string.Empty, targetFilename);
     }
 
-    private static async Task ProcessTranslationRequestsAsync(OllamaTranslator translator, List<TranslationRequest> requests)
+    private static async Task ProcessTranslationFileRequestsAsync(OllamaTranslator translator, List<TranslationFileRequest> requests)
     {
         await AnsiConsole.Progress()
             .Columns(
@@ -130,7 +138,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
 
                 foreach (var request in requests)
                 {
-                    if (!ValidateTranslationRequest(request))
+                    if (!ValidateTranslationFileRequest(request))
                     {
                         task.Increment(1);
                         continue;
@@ -153,7 +161,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
             });
     }
 
-    private static async Task<string> TranslateFileAsync(OllamaTranslator translator, string sourcePath, string targetPath)
+    public static async Task<string> TranslateFileAsync(OllamaTranslator translator, string sourcePath, string targetPath)
     {
         var extension = Path.GetExtension(sourcePath).ToLowerInvariant();
         if (extension == ".csv")
@@ -166,7 +174,7 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
         return await textTranslator.TranslateFileAsync(sourcePath, targetPath);
     }
 
-    private static bool ValidateTranslationRequest(TranslationRequest request)
+    public static bool ValidateTranslationFileRequest(TranslationFileRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.SourcePath) || string.IsNullOrWhiteSpace(request.TargetPath))
         {
@@ -191,4 +199,10 @@ public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
     }
 }
 
-internal sealed record TranslationRequest(string SourcePath, string TargetPath);
+/// <summary>
+///     A file-level translation job: a source path to translate and the path to write the
+///     translated copy to. Distinct from <c>OllamaTranslatorApi.Models.TranslationRequest</c>,
+///     which represents a single text-translation call to the LLM service — the two previously
+///     shared the name, which made the tests ambiguous.
+/// </summary>
+public sealed record TranslationFileRequest(string SourcePath, string TargetPath);

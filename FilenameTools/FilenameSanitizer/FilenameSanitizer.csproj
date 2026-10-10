@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -22,9 +22,8 @@
 		<Title>Filename sanitizer utility</Title>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="9.0.2" />
-	</ItemGroup>
+	<!-- System.Text.Json is part of the net10.0 shared framework; referencing the
+	     package explicitly is redundant and triggers NU1510. -->
 	<ItemGroup>
 		<Content Include="sanitizer_replace_patterns.txt" CopyToOutputDirectory="Always" />
 		<Content Include="sanitizer_settings.json" CopyToOutputDirectory="Always" />

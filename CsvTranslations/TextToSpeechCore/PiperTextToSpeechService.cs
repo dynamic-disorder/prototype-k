@@ -17,7 +17,7 @@ namespace TextToSpeechCore;
 ///     configured voice models on first use, caching them locally per PiperSharp's own conventions.
 ///     Optionally selects a specific speaker for each configured language via the model's
 ///     <c>speaker_id_map</c> (<c>*.onnx.json</c>) and passes it to piper as <c>--speaker <id></c>.
-///     Playback relies on NAudio's <see cref="WaveOutEvent"/>, which is Windows-only at runtime.
+///     Playback relies on NAudio's <see cref="WaveOut"/>, which is Windows-only at runtime.
 /// </summary>
 public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
 {
@@ -190,7 +190,7 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
 
         using var stream = new MemoryStream(wav);
         using var reader = new WaveFileReader(stream);
-        using var output = new WaveOutEvent();
+        using var output = new WaveOut();
         var playbackFinished = new TaskCompletionSource<bool>();
 
         output.PlaybackStopped += (_, _) => { playbackFinished.TrySetResult(true); };
