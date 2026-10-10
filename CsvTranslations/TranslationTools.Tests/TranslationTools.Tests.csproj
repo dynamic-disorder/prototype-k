@@ -2,6 +2,7 @@
   <PropertyGroup>
     <!-- Project-specific properties only -->
     <IsPackable>false</IsPackable>
+    <NoWarn>CA1707</NoWarn> <!-- Underscores in test method names are intentional -->
   </PropertyGroup>
 
   <ItemGroup>
