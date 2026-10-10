@@ -14,11 +14,10 @@
 - Respect project boundaries defined in `.claude/rules/repository-structure.md`
 
 ## File Operations
-- **Line endings**: CRLF for .NET code, Markdown, text files (Windows convention)
+- **Line endings**: **LF everywhere** — in the repository *and* the working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`). The old CRLF-for-`.cs` policy was dropped in Oct 2026; do not reintroduce CRLF.
 - **Shell scripts**: LF line endings (Docker compatibility)
-- **Automatic normalization**: `.claude/hooks/normalize-line-endings.ps1` converts LF→CRLF on Windows
-- **PowerShell utilities**: Stored in `.claude/scripts/` (not root directory)
-  - `check_line_endings.ps1`, `fix_line_endings.ps1`, `fix_string_literals.ps1`, etc.
+- **No CRLF normalisation hooks**: the former `.claude/hooks/normalize-line-endings.*` and the `.claude/scripts/*line_endings*` PowerShell fixers were removed — they enforced the abandoned CRLF policy. Do not normalise line endings automatically.
+- **Node scripts** (cross-platform, dependency-free): `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`
 - Follow `.editorconfig` for code formatting
 
 ## Build System
@@ -29,9 +28,9 @@
 ## Claude Code Integration
 - Respect `.claude/` configuration and CLAUDE.md files
 - Use available skills defined in `.claude/skills/`
-- **Hooks**: PowerShell hooks (`.ps1`) on Windows
-  - PostToolUse: `.claude/hooks/normalize-line-endings.ps1` (fixes line endings)
+- **Hooks**: bash hooks are the cross-platform ones
   - PreToolUse: `.claude/hooks/pre-commit-build-check.sh` (bash, cross-platform)
+  - PowerShell (`.ps1`) hooks only run on Windows — `pwsh` is not installed on the Linux box
 - Adhere to `.claude/settings.json` permissions
 
 ## Development Workflow
