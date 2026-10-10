@@ -17,6 +17,9 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 // Explicit relative paths. Wildcards are handed to glob so `.claude/rules/*.md` expands.
+// The root `.claude/` tree is git-ignored and now holds only skills, which load on demand rather
+// than being injected, so it is deliberately not counted. The per-project `.claude/rules/` files
+// are committed and are counted.
 const patterns = [
   'CLAUDE.md',
   'CliUtils/CLAUDE.md',
@@ -29,7 +32,6 @@ const patterns = [
   'MediaRenamer/CLAUDE.md',
   'ai_offline/CLAUDE.md',
   '.clinerules',
-  '.claude/rules/*.md',
   '.github/copilot-instructions.md',
   '.github/clean_code_general_instructions.md',
 ];

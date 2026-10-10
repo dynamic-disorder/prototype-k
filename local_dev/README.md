@@ -34,7 +34,7 @@ Builds every `.sln` in the repository on Linux/macOS and prints a per-solution s
 
 ### AI Context Token Estimate (`ai-context-token-estimate.mjs`)
 
-Estimates how much AI-context the committed instruction files cost (CLAUDE.md files, `.claude/rules/`, Copilot instructions), at a rough ~4 characters per token.
+Estimates how much AI-context the committed instruction files cost (CLAUDE.md files, `.clinerules`, per-project `.claude/rules/`, Copilot instructions), at a rough ~4 characters per token.
 
 ```bash
 node local_dev/scripts/ai-context-token-estimate.mjs
@@ -44,7 +44,7 @@ node local_dev/scripts/ai-context-token-estimate.mjs --json   # machine-readable
 **Notes**:
 - Dependency-free Node (built-ins only); no `npm install`.
 - Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box because `pwsh` is not installed.
-- Hooks under `.claude/hooks/` are not counted — only their output is injected at session start.
+- The git-ignored root `.claude/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
 
 ### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)
 

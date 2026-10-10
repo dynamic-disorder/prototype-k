@@ -6,46 +6,56 @@ and the reasons matter because "it's ignored" is not the same as "it's disposabl
 Rule of thumb: `git status` will **never** show changes to these paths. Use
 `git status --ignored` or `git check-ignore -v <path>` to confirm.
 
-## 1. `.claude/` — excluded on purpose, **do not force-add yet**
+## 1. `.claude/` — excluded, now sanitised and reduced
 
-This tree is ignored because it is **not safe to publish as-is**:
+**State (2026-10-10): reviewed, sanitised and cut from 29 files / 67,271 chars to 11 files /
+14,038 chars (−79%).** It is still untracked by choice, not because it is unsafe.
 
-1. **Personal / work configuration.** It has been modified for a work Claude Code setup. It must be
-   reviewed and sanitised before any of it can go into a shared repository.
-2. **Outdated.** It was written months ago; the owner's practice has moved on since.
-3. **The layout has changed.** Claude Code no longer separates user-initiated *commands* from
-   model-invoked behaviour — everything now lives under `.claude/skills/`, triggerable by the user or
-   by the AI. Directory-scoped skills can also be referenced from another directory or from the root
+Why it was ignored originally, and why the cleanup was needed:
+
+1. **Personal / work configuration.** It had been adapted for a work Claude Code setup and carried
+   machine paths, a work username, a ticket-tracker key and work-domain example types.
+2. **Outdated.** Written months earlier; practice had moved on, and several rules contradicted the
+   repo's own `.editorconfig` and code.
+3. **The layout had changed.** Claude Code no longer separates user-initiated *commands* from
+   model-invoked behaviour — everything lives under `.claude/skills/`, triggerable by the user or the
+   AI. Directory-scoped skills can also be referenced from another directory or from root
    instructions (e.g. "read `folderX/CLAUDE.md`, then run the skills in it").
 
-> ⚠️ **Correction:** an earlier revision of this file recommended `git add -f .claude/rules`. That was
-> wrong and has been reverted — the files were briefly staged and then removed from the index, and
-> the unpushed commit was rewritten so no `.claude` content ever reached the remote. Keep them local
-> until they have been sanitised.
+Current inventory (11 files, none tracked):
 
-Inventory (29 files, none tracked):
+| Path | Note |
+| :--- | :--- |
+| `.claude/skills/*/SKILL.md` (10) | `csharp-conventions`, `csharp-build-verify`, `csharp-refactor`, `explain`, `git-commit`, `unit-test-writer`, `issue-investigate`, `spike`, `publish`, `install-net10-runtime` |
+| `.claude/settings.local.json` | Local permission allow-list only |
 
-| Area | Files | Notes |
-| :--- | :---- | :---- |
-| `.claude/rules/` | 5 | Convention docs; `CLAUDE.md` refers to them as the conventions source of truth — but they are local, not versioned |
-| `.claude/commands/` | 6 | **Legacy shape.** Includes the repo-relevant `/publish` and `/install-net10-runtime` |
-| `.claude/skills/` | 12 | Current shape; includes `personal-cc-exporter` |
-| `.claude/hooks/` | 3 | bash hooks; `.clinerules` references `pre-commit-build-check.sh` |
-| `.claude/lib/` | 1 | `project-env.sh` |
-| `.claude/settings.json`, `settings.local.json` | 2 | `settings.json` is empty and nothing is wired |
+Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
+`skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
+`skills/unit-test-generator`, `skills/git-commit-message-writer`, `hooks/` (3, never wired),
+`lib/project-env.sh`, `settings.json` (0 bytes).
 
-### Sanitisation checklist for `.claude/`
+### What the sanitisation removed
 
-- **Absolute / machine-specific paths.** `settings.local.json` contains
-  `D:/code/GitHub/My/prototype-k/.claude/scripts/statusline.js` — a *different machine's* drive letter,
-  and a script that has since been deleted.
-- **User, machine and org identifiers** (`makh`, `prototype-k`, drive letters, hostnames).
-- **Secrets / tokens / keys** — none found on the last scan, but re-check after edits.
-- **References to deleted files.** The CRLF fixers and the statusline script
-  (`.claude/scripts/…`) are gone; `personal-cc-exporter` and `settings.local.json` still point at
-  `scripts/statusline.js`.
-- **Legacy layout.** `commands/` should become `skills/`; when doing that, decide what to do about the
-  two repo-relevant skills, since tracked docs (`CsvTranslations/CLAUDE.md`) reference them by name.
+- A **work username** in `settings.local.json`, plus `D:` drive-letter paths and a dead
+  `outputStyle`.
+- The owner **surname**, `whoami` and a personal `C:\_myFiles` path from `personal-cc-exporter`.
+- A **work ticket key** (`REV-…`) and branch convention; work-domain example types
+  (patient/health, `BatchConsumer`/`IConsumerMessage`).
+- References to files that no longer exist (`scripts/statusline.js`, the CRLF fixers) and to a
+  non-existent `temp_user_files/` (the real directory is `local_user_files/`).
+- **Rules that contradicted the repo** — corrected with evidence rather than kept: the `int`/`Int32`
+  rule (backwards vs `.editorconfig`), a blanket "no `Async` suffix" rule (the codebase uses it
+  everywhere), "XML docs on every `[Fact]`" (the code documents the test class only), and a claimed
+  pre-commit build hook that was never wired.
+- **Micromanagement** — the step-by-step build-discovery recipes, prescribed output strings, long
+  report templates, and rules restating what `.editorconfig` or the analyzer already enforce.
+
+> **Correction:** an earlier revision of this file recommended `git add -f .claude/rules`. That was
+> wrong and was reverted — the files were briefly staged and then unstaged, and the unpushed commit
+> was rewritten so no `.claude` content ever reached the remote. Now that the tree is sanitised,
+> versioning it is a legitimate choice; force-add if wanted.
+
+The pre-cleanup state is preserved at `local_user_files/claude-config-pre-cleanup-20261010-160731/`.
 
 ## 2. Ignored *but* tracked — already public, same review applies
 
@@ -103,9 +113,13 @@ files** in the working tree. That fix stands regardless of whether the files are
 
 ## Persisting any of this
 
-Review and sanitise first — for `.claude/`, prefer migrating to the current `skills/` layout before
-versioning anything. Then:
+`.claude/` has now been sanitised, so versioning it is a legitimate choice — it is currently kept
+local by preference, not because it is unsafe. If you do version it:
 
 ```bash
-git add -f <path>     # force-add despite the ignore rule
+git add -f .claude/skills          # force-add despite the ignore rule
 ```
+
+Add `settings.local.json` only if you want the local permission list shared; it is per-machine by
+design. The rest of the entries in this file (per-machine IDE state, scratch tooling) should stay
+untracked.

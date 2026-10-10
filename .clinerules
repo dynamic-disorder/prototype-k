@@ -1,72 +1,25 @@
 # Cline Configuration Rules
-## Shell & Commands
-- **Primary shell**: PowerShell on Windows (default)
-- **Git Bash**: Available in Windows development environments via Git installation (`git --version` to verify)
-- **Prefer PowerShell cmdlets** over Unix commands when available
-- **Error handling**: Use `-ErrorAction` parameter, not `||` operator
-- **Command style**: `Get-ChildItem -Filter *.cs -Recurse | Select-String "pattern"`
 
-## Project Structure
-- Multi-project repository with independent solutions
-- **Development support folders**:
-  - `local_dev/`: Development artifacts, analyses, tooling, scripts, documentation (not git-ignored)
-  - `local_user_files/`: Ephemeral/user-specific files (git-ignored)
-- Respect project boundaries defined in `.claude/rules/repository-structure.md`
+## Platforms & shells
+- **Primary**: Omarchy (Arch) Linux, bash.
+- **Secondary**: Windows 11, PowerShell or Git Bash.
+- Pick the shell that matches the host; do not assume Windows. `pwsh` is **not** installed on the Linux box.
 
-## File Operations
-- **Line endings**: **LF everywhere** — in the repository *and* the working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`). The old CRLF-for-`.cs` policy was dropped in Oct 2026; do not reintroduce CRLF.
-- **Shell scripts**: LF line endings (Docker compatibility)
-- **No CRLF normalisation hooks**: the former `.claude/hooks/normalize-line-endings.*` and the `.claude/scripts/*line_endings*` PowerShell fixers were removed — they enforced the abandoned CRLF policy. Do not normalise line endings automatically.
-- **Node scripts** (cross-platform, dependency-free): `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`
-- Follow `.editorconfig` for code formatting
+## Repository
+- .NET 10 mono-repo, four independent solutions: `CliUtils`, `FilenameTools`, `CsvTranslations`, `MediaRenamer`.
+- Build + test everything: `./local_dev/scripts/build-all-linux.sh --test` (add `-c Release`).
+- Per-solution detail and project conventions live in each `<Project>/CLAUDE.md`.
+- `local_dev/`: development artifacts, analyses, tooling (committed).
+- `local_user_files/`: ephemeral, machine-local scratch (git-ignored).
 
-## Build System
-- .NET 10.0 projects
-- Build with `dotnet build` using solution files in subdirectories
-- Use VS Code tasks in `.vscode/tasks.json` for common operations
+## Conventions
+- `.editorconfig` is the single source of truth for formatting and style.
+- LF everywhere — in the repository *and* the working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`). Do not reintroduce CRLF, and do not add automatic line-ending normalisation.
+- Node scripts are cross-platform and dependency-free: `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`.
 
-## Claude Code Integration
-- Respect `.claude/` configuration and CLAUDE.md files
-- Use available skills defined in `.claude/skills/`
-- **Hooks**: bash hooks are the cross-platform ones
-  - PreToolUse: `.claude/hooks/pre-commit-build-check.sh` (bash, cross-platform)
-  - PowerShell (`.ps1`) hooks only run on Windows — `pwsh` is not installed on the Linux box
-- Adhere to `.claude/settings.json` permissions
+## Local AI configuration
+- `.claude/` is git-ignored and machine-local; it holds personal/work configuration that is **not** sanitised for publication. Do not commit it.
+- Skills live under `.claude/skills/`. See `local_dev/git-ignored-local-files.md` for what is untracked, why, and what would need review before versioning.
 
-## Development Workflow
-1. Check if change belongs to specific subproject
-2. Build relevant solution to ensure no breakage
-3. Run existing tests if available
-4. Update documentation if needed
-
-## Areas to Focus
-- **High priority**: C# .NET, file name sanitization, CSV translation tools, Ollama AI integration, Docker for AI offline
-- **Be careful with**: Production-like configurations, hobby project nature, test changes before committing
-
-## Troubleshooting
-
-### VS Code Cache Issues (Cline)
-When Visual Studio Code cache appears to be introducing issues (providing not-up-to-date data, stale file contents, or incorrect project state—affects mainly Cline), execute the cache cleaner:
-
-```powershell
-cd local_dev/scripts
-python vscode_cache_cleaner.py
-```
-
-The script will:
-1. Close VS Code if running
-2. Remove cache folders (Cache, CachedData, Code Cache, GPUCache, logs, CachedExtensions)
-3. Preserve your settings and installed extensions
-
-After running, restart VS Code to regenerate fresh caches.
-
-## Command Examples
-```powershell
-# Preferred PowerShell style
-Get-ChildItem -Path . -Filter *.cs -Recurse | Select-String "pattern"
-
-# Acceptable Unix style (when necessary)
-grep -r "pattern" *.cs
-
-# Avoid mixed syntax (fails in PowerShell)
-# grep --version 2>&1 || echo "not available"
+## Utility
+- VS Code cache problems: `python3 local_dev/scripts/vscode_cache_cleaner.py` (closes VS Code, clears caches, keeps settings and extensions).

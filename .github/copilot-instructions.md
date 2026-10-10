@@ -52,7 +52,7 @@
 ## C# and scripting conventions
 - Prioritize readability, maintainability, and existing repository style.
 - Prefer small, well-named functions and clear separation of concerns.
-- The AUTHORITATIVE C#/test conventions live in `.claude/rules/csharp-conventions.md` and `.claude/rules/test-conventions.md`. Apply those. Critical one-liners that must never be dropped:
+- Repository C#/test conventions (`.editorconfig` remains the source of truth for formatting). The critical ones:
   - File-scoped namespaces: `namespace My.Project.Sub;`
   - Add XML docs (`/// <summary>`) for new or modified public/internal types and methods.
   - Use braces even for one-line `if`/`return` blocks for clarity.
