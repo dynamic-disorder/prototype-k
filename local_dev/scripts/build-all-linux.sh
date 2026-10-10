@@ -9,12 +9,12 @@
 #   ./local_dev/scripts/build-all-linux.sh --test -c Release
 #
 # Notes
-#  * Windows-only projects (WPF, net9.0-windows10.0.19041.0) still *compile*
+#  * Windows-only projects (WPF, net10.0-windows10.0.19041.0) still *compile*
 #    here because Directory.Build.props sets EnableWindowsTargeting=true.
 #    They remain unrunnable on Linux — that is expected, not a failure.
-#  * net9.0 test assemblies need the .NET 9 runtime. When only a newer runtime
-#    is installed the script falls back to DOTNET_ROLL_FORWARD=LatestMajor
-#    instead of failing, and says so.
+#  * Every project targets net10.0, so test assemblies need the .NET 10 runtime.
+#    If only an older runtime were installed the script falls back to
+#    DOTNET_ROLL_FORWARD=LatestMajor instead of failing, and says so.
 #
 set -uo pipefail
 
@@ -34,10 +34,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# net9.0 assemblies cannot execute on a net10-only install without roll-forward.
-if ! dotnet --list-runtimes 2>/dev/null | grep -q 'Microsoft\.NETCore\.App 9\.'; then
+# Every project targets net10.0; running the test hosts needs the .NET 10 runtime.
+if ! dotnet --list-runtimes 2>/dev/null | grep -q 'Microsoft\.NETCore\.App 10\.'; then
   export DOTNET_ROLL_FORWARD=LatestMajor
-  echo "note: no .NET 9 runtime found — using DOTNET_ROLL_FORWARD=LatestMajor for test execution."
+  echo "note: no .NET 10 runtime found — using DOTNET_ROLL_FORWARD=LatestMajor for test execution."
   echo
 fi
 

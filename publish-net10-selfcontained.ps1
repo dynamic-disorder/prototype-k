@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-Publish .NET 9 apps as self-contained Windows executables for end-user distribution.
+Publish .NET 10 apps as self-contained Windows executables for end-user distribution.
 
 .DESCRIPTION
-This script builds selected .NET 9 projects as self-contained win-x64 packages, so the end user does not need a local .NET 9 runtime.
+This script builds selected .NET 10 projects as self-contained win-x64 packages, so the end user does not need a local .NET 10 runtime.
 
 .PARAMETER Project
 One or more project names from the supported list. If omitted, all supported projects are published.
@@ -15,10 +15,10 @@ The target runtime identifier. Defaults to win-x64.
 The build configuration. Defaults to Release.
 
 .EXAMPLE
-./publish-net9-selfcontained.ps1
+./publish-net10-selfcontained.ps1
 
 .EXAMPLE
-./publish-net9-selfcontained.ps1 -Project AddEntryApp,OllamaTranslatorApp
+./publish-net10-selfcontained.ps1 -Project AddEntryApp,OllamaTranslatorApp
 #>
 [CmdletBinding()]
 param(
@@ -52,7 +52,7 @@ if ($Project.Count -eq 0) {
     }
 }
 
-Write-Host "Publishing self-contained .NET 9 apps" -ForegroundColor Cyan
+Write-Host "Publishing self-contained .NET 10 apps" -ForegroundColor Cyan
 Write-Host "Runtime: $Runtime" -ForegroundColor Gray
 Write-Host "Configuration: $Configuration`n" -ForegroundColor Gray
 
