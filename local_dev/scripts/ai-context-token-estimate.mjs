@@ -2,10 +2,11 @@
 // Estimates token usage of the committed AI-context files (CLAUDE.md, rules, Copilot
 // instructions). Rough rule of thumb: ~4 characters per token for English/markdown text.
 //
-// Node port of ai_context_token_estimate.ps1, which could not run here because `pwsh` is not
-// installed on the Omarchy Linux box. Dependency-free: Node built-ins only.
+// Node port of ai_context_token_estimate.ps1, which could not run here without first installing
+// pwsh (absent from PATH on the Omarchy Linux box by default). Dependency-free: Node built-ins only.
 //
-// Hooks (.claude/hooks/*) are NOT counted: only their OUTPUT is injected at session start.
+// The git-ignored root `.claude/` tree is NOT counted: it holds only skills, which load on demand
+// rather than being injected at session start.
 //
 // Usage:
 //   node local_dev/scripts/ai-context-token-estimate.mjs

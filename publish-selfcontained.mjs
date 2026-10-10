@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Publishes the supported apps as self-contained Windows executables for end-user distribution.
 //
-// Node port of the former publish-net10-selfcontained.ps1. It exists because PowerShell (`pwsh`)
-// is not installed on the Omarchy Linux box, while Node is; and because Node runs identically on
-// Windows. Cross-publishing win-x64 from Linux works because this only drives `dotnet publish`.
+// Node port of the former publish-net10-selfcontained.ps1. Node was chosen because it needs no
+// install step on either platform — `pwsh` is absent from PATH on the Omarchy Linux box by default,
+// though it can be added as a local .NET tool — and the same script runs identically on Windows.
+// Cross-publishing win-x64 from Linux works because this only drives `dotnet publish`.
 //
 // Deliberately dependency-free: Node built-ins only, so it needs nothing beyond `node` itself.
 //

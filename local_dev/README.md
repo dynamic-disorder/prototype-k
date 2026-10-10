@@ -46,7 +46,12 @@ Provided: `REPO_ROOT` / `$RepoRoot`, `REPO_NAME`, `HOST_OS` (linux/macos/windows
 - `build-all-linux.sh` sources `repo-env.sh`; use `repo-env.sh` from any new script rather than
   re-deriving the root.
 - Node scripts resolve the root themselves via `import.meta.url`, so they need no shell.
-- `repo-env.ps1` targets both Windows PowerShell 5.1 and PowerShell 7+.
+- `repo-env.ps1` targets both Windows PowerShell 5.1 and PowerShell 7+; verified on PowerShell 7.6.6
+  (summary, `-Json` and dot-sourced). There is no `pwsh` on `PATH` here by default — install it
+  without root via `dotnet tool install PowerShell --tool-path local_user_files/dotnet-tools`; see
+  `../memory/omarchy-tool-substitutions.md` for the `XDG_*` caveat that bites under the sandbox.
+- The capability flags report what the **invoking** shell can resolve on `PATH`, so `HAS_PWSH` may be
+  `1` from PowerShell and `0` from bash in the same checkout.
 
 ### Cross-Platform Build & Test (`build-all-linux.sh`)
 
@@ -78,7 +83,7 @@ node local_dev/scripts/ai-context-token-estimate.mjs --json   # machine-readable
 
 **Notes**:
 - Dependency-free Node (built-ins only); no `npm install`.
-- Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box because `pwsh` is not installed.
+- Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box at the time because `pwsh` was not installed (it can be added as a local .NET tool — see `../memory/omarchy-tool-substitutions.md`).
 - The git-ignored root `.claude/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
 
 ### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)

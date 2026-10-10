@@ -3,7 +3,7 @@
 ## Platforms & shells
 - **Primary**: Omarchy (Arch) Linux, bash.
 - **Secondary**: Windows 11, PowerShell or Git Bash.
-- Pick the shell that matches the host; do not assume Windows. `pwsh` is **not** installed on the Linux box.
+- Pick the shell that matches the host; do not assume Windows. `pwsh` is not on `PATH` on the Linux box by default, but it installs without root as a local .NET tool — see `memory/omarchy-tool-substitutions.md`.
 
 ## Repository
 - .NET 10 mono-repo, four independent solutions: `CliUtils`, `FilenameTools`, `CsvTranslations`, `MediaRenamer`.

@@ -124,5 +124,5 @@ Wrappers, both in the repository root:
 
 | Wrapper | Language | Why |
 | :------ | :------- | :-- |
-| `publish-selfcontained.mjs` | Node (dependency-free) | Developer tool. Node runs on both Linux and Windows; `pwsh` is not installed on the Linux box |
+| `publish-selfcontained.mjs` | Node (dependency-free) | Developer tool. Node needs no install step on either platform; `pwsh` is absent from `PATH` here by default (it is installable as a local .NET tool) |
 | `install-net10-runtime.ps1` | PowerShell | Runs on **end-user** machines, where PowerShell 5.1 is guaranteed and Node is not |
