@@ -24,7 +24,7 @@ The solution is **`CsvTranslations.sln`** (in this directory).
 ```bash
 cd CsvTranslations
 dotnet build CsvTranslations.sln            # or -c Release
-dotnet test  CsvTranslations.sln            # 124 tests: 25 + 68 + 31
+dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
 ```
 
 - **Windows-targeted projects cross-compile.** `TextToSpeechApp` targets
@@ -57,13 +57,13 @@ All test projects now build clean (0 warnings) and the three that can run on Lin
 
 | Project | In `CsvTranslations.sln` | Status |
 | :------ | :----------------------- | :----- |
-| `OllamaTranslatorApi.Tests` | yes | 25/25 pass |
-| `TranslationTools.Tests` | yes | 68/68 pass (was an empty project with no test sources) |
+| `OllamaTranslatorApi.Tests` | yes | 27/27 pass |
+| `TranslationTools.Tests` | yes | 81/81 pass (was an empty project with no test sources) |
 | `OllamaTranslatorApp.Tests` | yes | 31/31 pass (was 36 compile errors; now added to the solution) |
 | `TextToSpeechApp.Tests` | **no** | builds (Windows-only target, cannot run on Linux) |
 
-`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **124 tests**
-(25 + 68 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
+`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **139 tests**
+(27 + 81 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
 adding it would make `dotnet test` try to *execute* a `net10.0-windows…`/`win-x64`
 assembly on Linux. Build it explicitly with its `.csproj` path.
 

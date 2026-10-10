@@ -20,11 +20,12 @@ The solution contains these projects:
 - OllamaTranslatorApp (console app)
 - TextToSpeechApp (Windows TTS app, cross-compiles on Linux via `EnableWindowsTargeting`)
 - TextToSpeechCore (library)
-- Test projects: `OllamaTranslatorApi.Tests` (25 tests, part of the solution),
-  `TranslationTools.Tests` (no test sources).
+- Test projects: `OllamaTranslatorApi.Tests` (27 tests, part of the solution),
+  `TranslationTools.Tests` (81 tests, part of the solution),
+  `OllamaTranslatorApp.Tests` (31 tests, part of the solution).
 
 Not in the solution — build from their `.csproj` paths:
-`TextToSpeechApp.Tests` (Windows-only) and `OllamaTranslatorApp.Tests` (currently does not compile).
+`TextToSpeechApp.Tests` (Windows-only target, builds but cannot run on Linux).
 
 ## Next Steps
 After building, you can run individual apps with `dotnet run --project <project-path>`

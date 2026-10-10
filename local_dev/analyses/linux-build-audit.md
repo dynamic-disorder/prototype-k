@@ -259,7 +259,7 @@ most of the open issues above.
 | # | Was | Now |
 | :- | :-- | :-- |
 | 1 | `OllamaTranslatorApp.Tests` did not compile (36 errors) | Rewritten against the real API; **31/31 pass** |
-| 3 | `TranslationTools.Tests` had no test sources | **68 real tests**, all pass |
+| 3 | `TranslationTools.Tests` had no test sources | **81 real tests**, all pass |
 | 4 | No .NET 9 runtime installed | N/A — everything targets `net10.0`, which *is* installed; no roll-forward needed |
 | 5 | `FilenameSanitizerCli` was the only `net10.0` project | Repo is uniformly `net10.0` (`net10.0-windows` for MediaRenamer/TextToSpeechCore, `net10.0-windows10.0.19041.0` for the WinRT TTS app) |
 | 6 | Two test projects outside `CsvTranslations.sln` | `OllamaTranslatorApp.Tests` **added** to the solution; `TextToSpeechApp.Tests` deliberately still out (see below) |
@@ -287,9 +287,9 @@ Notable package work:
 - `Spectre.Console(.Cli)` 0.49.1 → 0.57.2 required adding a `CancellationToken` parameter to
   `AsyncCommand<T>.ExecuteAsync` overrides.
 
-Test projects now wired into `CsvTranslations.sln`: `OllamaTranslatorApi.Tests` (25),
-`TranslationTools.Tests` (68), `OllamaTranslatorApp.Tests` (31) = **124 tests**, plus
-`FilenameSanitizer.Tests` (78) = **202** repo-wide, all green in Debug and Release.
+Test projects now wired into `CsvTranslations.sln`: `OllamaTranslatorApi.Tests` (27),
+`TranslationTools.Tests` (81), `OllamaTranslatorApp.Tests` (31) = **139 tests**, plus
+`FilenameSanitizer.Tests` (78) = **217** repo-wide, all green in Debug and Release.
 
 ### Why `TextToSpeechApp.Tests` stays out of the solution
 
@@ -307,10 +307,36 @@ public members of internal types but drops `internal` members. `ildump` showed
 `internal` type with **`public`** members (as `TtsSettings` does) — the containing type still
 keeps them out of the real public surface.
 
-### Known functional bug found while fixing the tests (not fixed)
+### Fixed: `BatchTranslateAsync` reordered translated lines
 
-`OllamaTranslator.BatchTranslateAsync` collects results from `Parallel.ForEachAsync` under a
-lock, so **output line order is not preserved** relative to the input. Multi-line text
-translation can therefore write translated lines in a different order than the source.
-Tests assert order-insensitively. Fixing it means ordering results by input index.
+`OllamaTranslator.BatchTranslateAsync` collected results from `Parallel.ForEachAsync` under a
+lock, so **output line order was not preserved** relative to the input: multi-line text
+translation could write translated lines in a different order than the source. It now indexes
+the entries (`Parallel.ForAsync`) and writes each result into a pre-sized array, returning them
+in input order. Regression tests drive translations to finish in reverse input order.
+
+### Fixed: five `TranslationsParser` / `TranslationsFinder` defects
+
+Found while writing the `TranslationTools.Tests` coverage, then fixed:
+
+1. `SplitCsvLine` mishandled doubled quotes (`""`) — the lookahead bumped a separate counter that
+   the `foreach` ignored, so an escaped-quote row collapsed into one field and lost its target.
+2. Language values were read from `csvLines[index]` (the data row numbered like the *column*
+   index), so the target language came from the third data row and a file with fewer than three
+   data rows threw `IndexOutOfRangeException`. They now come from the first data row.
+3. Rows with more columns than the header threw `IndexOutOfRangeException`; the loop is now
+   bounded by the shorter of the two.
+4. Hashtag columns were matched with `StartsWith("Hashtags")`, which the real header
+   (`Context Categorization Hashtags`) never satisfies, and a bogus language was fabricated for
+   them. Recognition is now a case-insensitive `Contains`, values are kept as
+   `TextEntryType.Hashtags`, and `TextToSpeechApp` skips them when displaying and reciting.
+5. A colon-style header using long column names threw `IndexOutOfRangeException` because
+   `GetCleanHeaderLine` stripped the spaces that long-name detection depends on.
+6. `TranslationsFinder.GetTranslationFilepathFromEnvironmentVariable` ignored its `json`
+   parameter, so `settings.json` was never parsed — only the environment variable was read.
+   The JSON `translation_filepath` property is now read first, with the environment variable as
+   a fallback.
+
+Validated against the repository's real dictionary: all 3077 data rows parse, languages resolve
+to English/Finnish, and each row yields Source, Target and Hashtags entries.
 

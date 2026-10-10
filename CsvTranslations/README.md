@@ -21,10 +21,10 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 
 ### Test Projects
 
-- **OllamaTranslatorApi.Tests** — Unit tests for the Ollama translation API (CsvFileTranslator, OllamaTranslator) — in the solution, 25 tests pass
+- **OllamaTranslatorApi.Tests** — Unit tests for the Ollama translation API (CsvFileTranslator, OllamaTranslator) — in the solution, 27 tests pass
 - **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app (real `TranslateCommand` helpers, `TextFileTranslator`, and `Program.TranslateFileAsync` routing) — in the solution, 31 tests pass
 - **TextToSpeechApp.Tests** — Unit tests for the TTS app — not in the solution; Windows-only target, builds but cannot run on Linux
-- **TranslationTools.Tests** — Unit tests for the shared CSV parsing/tooling library — in the solution, 68 tests pass
+- **TranslationTools.Tests** — Unit tests for the shared CSV parsing/tooling library — in the solution, 81 tests pass
 
 ## Data File
 
