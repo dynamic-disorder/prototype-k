@@ -22,7 +22,7 @@
 
 ## Local AI configuration
 - `.claude/` is git-ignored and machine-local; it holds personal/work configuration that is **not** sanitised for publication. Do not commit it.
-- Skills live under `.claude/skills/`. See `local_dev/git-ignored-local-files.md` for what is untracked, why, and what would need review before versioning.
+- Skills live under `.agents/skills/` (tracked and tool-neutral). Claude Code reaches the same files through the local `.claude/skills` symlink — see `local_dev/git-ignored-local-files.md`.
 
 ## Utility
 - VS Code cache problems: `python3 local_dev/scripts/vscode_cache_cleaner.py` (closes VS Code, clears caches, keeps settings and extensions).

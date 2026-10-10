@@ -18,16 +18,18 @@ Why it was ignored originally, and why the cleanup was needed:
 2. **Outdated.** Written months earlier; practice had moved on, and several rules contradicted the
    repo's own `.editorconfig` and code.
 3. **The layout had changed.** Claude Code no longer separates user-initiated *commands* from
-   model-invoked behaviour — everything lives under `.claude/skills/`, triggerable by the user or the
-   AI. Directory-scoped skills can also be referenced from another directory or from root
-   instructions (e.g. "read `folderX/CLAUDE.md`, then run the skills in it").
+   model-invoked behaviour — everything is a skill, triggerable by the user or the AI. Directory-scoped
+   skills can also be referenced from another directory or from root instructions (e.g. "read
+   `folderX/CLAUDE.md`, then run the skills in it").
 
-Current inventory (11 files, none tracked):
+The ten skills that survived that cleanup were later **promoted out of this ignored tree** to
+`.agents/skills/`, where they are tracked — see "How other harnesses reach this tree" below. What is
+left here now:
 
 | Path | Note |
 | :--- | :--- |
-| `.claude/skills/*/SKILL.md` (10) | `csharp-conventions`, `csharp-build-verify`, `csharp-refactor`, `explain`, `git-commit`, `unit-test-writer`, `issue-investigate`, `spike`, `publish`, `install-net10-runtime` |
 | `.claude/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
+| `.claude/skills` | A **symlink** to `../.agents/skills` so Claude Code finds the tracked skills. Covered by the `.claude/` rule; it owns no content of its own |
 
 Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
 `skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
@@ -62,29 +64,35 @@ also the unsanitised personal configuration, which is why it must not be committ
 disposable by policy: treat the snapshot as a convenience, not an archive, and copy anything worth
 keeping somewhere durable before clearing `local_user_files/`.
 
-### How other harnesses reach this tree
+### How the two harnesses share this repository
 
-`.claude/` is Claude Code's layout. DeepSeek Harness (DSH) uses the tool-neutral `AGENTS.md` +
-`.agents/skills/` convention instead, and its two halves treat this repository differently:
+`.claude/` is Claude Code's layout; DeepSeek Harness (DSH) uses the tool-neutral `AGENTS.md` +
+`.agents/skills/` convention. Both are served from a single copy:
 
-| DSH reads | From where | Needs a bridge? |
-| :--- | :--- | :--- |
-| Workspace instructions | `AGENTS.md` **and** `CLAUDE.md`, plus `AGENTS.local.md`/`CLAUDE.local.md` overlays, chained from the project root (`.git` marker) down to the working directory | **No** — the existing `CLAUDE.md` files already load, so there is no second file to maintain |
-| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` (where this machine's `diagnose-crash` and `omarchy` live) | **Yes** — `.claude/skills/` is not scanned |
-
-The bridge is a single local symlink:
+| | Claude Code | DeepSeek Harness | Shared how |
+| :--- | :--- | :--- | :--- |
+| Instructions | `CLAUDE.md` | `AGENTS.md` **and** `CLAUDE.md` (plus the `.local.md` overlays), chained from the project root (`.git` marker) down to the working directory | The existing `CLAUDE.md` files load in both — no second file to maintain |
+| Skills | `.claude/skills/` | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/`, where this machine's `diagnose-crash` and `omarchy` live | Canonical **tracked** copy at `.agents/skills/`; Claude Code reaches it through a local symlink |
 
 ```bash
-ln -sfn ../.claude/skills .agents/skills      # git-ignored: local glue, not content
+# canonical and tracked:  .agents/skills/<name>/SKILL.md
+ln -sfn ../.agents/skills .claude/skills   # local glue, ignored via the .claude/ rule
 ```
 
-One canonical copy, two harnesses. DSH discovers a skill as `<name>/SKILL.md` at the *top level* of a
-scanned root — nested `**/SKILL.md` is deliberately not discovered — and it follows symlinked
-directories, which is why the bridge works. Verified end to end: DSH's catalog picked up
-`csharp-conventions`, `csharp-build-verify`, `unit-test-writer`, `issue-investigate` and `spike`
-immediately, and correctly **withheld** `git-commit`, `publish`, `explain`, `csharp-refactor` and
-`install-net10-runtime` because they declare `disable-model-invocation: true`. That frontmatter is
-therefore portable between the two harnesses.
+`.agents/skills/` is DSH's native project root *and* tool-neutral, so it is the better home for the
+canonical copy; `.claude/` stays ignored, holding only personal settings and that symlink. DSH
+discovers a skill as `<name>/SKILL.md` at the *top level* of a scanned root — nested `**/SKILL.md` is
+deliberately not discovered — and it follows symlinked directories, which is why the shim works.
+
+Verified end to end: DSH's catalog picked up `csharp-conventions`, `csharp-build-verify`,
+`unit-test-writer`, `issue-investigate` and `spike`, and correctly **withheld** `git-commit`,
+`publish`, `explain`, `csharp-refactor` and `install-net10-runtime` because they declare
+`disable-model-invocation: true` — so that frontmatter is portable between the two harnesses.
+
+A **user-global** bridge was deliberately not created: these skills encode this repository
+(`FilenameTools` paths, its `.editorconfig`, its commit scopes), so placing them in
+`~/.agents/skills/` would make them fire in unrelated projects. Omarchy uses that mechanism for the
+distro's own machine-level skills, which is the right scope for them.
 
 Two related notes:
 
@@ -92,8 +100,10 @@ Two related notes:
   an existing Claude Code `hooks.json` or settings file during DSH runs. So `.claude/settings.json` is
   a live configuration surface for both, not just Claude Code — worth remembering now that its empty
   file and unwired hook were removed.
-- **User-global DSH config is outside this repository** (`~/.dsh/`, `~/.agents/`) and outside the
-  agent sandbox's writable area, so those can only be edited by the user.
+- **User-global DSH config is outside this repository** — `~/.dsh/` (settings, profiles, sessions) and
+  `~/.agents/skills/` — and outside the agent sandbox's writable area. Granting permission in
+  conversation does **not** lift that: writes there are refused unless elevated sandbox access is
+  approved per operation, so treat those paths as the user's to edit.
 
 ## 2. Ignored *but* tracked — already public, same review applies
 
@@ -154,16 +164,19 @@ files** in the working tree. That fix stands regardless of whether the files are
 
 ## Persisting any of this
 
-`.claude/` has now been sanitised, so versioning the **skills** is a legitimate choice — they are kept
-local by preference, not because they are unsafe:
+The **skills** are no longer part of this question — they were promoted to the tracked
+`.agents/skills/`, so nothing has to be force-added for them.
 
-```bash
-git add -f .claude/skills          # force-add despite the ignore rule
-```
+What stays untracked, and should:
 
-`settings.local.json` is **never** versioned. It is the personal overlay on the shareable
-`settings.json` — Claude Code's own layering — so it belongs in `.gitignore` permanently. The rest of
-the entries in this file (per-machine IDE state, scratch tooling) stay untracked as well.
+- `settings.local.json` — the personal overlay on the shareable `settings.json` (Claude Code's own
+  layering), so it belongs in `.gitignore` permanently.
+- The `.claude/skills` symlink — local glue pointing at the tracked skills.
+- Per-machine IDE state (`launchSettings.json`) and everything in `local_user_files/`.
+
+If something else here genuinely needs versioning, `git add -f <path>` is the escape hatch — but
+prefer moving it somewhere durable, as was done for `ildump` (to `local_dev/tools/`) and for the
+skills (to `.agents/skills/`).
 
 ### The two settings files
 

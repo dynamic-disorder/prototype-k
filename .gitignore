@@ -32,10 +32,9 @@ CLAUDE.local.md
 # the personal file ignored if that broader rule is ever narrowed (e.g. to version skills).
 .claude/settings.local.json
 .claude/agent-memory-local/
-# DeepSeek Harness reads AGENTS.md and the project skill root .agents/skills/. This symlink bridges
-# the canonical Claude Code skills (git-ignored) into that root, so both harnesses share one copy
-# instead of duplicating them. Local glue pointing at ignored content, not content of its own.
-.agents/skills
+# `.agents/skills/` is deliberately NOT ignored: it holds the tracked, tool-neutral skills.
+# Claude Code reaches the same files through the local `.claude/skills` symlink, which the
+# `.claude/` rule above already covers.
 __pycache__/
 # Python virtualenvs. `.venv/` currently protects itself with the `.gitignore` (`*`) that
 # `python -m venv` writes, but that file is not ours to rely on — this keeps the ~22 MB tree out
