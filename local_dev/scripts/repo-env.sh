@@ -2,7 +2,7 @@
 # Repository and environment locations, resolved at runtime — nothing machine-specific.
 #
 # The repository root is derived from this file's own location, so every script can work from any
-# working directory on any machine instead of hard-coding a path like D:\code\... or /mnt/...
+# working directory on any machine instead of hard-coding an absolute path.
 #
 # Source it (recommended) and use the exported variables:
 #

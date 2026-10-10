@@ -1,7 +1,7 @@
 """Repository locations for Python helpers, resolved from this file's own path.
 
 Nothing here is machine-specific: the root is derived from where this file sits, so a script
-anywhere in the tree can find the repository without hard-coding a path like ``c:\\code\\...``.
+anywhere in the tree can find the repository without hard-coding an absolute path.
 
 Import it from a script elsewhere in the repo:
 

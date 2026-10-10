@@ -88,6 +88,11 @@ dropped by a directory rename (see `analyses/linux-build-audit.md`).
 
 Scratch tooling built during the migration. Not versioned, but genuinely reusable.
 
+The directory is ignored with `local_user_files/*` **plus a negation** (`!local_user_files/README.md`),
+so that README is tracked while everything else inside is not. That is why
+`git check-ignore local_user_files` reports the *directory* as not ignored even though its contents
+are — and `git add -A local_user_files/` finds nothing.
+
 | Tool | Purpose |
 | :--- | :------ |
 | `local_user_files/ildump/` | Dumps a .NET assembly's declared types and members **with accessibility**, straight from IL metadata. Used to show that reference assemblies keep public members of internal types but strip `internal` ones — the reason `InternalsVisibleTo` alone doesn't let tests call internal helpers. |

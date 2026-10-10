@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     The repository root is derived from this file's own location, so scripts work from any working
-    directory on any machine instead of hard-coding a path like D:\code\... or C:\Users\...
+    directory on any machine instead of hard-coding an absolute path.
 
     Dot-source it and use the variables:
 
