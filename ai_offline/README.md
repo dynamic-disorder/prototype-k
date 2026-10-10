@@ -25,7 +25,7 @@ Docker-based setup for running [Ollama](https://ollama.com/) with [Open WebUI](h
 ### Documentation Files
 
 - `ollama-integrations-with-claude-code.md` — Guide for integrating Ollama with Claude Code
-- `AirLLM-Run-Qwen2.5‑Coder-7B-Instruct-with-AirLLM-on-Windows-10.md` — Running Qwen models with AirLLM
+- `AirLLM-Run-Qwen2.5-Coder-7B-Instruct-with-AirLLM-on-Windows-10.md` — Running Qwen models with AirLLM
 - `Ollama-integrations-with-Cline-Practical-Model-Compatibility-Guide.md` — Model compatibility guidance for Cline + Ollama
 
 ## Quick Start
