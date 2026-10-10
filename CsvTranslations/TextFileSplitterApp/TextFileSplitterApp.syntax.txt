@@ -1,5 +1,13 @@
 TextFileSplitter - Splits large text files into smaller files with configurable line limits
 
+DESCRIPTION:
+  Splits one large text or CSV file into small chunk files.
+
+  • Each chunk holds up to <max_lines_per_file> lines (250-25000).
+  • Output files are numbered and saved next to the input file.
+  • The CSV header row is repeated in every chunk.
+  • With --csv each chunk also gets a *_formatted.txt file with <entry> tags.
+
 USAGE:
   TextFileSplitter <input_file_path> <max_lines_per_file> [--csv] [--hashtags|--semantics]
   TextFileSplitter /help  (or --help, -h, /?, -?)
