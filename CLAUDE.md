@@ -45,8 +45,8 @@ Where to find authoritative context (read this index first, then open only the f
 - **Per-project context**: `<Project>/CLAUDE.md` — authoritative commands/conventions/gotchas for each project
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md` — per-solution results, root causes, open issues, cross-platform checklist
 - **Build script**: `local_dev/scripts/build-all-linux.sh` — build/test every solution on Linux
-- **Conventions**: `.claude/rules/` — `csharp-conventions.md`, `test-conventions.md`, `repository-structure.md`, `csharp-build-verification.md`. ⚠️ That directory is **git-ignored**, so these conventions are local to this clone — see below.
-- **Git-ignored local files**: `local_dev/git-ignored-local-files.md` — what lives outside version control in this clone (root `.claude/`, `launchSettings.json`, `local_user_files/` tooling) and how to persist it
+- **Conventions**: `.claude/rules/` — `csharp-conventions.md`, `test-conventions.md`, `repository-structure.md`, `csharp-build-verification.md`. ⚠️ This tree is **git-ignored on purpose** and must stay that way until sanitised: it holds personal/work Claude Code configuration, is outdated, and uses a layout Claude Code has since changed (everything is now a skill, not a command). Read them locally; do not force-add them to git.
+- **Git-ignored local files**: `local_dev/git-ignored-local-files.md` — why root `.claude/` is excluded (personal config awaiting sanitisation), the sanitisation checklist, what else lives outside version control, and how to persist it once reviewed
 - **Copilot instructions**: `.github/copilot-instructions.md` (+ subfolder files)
 - **Personal memory/reference**: `memory/` (committed, stable) — includes `omarchy-tool-substitutions.md` (tools missing on this Linux box and their working alternatives) ; Claude Code auto-memory `~/.claude/projects/*/memory/` (git-ignored, ephemeral)
 - **Analyses & plans**: `local_dev/analyses/`, `local_dev/plans/`
