@@ -111,6 +111,30 @@ python vscode_cache_cleaner.py
 
 **Source**: Based on community recommendations for VS Code cache management.
 
+## Tools
+
+Committed tooling that does not belong under `scripts/` because it is not a script. Anything wanted
+again later belongs here (or in `scripts/`), **not** in the git-ignored `local_user_files/` scratch.
+
+### .NET assembly inspector (`tools/ildump/`)
+
+Dumps an assembly's declared types — or one type's members — with their **accessibility**, straight
+from IL metadata via `System.Reflection.Metadata`. Written because this box has no
+`ildasm`/`monodis`/`ilspycmd`.
+
+```bash
+dotnet run --project local_dev/tools/ildump -- <assembly.dll> [typeFullName]
+```
+
+It produced the finding that reference assemblies keep the **public** members of internal types but
+strip the **internal** ones — the reason `InternalsVisibleTo` alone cannot let a test project call
+internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-audit.md).
+
+**Notes**:
+- Prints assembly attributes as `.ctor` (their constructor name) — cosmetic noise; the type and
+  member accessibility output is what it is for.
+- No package references: `System.Reflection.Metadata` is in the `net10.0` shared framework.
+
 ## Analyses
 
 - [`analyses/linux-build-audit.md`](analyses/linux-build-audit.md) — cross-platform build audit of every
@@ -122,5 +146,5 @@ python vscode_cache_cleaner.py
 ## Documentation
 
 - [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
-  `.gitignore` (root `.claude/`, `launchSettings.json`, `local_user_files/` tooling): what changed, what is
-  tracked-but-ignored, and how to persist any of it with `git add -f`.
+  `.gitignore` (root `.claude/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
+  changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.

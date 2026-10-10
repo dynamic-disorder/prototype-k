@@ -55,7 +55,12 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
 > was rewritten so no `.claude` content ever reached the remote. Now that the tree is sanitised,
 > versioning it is a legitimate choice; force-add if wanted.
 
-The pre-cleanup state is preserved at `local_user_files/claude-config-pre-cleanup-20261010-160731/`.
+A temporary snapshot of the pre-cleanup tree sits in the git-ignored scratch directory
+(`local_user_files/claude-config-pre-cleanup-20261010-160731/`, 29 files). It is the **only** copy of
+the deleted skills and commands — they were never tracked, so git history cannot recover them. It is
+also the unsanitised personal configuration, which is why it must not be committed. Scratch is
+disposable by policy: treat the snapshot as a convenience, not an archive, and copy anything worth
+keeping somewhere durable before clearing `local_user_files/`.
 
 ## 2. Ignored *but* tracked — already public, same review applies
 
@@ -84,26 +89,24 @@ dropped by a directory rename (see `analyses/linux-build-audit.md`).
 | :--- | :--- |
 | `CsvTranslations/OllamaTranslatorApp/Properties/launchSettings.json` | `workingDirectory` `bin\Debug\net9.0` → `net10.0`. Left untracked deliberately: per-machine IDE state that VS regenerates |
 
-## 4. Ignored dev tooling worth keeping (`local_user_files/`)
+## 4. Ephemeral scratch (`local_user_files/`)
 
-Scratch tooling built during the migration. Not versioned, but genuinely reusable.
+Disposable by design — nothing here is versioned, and nothing durable should live here. The directory
+is ignored with `local_user_files/*` **plus a negation** (`!local_user_files/README.md`), so that
+README is tracked while everything else inside is not. That is why `git check-ignore local_user_files`
+reports the *directory* as not ignored even though its contents are — and
+`git add -A local_user_files/` finds nothing.
 
-The directory is ignored with `local_user_files/*` **plus a negation** (`!local_user_files/README.md`),
-so that README is tracked while everything else inside is not. That is why
-`git check-ignore local_user_files` reports the *directory* as not ignored even though its contents
-are — and `git add -A local_user_files/` finds nothing.
+| Present in scratch | Purpose | Durable? |
+| :--- | :------ | :------- |
+| `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox (see `../memory/omarchy-tool-substitutions.md` for how to recreate `pwsh`). `nuget/env.sh` is pre-existing and still needed: it redirects the caches because `$HOME` is read-only. | No — all reproducible |
+| `compatcheck/` | One-off: resolved every member reference PiperSharp 1.0.7 makes against NAudio 3.1.0 to prove zero missing members. | No — the finding is recorded in `analyses/linux-build-audit.md` |
+| `parsecheck/` | One-off: ran the real `translations.csv` through `TranslationTools` to validate the parser fixes (3077/3077 rows). | No — the finding is recorded in the audit |
+| `CSV files/`, `samples/`, `*.bundles`, `tmp-rewrite.git/`, `dot-git-backup/`, `*.md` | Local data, backups and notes. | Deliberately local |
 
-| Tool | Purpose |
-| :--- | :------ |
-| `local_user_files/ildump/` | Dumps a .NET assembly's declared types and members **with accessibility**, straight from IL metadata. Used to show that reference assemblies keep public members of internal types but strip `internal` ones — the reason `InternalsVisibleTo` alone doesn't let tests call internal helpers. |
-| `local_user_files/compatcheck/` | Resolves every member reference a precompiled binary makes (including generic type-specifications) against a set of assemblies. Used to prove PiperSharp 1.0.7 still binds against NAudio 3.1.0 with zero missing members. |
-| `local_user_files/parsecheck/` | Parses the repository's real `translations.csv` through `TranslationTools` and reports languages, entry types and row counts. Used to validate the parser fixes against real data (3077/3077 rows). |
-| `local_user_files/nuget/env.sh` | Pre-existing. Redirects NuGet package/HTTP caches into the repo, because the agent sandbox mounts `$HOME` read-only. Source it before any `dotnet` command. |
-
-```bash
-source local_user_files/nuget/env.sh
-dotnet run --project local_user_files/ildump/ildump.csproj -- <assembly.dll> [typeFullName]
-```
+**Promoted out of scratch:** the .NET assembly inspector `ildump` moved to
+[`tools/ildump/`](tools/ildump/) once it was judged reusable rather than one-off — the rule being that
+anything wanted later belongs in `local_dev/`, not here.
 
 ## Removed during this work
 
