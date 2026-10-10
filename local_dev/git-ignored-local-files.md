@@ -62,6 +62,39 @@ also the unsanitised personal configuration, which is why it must not be committ
 disposable by policy: treat the snapshot as a convenience, not an archive, and copy anything worth
 keeping somewhere durable before clearing `local_user_files/`.
 
+### How other harnesses reach this tree
+
+`.claude/` is Claude Code's layout. DeepSeek Harness (DSH) uses the tool-neutral `AGENTS.md` +
+`.agents/skills/` convention instead, and its two halves treat this repository differently:
+
+| DSH reads | From where | Needs a bridge? |
+| :--- | :--- | :--- |
+| Workspace instructions | `AGENTS.md` **and** `CLAUDE.md`, plus `AGENTS.local.md`/`CLAUDE.local.md` overlays, chained from the project root (`.git` marker) down to the working directory | **No** — the existing `CLAUDE.md` files already load, so there is no second file to maintain |
+| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` (where this machine's `diagnose-crash` and `omarchy` live) | **Yes** — `.claude/skills/` is not scanned |
+
+The bridge is a single local symlink:
+
+```bash
+ln -sfn ../.claude/skills .agents/skills      # git-ignored: local glue, not content
+```
+
+One canonical copy, two harnesses. DSH discovers a skill as `<name>/SKILL.md` at the *top level* of a
+scanned root — nested `**/SKILL.md` is deliberately not discovered — and it follows symlinked
+directories, which is why the bridge works. Verified end to end: DSH's catalog picked up
+`csharp-conventions`, `csharp-build-verify`, `unit-test-writer`, `issue-investigate` and `spike`
+immediately, and correctly **withheld** `git-commit`, `publish`, `explain`, `csharp-refactor` and
+`install-net10-runtime` because they declare `disable-model-invocation: true`. That frontmatter is
+therefore portable between the two harnesses.
+
+Two related notes:
+
+- **Hooks are not Claude-only here.** DSH ships `dsh-hooks-claude-code`, which runs command hooks from
+  an existing Claude Code `hooks.json` or settings file during DSH runs. So `.claude/settings.json` is
+  a live configuration surface for both, not just Claude Code — worth remembering now that its empty
+  file and unwired hook were removed.
+- **User-global DSH config is outside this repository** (`~/.dsh/`, `~/.agents/`) and outside the
+  agent sandbox's writable area, so those can only be edited by the user.
+
 ## 2. Ignored *but* tracked — already public, same review applies
 
 Force-added before the policy above was remembered, so these **are in the remote history** and deserve
