@@ -10,19 +10,18 @@ paths:
 ## Operating System
 - Windows is required to **run** Windows-specific components
 - The whole solution **builds** on Linux/macOS as well: `Directory.Build.props` sets
-  `EnableWindowsTargeting=true`, which lets `net9.0-windows10.0.19041.0` projects restore
+  `EnableWindowsTargeting=true`, which lets `net10.0-windows10.0.19041.0` projects restore
   and compile cross-platform. Without it the build fails with `NETSDK1100`.
 - Some components (TextToSpeechApp) require Windows-specific APIs at runtime
 - Use Windows-compatible paths (backslashes, drive letters) only where Windows actually
   runs the code — prefer `Path.Combine` so the same source works on Linux
 
 ## .NET Development
-- Target framework: .NET 9.0
-- Windows-specific projects use `net9.0-windows10.0.19041.0`
+- Target framework: .NET 10.0
+- Windows-specific projects use `net10.0-windows10.0.19041.0`
 - Use `win-x64` runtime identifier for Windows-specific builds
 - Build commands: `dotnet build`, `dotnet run`, `dotnet test`
-- Running net9.0 tests needs the .NET 9 runtime; on a newer-only install use
-  `DOTNET_ROLL_FORWARD=LatestMajor` (or install `dotnet-runtime-9.0`)
+- Running net10.0 tests uses the installed .NET 10 runtime — no roll-forward needed
 
 ## Windows-Specific Components
 - TextToSpeechApp uses Windows Media APIs (Windows.Media.SpeechSynthesis)

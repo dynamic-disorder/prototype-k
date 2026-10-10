@@ -22,9 +22,9 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 ### Test Projects
 
 - **OllamaTranslatorApi.Tests** — Unit tests for the Ollama translation API (CsvFileTranslator, OllamaTranslator) — in the solution, 25 tests pass
-- **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app — **not in the solution and currently does not compile** (stale against the refactored `TranslationRequest` API, and needs `InternalsVisibleTo`)
+- **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app (real `TranslateCommand` helpers, `TextFileTranslator`, and `Program.TranslateFileAsync` routing) — in the solution, 31 tests pass
 - **TextToSpeechApp.Tests** — Unit tests for the TTS app — not in the solution; Windows-only target, builds but cannot run on Linux
-- **TranslationTools.Tests** — declared, but contains no test sources
+- **TranslationTools.Tests** — Unit tests for the shared CSV parsing/tooling library — in the solution, 68 tests pass
 
 ## Data File
 
@@ -32,8 +32,8 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 
 ## Requirements
 
-- .NET 9.0 SDK (the .NET 10 SDK also builds the solution)
-- .NET 9.0 runtime to run/test the net9.0 projects — on Arch/Omarchy `sudo pacman -S dotnet-runtime-9.0`, or use `DOTNET_ROLL_FORWARD=LatestMajor`
+- .NET 10.0 SDK
+- .NET 10.0 runtime to run/test the projects (the .NET 10 runtime is installed, so no roll-forward is needed)
 - Windows to *run* `TextToSpeechApp` (uses SAPI/WinRT). It and the whole solution still cross-compile on Linux/macOS thanks to `EnableWindowsTargeting=true` in `Directory.Build.props`.
 - Ollama server running locally (for OllamaTranslatorApp and OllamaTranslatorApi)
 

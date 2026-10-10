@@ -3,7 +3,7 @@
 .NET C# tools for sanitizing filenames to ensure OS compatibility. Contains libraries and console apps for batch filename normalization.
 
 **Core Projects:**
-- **FilenameSanitizer** (`FilenameSanitizer/`) — Library for filename normalization and sanitization (net9.0)
+- **FilenameSanitizer** (`FilenameSanitizer/`) — Library for filename normalization and sanitization (net10.0)
 - **FilenameSanitizerCli** (`FilenameSanitizerCli/`) — Console application for batch filename processing (net10.0)
 - **FilenameSanitizer.Tests** (`FilenameSanitizer.Tests/`) — Unit tests for the library (xUnit, 78 tests)
 
@@ -48,8 +48,8 @@ dotnet test FilenameTools.sln               # 78 tests
 dotnet run --project FilenameSanitizerCli -- <folder> [patterns]
 ```
 
-On a machine without the .NET 9 runtime (e.g. a .NET 10-only install) prefix test/run with
-`DOTNET_ROLL_FORWARD=LatestMajor`, or install it: `sudo pacman -S dotnet-runtime-9.0`.
+Every project targets `net10.0` and the .NET 10 runtime is installed, so `dotnet test`/`dotnet run`
+work directly — no roll-forward or extra runtime install required.
 
 See `.claude/commands/build.md` for the automated build/test command, and
 `../local_dev/analyses/linux-build-audit.md` for the cross-platform build audit.
@@ -57,5 +57,5 @@ See `.claude/commands/build.md` for the automated build/test command, and
 ## Known Issues
 
 - **Pattern mode skips normal filenames.** `FilenameNormalizer.RenameFileRemovingPatternsIfNeeded` calls `ShouldRenameFile`, which gates on `IsFilenameSanitized(originalName)` — true for any already-clean name. So `prefix-test.txt` logs *"already sanitized"* instead of becoming `test.txt`; only files that *also* contain invalid characters get their patterns stripped. Fix is to compare the pattern-stripped name with the original instead of consulting `IsFilenameSanitized`.
-- **CLI targets `net10.0`** while the library and everything else in the repo is `net9.0`, so building the CLI needs the .NET 10 SDK.
+- **All projects target `net10.0`** (the CLI, the library, and the tests), so the whole solution builds with the .NET 10 SDK.
 - **CLI interaction:** the tool prints the log-file path and waits for a keypress, but only when stdin is a TTY (`Console.IsInputRedirected`). Scripted/piped runs exit cleanly instead of throwing.

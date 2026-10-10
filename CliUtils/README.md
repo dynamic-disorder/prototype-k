@@ -1,6 +1,6 @@
 # CliUtils
 
-A shared .NET 9 class library providing enhanced console output utilities for CLI applications across the repository.
+A shared .NET 10 class library providing enhanced console output utilities for CLI applications across the repository.
 
 ## Features
 
@@ -11,8 +11,8 @@ A shared .NET 9 class library providing enhanced console output utilities for CL
 
 ## Dependencies
 
-- .NET 9.0
-- Spectre.Console 0.49.1
+- .NET 10.0
+- Spectre.Console 0.57.2
 
 ## Usage
 

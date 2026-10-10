@@ -13,7 +13,7 @@ description: Build the FilenameTools solution and all projects
 ## Project Structure
 
 The solution contains these projects:
-- FilenameSanitizer (library for filename normalization, net9.0)
+- FilenameSanitizer (library for filename normalization, net10.0)
 - FilenameSanitizerCli (console application for batch processing, net10.0)
 - FilenameSanitizer.Tests (unit tests, 78 tests)
 
@@ -34,5 +34,4 @@ The library directory is `FilenameSanitizer/` (lowercase `n`) — on Linux a
 ## Next Steps
 After building, test the CLI with: `dotnet run --project FilenameSanitizerCli -- .`
 
-Tests need the .NET 9 runtime; on a newer-only install prefix with
-`DOTNET_ROLL_FORWARD=LatestMajor`.
+Tests use the installed .NET 10 runtime — no roll-forward needed.

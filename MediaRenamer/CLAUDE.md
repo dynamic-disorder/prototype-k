@@ -9,7 +9,7 @@ Services, and WpfApp.
 | Project | Path | Type | Notes |
 | :------ | :--- | :--- | :---- |
 | **Models** | `Models/` | Library | Data models (MediaFileInfo, RenamePlanItem) |
-| **Services** | `Services/` | Library | Metadata extraction (EXIF via MetadataExtractor 2.9.0), file renaming |
+| **Services** | `Services/` | Library | Metadata extraction (EXIF via MetadataExtractor 2.9.3), file renaming |
 | **WpfApp** | `WpfApp/` | WPF app | Main UI (MainWindow.xaml), references Models + Services |
 
 ## Commands
@@ -20,11 +20,11 @@ Services, and WpfApp.
 
 ## Conventions
 
-Targets **net8.0-windows** (this project is intentionally on .NET 8, NOT .NET 9 —
-the rest of the repo uses .NET 9). WPF + Windows Forms are enabled.
+Targets **net10.0-windows** (this project is on .NET 10, aligned with the rest of the
+repo). WPF + Windows Forms are enabled.
 
 **Cross-platform build (verified 2026-10-10):** all three projects build in Debug and
-Release on Linux. The `net8.0-windows` targeting pack comes from NuGet and WPF's XAML
+Release on Linux. The `net10.0-windows` targeting pack comes from NuGet and WPF's XAML
 compiler runs cross-platform because `EnableWindowsTargeting=true` is set in the
 repository-root `Directory.Build.props`. Running the app still requires Windows — on
 Linux `dotnet run --project WpfApp` will fail at launch, not at build.

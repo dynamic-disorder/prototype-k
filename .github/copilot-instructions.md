@@ -42,7 +42,7 @@
 - Put shareable local helpers, analyses, tooling, scripts, and documentation in `local_dev/` (not git-ignored)
 - Keep ephemeral or user-specific files in `local_user_files/` (git-ignored)
 - These folders exist at repository root; use them for appropriate content
-- Note: Some project builds require the .NET 9 SDK or .NET 9 targeting pack, especially Windows-specific `net9.0-windows10.0.19041.0` apps such as `TextToSpeechApp`.
+- Note: Some project builds require the .NET 10 SDK or .NET 10 targeting pack, especially Windows-specific `net10.0-windows10.0.19041.0` apps such as `TextToSpeechApp`.
 - Cross-platform builds are mandatory: every solution must also build on Linux (Omarchy/Arch). Windows-targeted projects (WPF, `net*-windows`) cross-compile because `EnableWindowsTargeting=true` is set in `Directory.Build.props`, and a wrong-case `ProjectReference` is silently skipped during restore on case-sensitive filesystems. Run `./local_dev/scripts/build-all-linux.sh --test` to build/test every solution; details in `local_dev/analyses/linux-build-audit.md`.
 
 ### GIT commit

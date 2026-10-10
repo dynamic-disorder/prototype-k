@@ -33,7 +33,7 @@ paths:
 - Patterns format: `prefix-` or `_old`
 
 ## .NET Development
-- Target framework: .NET 9.0 (the CLI is on .NET 10.0)
+- Target framework: .NET 10.0 (the CLI, library, and tests all target `net10.0`)
 - Build commands: `dotnet build`, `dotnet run`, `dotnet test`
 - Console app: `FilenameSanitizerCli`
 

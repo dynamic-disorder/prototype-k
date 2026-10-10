@@ -10,7 +10,7 @@ MediaRenamer.sln
 │   ├── Models/                  # Data models for file metadata, renaming rules
 │   └── Services/                # Metadata extraction services (EXIF, timestamps)
 │
-└── MediaRenamer.Wpf/            # WPF client application (.NET 8.0 Windows App SDK or .NET WinForms-style hybrid if needed)
+└── MediaRenamer.Wpf/            # WPF client application (.NET 10.0 Windows desktop, or .NET WinForms-style hybrid if needed)
     ├── App.xaml                 # Application startup and window navigation logic
     └── MainWindow.xaml          # Main user interface layout with renaming controls, file list view
 

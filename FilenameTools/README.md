@@ -1,6 +1,6 @@
 # FilenameTools
 
-A cross-platform .NET 9 utility for sanitizing filenames — removes or replaces problematic characters, trims whitespace, normalizes casing, and replaces special Unicode characters with ASCII equivalents.
+A cross-platform .NET 10 utility for sanitizing filenames — removes or replaces problematic characters, trims whitespace, normalizes casing, and replaces special Unicode characters with ASCII equivalents.
 
 ## Structure
 
@@ -30,7 +30,7 @@ Command-line entry point that accepts file/directory paths and applies sanitizat
 # Build
 dotnet build FilenameTools.sln          # -c Release also works
 
-# Test (78 tests; needs the .NET 9 runtime or DOTNET_ROLL_FORWARD=LatestMajor)
+# Test (78 tests; uses the installed .NET 10 runtime)
 dotnet test FilenameTools.sln
 
 # Run CLI — optional patterns are semicolon-separated

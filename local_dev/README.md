@@ -26,9 +26,8 @@ Builds every `.sln` in the repository on Linux/macOS and prints a per-solution s
 **Notes**:
 - Windows-only targets (WPF, `net*-windows`) still compile — `EnableWindowsTargeting=true`
   is set in `Directory.Build.props`. They remain unrunnable on Linux.
-- If no .NET 9 runtime is installed it automatically exports
-  `DOTNET_ROLL_FORWARD=LatestMajor` so the net9.0 test hosts can start
-  (`sudo pacman -S dotnet-runtime-9.0` avoids the fallback).
+- Every project targets `net10.0` and the .NET 10 runtime is installed, so the test
+  hosts start directly — no `DOTNET_ROLL_FORWARD` fallback is needed.
 - Covers solutions only. `CsvTranslations/OllamaTranslatorApp.Tests` and
   `CsvTranslations/TextToSpeechApp.Tests` are not part of any solution and must be
   built from their `.csproj` paths.

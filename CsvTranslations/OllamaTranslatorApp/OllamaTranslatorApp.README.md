@@ -9,7 +9,7 @@ The OllamaTranslatorApp processes CSV files containing translation entries, send
 ## Prerequisites
 
 ### **Required Software**
-- **.NET 9 SDK** - The application targets `net9.0`
+- **.NET 10 SDK** - The application targets `net10.0`
 - **Ollama** - Local AI inference server (https://ollama.com)
 - **Windows, macOS, or Linux** (cross-platform .NET console app)
 
@@ -45,7 +45,7 @@ dotnet run input.csv output.csv
 dotnet run --folder my_csv_files
 
 # Run built executable
-.\bin\Debug\net9.0\OllamaTranslatorApp.exe input.csv output.csv
+.\bin\Debug\net10.0\OllamaTranslatorApp.exe input.csv output.csv
 ```
 
 ### **Publish for distribution**
@@ -178,7 +178,7 @@ dotnet run -- input.csv output.csv
 dotnet build -c Release
 
 # Run release version
-.\bin\Release\net9.0\OllamaTranslatorApp.exe input.csv output.csv
+.\bin\Release\net10.0\OllamaTranslatorApp.exe input.csv output.csv
 ```
 
 ## Features

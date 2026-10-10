@@ -15,7 +15,7 @@
 
 **Key Features:** CSV-based storage, offline AI translation via Ollama, Windows TTS, batch processing, modular architecture.
 
-**Usage:** Build with `dotnet build`, run individual apps with `dotnet run`. Requires .NET 9.0, Windows for TTS, and local Ollama instance for AI translation.
+**Usage:** Build with `dotnet build`, run individual apps with `dotnet run`. Requires .NET 10.0, Windows for TTS, and local Ollama instance for AI translation.
 
 ## Building
 
@@ -24,20 +24,25 @@ The solution is **`CsvTranslations.sln`** (in this directory).
 ```bash
 cd CsvTranslations
 dotnet build CsvTranslations.sln            # or -c Release
-dotnet test  CsvTranslations.sln            # OllamaTranslatorApi.Tests: 25 tests
+dotnet test  CsvTranslations.sln            # 124 tests: 25 + 68 + 31
 ```
 
 - **Windows-targeted projects cross-compile.** `TextToSpeechApp` targets
-  `net9.0-windows10.0.19041.0` with `RuntimeIdentifier=win-x64` (see
+  `net10.0-windows10.0.19041.0` with `RuntimeIdentifier=win-x64` (see
   `Directory.Build.TTS.props`). `Directory.Build.props` sets
   `EnableWindowsTargeting=true`, so the whole solution restores and builds on
   Linux/macOS — but the TTS app still only *runs* on Windows.
+- **`TextToSpeechCore` targets `net10.0-windows`** (not plain `net10.0`). Since
+  NAudio 3.0 the monolithic package is split per platform and `NAudio.WinMM`
+  (home of the `WaveOut` playback class) only ships a Windows TFM, so the library
+  must be Windows-targeted to consume it. Its only consumers are Windows-targeted
+  too, and playback was already Windows-only at runtime.
 - **`NETSDK1100`** ("To build a project targeting Windows on this operating
   system, set the EnableWindowsTargeting property") means that property was lost
-  from `Directory.Build.props`. `NETSDK1127` means the .NET 9 targeting pack is
-  missing; a newer SDK alone does not guarantee `net9.0` build support.
-- **Running net9.0 tests** needs the .NET 9 runtime. On a .NET 10-only install
-  use `DOTNET_ROLL_FORWARD=LatestMajor` or `sudo pacman -S dotnet-runtime-9.0`.
+  from `Directory.Build.props`. `NETSDK1127` means the .NET 10 targeting pack is
+  missing; the installed SDK must be new enough to support `net10.0`.
+- **Running net10.0 tests** needs only the .NET 10 runtime, which is already
+  installed — everything targets `net10.0`, so no roll-forward is required.
 
 ## Project Dependencies
 
@@ -46,21 +51,21 @@ dotnet test  CsvTranslations.sln            # OllamaTranslatorApi.Tests: 25 test
 - **TextToSpeechApp**: Windows-only at runtime (uses Windows.Media.SpeechSynthesis); depends on `TextToSpeechCore` (PiperSharp + NAudio)
 - Test projects: xUnit-based unit tests
 
-## Test project status (audited 2026-10-10)
+## Test project status (updated 2026-10-10, after the .NET 10 migration fixes)
 
-Only **`OllamaTranslatorApi.Tests`** is wired into the solution and green (25 tests).
-The other test projects need attention:
+All test projects now build clean (0 warnings) and the three that can run on Linux are green:
 
 | Project | In `CsvTranslations.sln` | Status |
 | :------ | :----------------------- | :----- |
 | `OllamaTranslatorApi.Tests` | yes | 25/25 pass |
-| `TranslationTools.Tests` | yes | **contains no test sources at all** — `dotnet test` reports "No test is available" |
-| `OllamaTranslatorApp.Tests` | **no** | **does not compile (36 errors)** — stale against the refactored API (`TranslationRequest` has no `SourcePath`/`TargetPath`; it is now `TranslationRequest(Text, Prompt, Semantics)`), plus 14× `'Program' is inaccessible` because `OllamaTranslatorApp.csproj` lacks the `InternalsVisibleTo("OllamaTranslatorApp.Tests")` that `TextToSpeechApp.csproj` declares |
+| `TranslationTools.Tests` | yes | 68/68 pass (was an empty project with no test sources) |
+| `OllamaTranslatorApp.Tests` | yes | 31/31 pass (was 36 compile errors; now added to the solution) |
 | `TextToSpeechApp.Tests` | **no** | builds (Windows-only target, cannot run on Linux) |
 
-Because two of them are outside the solution, `dotnet build`/`dotnet test` on
-`CsvTranslations.sln` never covers them — build them explicitly with their
-`.csproj` paths.
+`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **124 tests**
+(25 + 68 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
+adding it would make `dotnet test` try to *execute* a `net10.0-windows…`/`win-x64`
+assembly on Linux. Build it explicitly with its `.csproj` path.
 
 ## CSV Format
 
@@ -89,13 +94,13 @@ See `.claude/commands/build.md` for automated build/test command.
 
 Use Claude Code slash commands for distribution:
 
-- **`/publish-net9`** — Publish supported apps as self-contained `.exe` bundles
-  - Creates standalone executable files with bundled .NET 9 runtime
-  - Larger file sizes but no .NET 9 installation required on target machines
-  - Output: `bin\Release\net9.0-windows10.0.19041.0\win-x64\publish\<app>.exe` for each project
+- **`/publish-net10`** — Publish supported apps as self-contained `.exe` bundles
+  - Creates standalone executable files with bundled .NET 10 runtime
+  - Larger file sizes but no .NET 10 installation required on target machines
+  - Output: `bin\Release\net10.0-windows10.0.19041.0\win-x64\publish\<app>.exe` for each project
 
-- **`/install-net9-runtime`** — Install .NET 9 runtime on target machines
+- **`/install-net10-runtime`** — Install .NET 10 runtime on target machines
   - Semi-automatic installer for end-user deployment
-  - Smaller distribution size; requires .NET 9 to be installed before running apps
+  - Smaller distribution size; requires .NET 10 to be installed before running apps
 
-These commands wrap PowerShell scripts in the repository root (`publish-net9-selfcontained.ps1` and `install-net9-runtime.ps1`).
+These commands wrap PowerShell scripts in the repository root (`publish-net10-selfcontained.ps1` and `install-net10-runtime.ps1`).

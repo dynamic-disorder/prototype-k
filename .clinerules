@@ -22,7 +22,7 @@
 - Follow `.editorconfig` for code formatting
 
 ## Build System
-- .NET 9.0 projects
+- .NET 10.0 projects
 - Build with `dotnet build` using solution files in subdirectories
 - Use VS Code tasks in `.vscode/tasks.json` for common operations
 

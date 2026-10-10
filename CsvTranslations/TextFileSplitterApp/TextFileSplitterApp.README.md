@@ -103,7 +103,7 @@ dotnet run "input.txt" 1000
 
 ### Run compiled executable
 ```powershell
-.\bin\Debug\net9.0\TextFileSplitterApp.exe "input.txt" 500 --csv
+.\bin\Debug\net10.0\TextFileSplitterApp.exe "input.txt" 500 --csv
 ```
 
 ## Example Session

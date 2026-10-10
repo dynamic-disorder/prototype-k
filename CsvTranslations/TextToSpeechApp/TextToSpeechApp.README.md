@@ -5,7 +5,7 @@ A Windows console application that reads translation entries from CSV files alou
 ## Prerequisites
 
 ### **Required Software**
-- **.NET 9 SDK** - The application targets `net9.0-windows10.0.19041.0`
+- **.NET 10 SDK** - The application targets `net10.0-windows10.0.19041.0`
 - **Windows 10 or newer** (build 19041+) - Required for Windows SAPI/WinRT integration
 - **64-bit Windows** - Application is compiled for `win-x64` runtime
 
@@ -13,9 +13,9 @@ A Windows console application that reads translation entries from CSV files alou
 - Windows 10 version 19041 (May 2020 Update) or later
 - **Windows provider**: Windows Speech Platform voices installed (check Windows Settings → Time & Language → Speech)
 - **Piper provider**: Voice models and Piper engine are downloaded automatically on first run
-- Sufficient disk space for .NET 9 runtime and Piper voice models
+- Sufficient disk space for .NET 10 runtime and Piper voice models
 
-## Why Windows 10+ and .NET 9?
+## Why Windows 10+ and .NET 10?
 
 This application can use either:
 - **Windows.Media.SpeechSynthesis** from the **Windows Runtime (WinRT)** API, which is only available on Windows 10 build 19041 and newer
@@ -192,7 +192,7 @@ The `csv_files/` directory contains several pre-populated translation files:
 
 ### **Project Configuration**
 ```xml
-<TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
 <UseWinRT>true</UseWinRT>
 <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 ```
@@ -201,9 +201,10 @@ The `csv_files/` directory contains several pre-populated translation files:
 - `TranslationTools` project (shared library for CSV parsing)
 - `TextToSpeechCore` project (shared TTS interfaces and Piper implementation)
 - `CliUtils` project (console utilities)
-- `Microsoft.Extensions.DependencyInjection` (v10.0.3)
+- `Microsoft.Extensions.DependencyInjection` (v10.0.12)
 - Windows WinRT APIs (provided by Windows)
-- PiperSharp (v1.0.6) — local neural TTS engine
+- PiperSharp (v1.0.7) — local neural TTS engine
+- NAudio (v3.1.0) — audio playback
 
 ### **Voice Selection**
 The application matches CSV language headers to configured voices:
@@ -229,14 +230,14 @@ The application matches CSV language headers to configured voices:
 - **Piper provider**: The language may not have a configured voice in settings.json — add a PiperVoices entry
 
 ### **Build errors about WinRT**
-- Ensure you have .NET 9 SDK installed
+- Ensure you have .NET 10 SDK installed
 - Verify Windows 10 version 19041 or newer
 - Check that `UseWinRT` property is enabled in csproj
 
 ### **Application crashes on startup**
 - Run as Administrator if experiencing permission issues
 - Check Windows Speech services are running
-- Verify .NET 9 runtime is installed
+- Verify .NET 10 runtime is installed
 
 ### **Piper provider not working**
 - Check that `TtsProvider` is set to `"Piper"` in settings.json
