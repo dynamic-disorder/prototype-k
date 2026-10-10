@@ -322,8 +322,8 @@ Get-ChildItem -Path ".\input_data" -Filter "*.csv" | ForEach-Object {
 ### **Building from Source**
 ```powershell
 # Clone repository
-git clone https://github.com/khryo-makhina/public.git
-cd public\translations_csv\OllamaTranslatorApp
+git clone https://github.com/dynamic-disorder/prototype-k.git
+cd prototype-k\CsvTranslations\OllamaTranslatorApp
 
 # Restore dependencies
 dotnet restore
