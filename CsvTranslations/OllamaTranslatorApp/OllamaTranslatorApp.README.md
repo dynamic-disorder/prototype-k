@@ -79,6 +79,15 @@ Example:
   OllamaTranslatorApp story.txt story.translated.txt
 ```
 
+### **Argument validation (fail fast)**
+
+Parameters are validated before any file is touched, so an invalid invocation
+prints `Error: ...` and exits with a non-zero code without translating anything:
+
+- Supply **either** `source_file` `target_file` **or** `--folder <folder_path>` — supplying both is an error.
+- Both positional arguments are required when `--folder` is not used.
+- The source file (or the folder) must exist.
+
 ## CSV File Format
 
 The input CSV file must contain the header row with the following columns: "SourceText" and "TargetText". Optional columns "Hashtags" and "Semantics" can be included to provide additional context for translation.
@@ -195,9 +204,10 @@ dotnet build -c Release
 - Progress indicators for each file
 
 ### **Error Handling**
-- Validates CSV file existence and format
+- Validates every parameter up front and **exits with a non-zero code before translating anything** when they are invalid
+- Validates source file existence and format
 - Checks Ollama API connectivity
-- Continues processing other files if one fails
+- Continues processing other files if a single translation fails at runtime
 - Detailed error messages for troubleshooting
 
 ### **UTF-8 Support**
@@ -206,7 +216,7 @@ dotnet build -c Release
 
 ## How It Works
 
-1. **Input Validation**: Checks if source CSV file exists and has correct format
+1. **Input Validation**: Rejects invalid parameters and missing source files up front (fail fast); checks format
 2. **CSV Parsing**: Reads "SourceText" column from input file
 3. **AI Translation**: Sends each text to Ollama API with configured prompt
 4. **Response Parsing**: Extracts translation and hashtags from Ollama response
@@ -221,9 +231,15 @@ dotnet build -c Release
 - Verify CSV files have .csv extension
 
 ### **"Error: Source file does not exist."**
+- The run aborts immediately with a non-zero exit code; nothing is translated
 - Verify file path is correct
 - Use absolute paths if unsure
 - Check file permissions
+
+### **Invalid arguments (fail fast)**
+- Invalid argument combinations are rejected before anything is translated, with a non-zero exit code
+- Supply exactly one mode: `source_file` `target_file`, or `--folder <folder_path>`
+- Both positional arguments are required when `--folder` is not used
 
 ### **"Error connecting to Ollama API"**
 - Ensure Ollama is running (`ollama serve` or Ollama desktop app)

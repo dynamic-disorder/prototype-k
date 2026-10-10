@@ -1,6 +1,7 @@
 using OllamaTranslatorApi.Core;
 
 using Shouldly;
+using Spectre.Console;
 
 namespace OllamaTranslatorApp.Tests;
 
@@ -147,6 +148,70 @@ public sealed class ProgramTests
             new TranslateSettings { Folder = workspace.Combine("does-not-exist") });
 
         requests.ShouldBeEmpty();
+    }
+
+    // ------------------------------------------------------------------ TranslateSettings.Validate
+
+    [Fact]
+    public void Validate_SourceAndTargetProvided_ReturnsSuccess()
+    {
+        // Given: a complete source/target pair and no folder
+        var sut = new TranslateSettings { Source = "input.csv", Target = "output.csv" };
+
+        // When: the settings validate themselves
+        ValidationResult result = sut.Validate();
+
+        // Then: the pair is accepted
+        result.Successful.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Validate_FolderProvidedAlone_ReturnsSuccess()
+    {
+        // Given: a folder and no positional file pair
+        var sut = new TranslateSettings { Folder = "some-folder" };
+
+        // When: the settings validate themselves
+        ValidationResult result = sut.Validate();
+
+        // Then: folder mode is accepted
+        result.Successful.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("", "", null)]
+    [InlineData("only-source.csv", "", null)]
+    [InlineData("", "only-target.csv", null)]
+    [InlineData("", "", "")]
+    [InlineData("", "", "   ")]
+    public void Validate_NoFolderAndIncompleteFilePair_ReturnsError(string source, string target, string? folder)
+    {
+        // Given: neither a folder nor a complete source/target pair
+        var sut = new TranslateSettings { Source = source, Target = target, Folder = folder };
+
+        // When: the settings validate themselves
+        ValidationResult result = sut.Validate();
+
+        // Then: the parameters are rejected with an actionable message
+        result.Successful.ShouldBeFalse();
+        result.Message.ShouldNotBeNullOrWhiteSpace();
+    }
+
+    [Theory]
+    [InlineData("source.csv", "")]
+    [InlineData("", "target.csv")]
+    [InlineData("source.csv", "target.csv")]
+    public void Validate_FolderAndFileArgumentsTogether_ReturnsError(string source, string target)
+    {
+        // Given: a folder combined with positional file arguments
+        var sut = new TranslateSettings { Source = source, Target = target, Folder = "some-folder" };
+
+        // When: the settings validate themselves
+        ValidationResult result = sut.Validate();
+
+        // Then: the ambiguous combination is rejected
+        result.Successful.ShouldBeFalse();
+        result.Message.ShouldNotBeNullOrWhiteSpace();
     }
 
     // ------------------------------------------------------------------------ TranslateFileAsync

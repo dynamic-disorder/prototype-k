@@ -38,36 +38,76 @@ internal sealed class Program
 
 public sealed class TranslateSettings : CommandSettings
 {
-    [CommandArgument(0, "source file")]
+    /// <summary>Source file to translate. Required unless <c>--folder</c> is supplied.</summary>
+    [CommandArgument(0, "[source_file]")]
+    [Description("Path to the input file to translate (CSV, TXT, MD, TEXT).")]
     public string Source { get; init; } = string.Empty;
 
-    [CommandArgument(1, "target file")]
+    /// <summary>File the translation is written to. Required unless <c>--folder</c> is supplied.</summary>
+    [CommandArgument(1, "[target_file]")]
+    [Description("Path where the translated file is written.")]
     public string Target { get; init; } = string.Empty;
 
+    /// <summary>Folder whose supported files are all translated. Mutually exclusive with the source/target pair.</summary>
     [CommandOption("-f|--folder")]
     [Description("Translate all supported files inside the specified folder.")]
     public string? Folder { get; init; }
 
+    /// <summary>
+    ///     Validates the parameter combination before any work begins. Either
+    ///     <c>&lt;source_file&gt; &lt;target_file&gt;</c> or <c>--folder</c> must be supplied, never both.
+    /// </summary>
+    /// <returns>A success result, or an error describing the invalid combination.</returns>
     public override ValidationResult Validate()
     {
-        if (!string.IsNullOrWhiteSpace(Folder))
+        var hasFolder = !string.IsNullOrWhiteSpace(Folder);
+        var hasSource = !string.IsNullOrWhiteSpace(Source);
+        var hasTarget = !string.IsNullOrWhiteSpace(Target);
+
+        if (hasFolder)
         {
+            if (hasSource || hasTarget)
+            {
+                return ValidationResult.Error("Specify either <source_file> <target_file> or --folder, not both.");
+            }
+
             return ValidationResult.Success();
         }
 
-        // Source and Target are required CommandArguments, validation is done by Spectre.Console
+        if (!hasSource || !hasTarget)
+        {
+            return ValidationResult.Error("Both <source_file> and <target_file> are required unless --folder is used.");
+        }
+
         return ValidationResult.Success();
     }
 }
 
 public sealed class TranslateCommand : AsyncCommand<TranslateSettings>
 {
+    /// <summary>
+    ///     Expands the validated parameters into file requests and translates them. Every request is
+    ///     checked before any Ollama work starts, so an invalid parameter aborts the whole run
+    ///     instead of being silently skipped once the progress display is already running.
+    /// </summary>
+    /// <param name="context">The command context provided by Spectre.Console.</param>
+    /// <param name="settings">The parsed command-line settings.</param>
+    /// <param name="cancellationToken">Token that cancels the run.</param>
+    /// <returns><c>0</c> when every request was processed; <c>-1</c> when a parameter is invalid.</returns>
     public override async Task<int> ExecuteAsync(CommandContext context, TranslateSettings settings, CancellationToken cancellationToken)
     {
         var translationRequests = BuildTranslationFileRequests(settings);
         if (translationRequests.Count == 0)
         {
             AnsiConsole.MarkupLine("[red]Error:[/] No valid translation requests found.");
+            return -1;
+        }
+
+        var invalidRequestCount = translationRequests.Count(request => !ValidateTranslationFileRequest(request));
+        if (invalidRequestCount > 0)
+        {
+            AnsiConsole.MarkupLine(
+                $"[red]Error:[/] {invalidRequestCount} of {translationRequests.Count} file(s) failed validation; nothing was translated.");
             return -1;
         }
 
