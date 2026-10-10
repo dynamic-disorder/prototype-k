@@ -261,7 +261,7 @@ most of the open issues above.
 | 1 | `OllamaTranslatorApp.Tests` did not compile (36 errors) | Rewritten against the real API; **31/31 pass** |
 | 3 | `TranslationTools.Tests` had no test sources | **81 real tests**, all pass |
 | 4 | No .NET 9 runtime installed | N/A — everything targets `net10.0`, which *is* installed; no roll-forward needed |
-| 5 | `FilenameSanitizerCli` was the only `net10.0` project | Repo is uniformly `net10.0` (`net10.0-windows` for MediaRenamer/TextToSpeechCore, `net10.0-windows10.0.19041.0` for the WinRT TTS app) |
+| 5 | `FilenameSanitizerCli` was the only `net10.0` project | Repo is uniformly `net10.0` (`net10.0-windows` for MediaRenamer, `net10.0-windows10.0.19041.0` for the WinRT TTS app) |
 | 6 | Two test projects outside `CsvTranslations.sln` | `OllamaTranslatorApp.Tests` **added** to the solution; `TextToSpeechApp.Tests` deliberately still out (see below) |
 
 Target frameworks after the migration:
@@ -270,7 +270,7 @@ Target frameworks after the migration:
 | :--------- | :-- |
 | CliUtils, all CsvTranslations libs/apps, FilenameTools | `net10.0` |
 | `MediaRenamer` (Models/Services/WpfApp) | `net10.0-windows` |
-| `TextToSpeechCore` | `net10.0-windows` |
+| `TextToSpeechCore` | `net10.0` |
 | `TextToSpeechApp`, `TextToSpeechApp.Tests` | `net10.0-windows10.0.19041.0` |
 
 Notable package work:
@@ -279,17 +279,17 @@ Notable package work:
   the same `Microsoft.Windows.SDK.NET.Ref 10.0.19041.57` projection pack, so
   `Windows.Media.SpeechSynthesis` needed no code changes.
 - **NAudio 2.2.1 → 3.1.0.** NAudio 3.x split the monolithic package per platform and
-  `NAudio.WinMM` (which holds the playback class) only ships a Windows TFM, so
-  `TextToSpeechCore` had to become `net10.0-windows`, and the renamed
+  `NAudio.WinMM` (which holds the playback class) only ships a Windows TFM, so the renamed
   `WaveOutEvent` → `WaveOut` API was adopted (`WaveOutEvent` survives only as `[Obsolete]`).
   PiperSharp 1.0.7 was verified member-by-member to still bind against NAudio 3.1.0.
 
-  **This TFM widening is a workaround, not a design requirement, and should not be
-  widened further.** Only our own `new WaveOut()` playback call needs Windows —
-  PiperSharp's synthesis and `WaveFileReader` are platform-neutral. The intended fix
-  is to refactor rather than align: put playback behind an interface owned by
-  `TextToSpeechCore` and move the NAudio implementation into `TextToSpeechApp`
-  (already Windows-targeted), which lets `TextToSpeechCore` return to `net10.0`.
+  Rather than widen `TextToSpeechCore`'s target framework to match the package, playback was
+  **refactored out**: the library owns an `IAudioPlayback` interface, and `TextToSpeechApp`
+  (already Windows-targeted) supplies the NAudio `WaveOut` implementation
+  (`NaudioWavPlayback`). `TextToSpeechCore` therefore stays `net10.0` and no longer references
+  NAudio at all — verified by compiling a plain `net10.0` consumer against it. General lesson:
+  when a dependency's *packaging* pushes a platform constraint into a library, prefer
+  refactoring the seam over widening the target.
 - `PiperSharp` 1.0.7 also lifts transitive `SharpCompress` 0.36.0 → 0.50.1, clearing `NU1902`.
 - `Spectre.Console(.Cli)` 0.49.1 → 0.57.2 required adding a `CancellationToken` parameter to
   `AsyncCommand<T>.ExecuteAsync` overrides.

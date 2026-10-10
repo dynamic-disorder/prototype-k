@@ -31,7 +31,7 @@ internal static class TtsServiceFactory
         // The dictionary key is the provider name — check if it's "Piper"
         if (settings.TtsProvider.Equals("Piper", StringComparison.OrdinalIgnoreCase))
         {
-            return new PiperTextToSpeechService(voiceLanguages, config.PiperVoices, rowEntries);
+            return new PiperTextToSpeechService(voiceLanguages, config.PiperVoices, new NaudioWavPlayback(), rowEntries);
         }
 
         return new WindowsTextToSpeechService(voiceLanguages, rowEntries);

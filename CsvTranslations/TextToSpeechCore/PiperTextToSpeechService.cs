@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using NAudio.Wave;
-
 using PiperSharp;
 using PiperSharp.Models;
 
@@ -17,12 +15,14 @@ namespace TextToSpeechCore;
 ///     configured voice models on first use, caching them locally per PiperSharp's own conventions.
 ///     Optionally selects a specific speaker for each configured language via the model's
 ///     <c>speaker_id_map</c> (<c>*.onnx.json</c>) and passes it to piper as <c>--speaker <id></c>.
-///     Playback relies on NAudio's <see cref="WaveOut"/>, which is Windows-only at runtime.
+///     Synthesized audio is played through an injected <see cref="IAudioPlayback"/>, so this class
+///     itself stays platform-neutral.
 /// </summary>
 public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
 {
     private readonly Dictionary<string, PiperProvider> _providers = new();
     private readonly IReadOnlyDictionary<string, PiperVoiceConfig> _voicesByLanguageName;
+    private readonly IAudioPlayback _audioPlayback;
     private readonly List<TextEntryRow>? _rowEntries;
 
     /// <summary>
@@ -33,14 +33,20 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
     ///     Maps <see cref="VoiceLanguage.LanguageName"/> to a detailed <see cref="PiperVoiceConfig"/>
     ///     (language code, model card, quality, optional speaker).
     /// </param>
+    /// <param name="audioPlayback">
+    ///     The platform-specific playback used to play synthesized WAV audio. Injected so this
+    ///     library does not have to reference a Windows-only audio package.
+    /// </param>
     /// <param name="rowEntries">The translation entry rows this service may be asked to speak.</param>
     public PiperTextToSpeechService(
         VoiceLanguageList voiceLanguages,
         IReadOnlyDictionary<string, PiperVoiceConfig> voicesByLanguageName,
+        IAudioPlayback audioPlayback,
         List<TextEntryRow>? rowEntries = null)
     {
         VoiceLanguages = voiceLanguages;
         _voicesByLanguageName = voicesByLanguageName;
+        _audioPlayback = audioPlayback;
         _rowEntries = rowEntries;
     }
 
@@ -189,15 +195,7 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
         byte[] wav = await provider.InferAsync(text, AudioOutputType.Wav);
 
         using var stream = new MemoryStream(wav);
-        using var reader = new WaveFileReader(stream);
-        using var output = new WaveOut();
-        var playbackFinished = new TaskCompletionSource<bool>();
-
-        output.PlaybackStopped += (_, _) => { playbackFinished.TrySetResult(true); };
-        output.Init(reader);
-        output.Play();
-
-        await playbackFinished.Task;
+        await _audioPlayback.PlayWavAsync(stream);
     }
 
     /// <summary>

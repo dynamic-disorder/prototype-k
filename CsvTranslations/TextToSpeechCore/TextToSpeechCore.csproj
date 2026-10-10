@@ -3,17 +3,15 @@
     <!-- Project-specific properties only -->
     <RootNamespace>TextToSpeechCore</RootNamespace>
 
-    <!-- Playback uses NAudio's WinMM WaveOut player. Since NAudio 3.0 the monolithic
-         NAudio package was split per platform and NAudio.WinMM only ships a Windows
-         TFM, so this library must target Windows to consume it. Its only consumers
-         (TextToSpeechApp and TextToSpeechApp.Tests) are Windows-targeted anyway, and
-         playback was already Windows-only at runtime. -->
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Deliberately platform-neutral. Synthesizing audio via PiperSharp works anywhere
+         Piper runs; only playback is OS-specific, so it is injected as IAudioPlayback and
+         implemented by the consuming app. Do not widen this target to satisfy an audio
+         package (see CsvTranslations/CLAUDE.md). -->
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="PiperSharp" />
-    <PackageReference Include="NAudio" />
   </ItemGroup>
 
   <ItemGroup>

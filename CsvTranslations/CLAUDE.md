@@ -32,18 +32,15 @@ dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
   `Directory.Build.TTS.props`). `Directory.Build.props` sets
   `EnableWindowsTargeting=true`, so the whole solution restores and builds on
   Linux/macOS — but the TTS app still only *runs* on Windows.
-- **`TextToSpeechCore` targets `net10.0-windows`** (not plain `net10.0`). Since
-  NAudio 3.0 the monolithic package is split per platform and `NAudio.WinMM`
-  (home of the `WaveOut` playback class) only ships a Windows TFM, so the library
-  must be Windows-targeted to consume it. Its only consumers are Windows-targeted
-  too, and playback was already Windows-only at runtime.
-  - **This is a workaround for NAudio's packaging, not a design requirement.**
-    Only our own playback call (`new WaveOut()` in `PiperTextToSpeechService`)
-    needs Windows — PiperSharp's synthesis and `WaveFileReader` are
-    platform-neutral. To restore `net10.0` rather than keep bending the TFM, the
-    intended refactor is to put playback behind an interface owned by
-    `TextToSpeechCore` and move the NAudio implementation into the already-Windows
-    `TextToSpeechApp`. Prefer that over widening this library's target further.
+- **`TextToSpeechCore` stays `net10.0` (platform-neutral).** PiperSharp synthesis works
+  anywhere Piper runs, so only *playback* is OS-specific. It is injected as
+  `IAudioPlayback`; `TextToSpeechApp` supplies the NAudio `WaveOut` implementation
+  (`NaudioWavPlayback`).
+  - This is deliberate: NAudio 3.0 split the monolithic package per platform and
+    `NAudio.WinMM` (home of `WaveOut`) only ships a Windows TFM. Rather than widen
+    this library's target framework to match the package, the Windows-only
+    dependency lives in the app. **Prefer refactoring like this over widening the
+    TFM** — and keep `NAudio` off `TextToSpeechCore`.
 - **`NETSDK1100`** ("To build a project targeting Windows on this operating
   system, set the EnableWindowsTargeting property") means that property was lost
   from `Directory.Build.props`. `NETSDK1127` means the .NET 10 targeting pack is
@@ -55,7 +52,7 @@ dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
 
 - **TranslationTools**: Core library for CSV handling
 - **OllamaTranslatorApi**: Requires local Ollama instance (see `ai_offline/`)
-- **TextToSpeechApp**: Windows-only at runtime (uses Windows.Media.SpeechSynthesis); depends on `TextToSpeechCore` (PiperSharp + NAudio)
+- **TextToSpeechApp**: Windows-only at runtime (uses Windows.Media.SpeechSynthesis). Depends on `TextToSpeechCore` (PiperSharp, platform-neutral) and, directly, on `NAudio` for the WinMM playback implementation it injects.
 - Test projects: xUnit-based unit tests
 
 ## Test project status (updated 2026-10-10, after the .NET 10 migration fixes)
