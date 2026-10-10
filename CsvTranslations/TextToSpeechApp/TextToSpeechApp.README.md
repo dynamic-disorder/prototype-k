@@ -255,8 +255,10 @@ Available voices:
 - Microsoft Heera Desktop (en)
 Using voice: Microsoft David Desktop for language: en
 Loaded entries: 150
-Starting text-to-speech for translation entries. Press Ctrl+C or ESC to stop.
-Press Enter to pause for 10 seconds. Press space bar to pause and again to resume.
+
+Ctrl+C / ESC: stop   ·   Enter: pause 10 seconds   ·   Space: pause / resume
+────────────────────────────────────────────────────────────────────────────────
+
 Reciting 150 entries, randomly.
 001 / 150 :: "Good morning","Hyvää huomenta"
 002 / 150 :: "Thank you for your email","Kiitos sähköpostistasi"

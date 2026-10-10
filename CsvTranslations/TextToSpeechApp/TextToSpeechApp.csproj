@@ -7,7 +7,18 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <None Remove="TextToSpeechApp.syntax.txt" />
+    <None Remove="TextToSpeechApp.runtime_commands.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TextToSpeechApp.syntax.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TextToSpeechApp.runtime_commands.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

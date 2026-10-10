@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -25,18 +26,34 @@ internal sealed class Program
     }
 
     /// <summary>
-    /// Displays the control instructions for the text-to-speech application
-    /// as a formatted section with separators.
+    /// Displays the runtime control commands for the text-to-speech application,
+    /// closed by a separator line. The commands are read from
+    /// <c>TextToSpeechApp.runtime_commands.txt</c> so they stay easy to spot
+    /// before reciting starts and again while it is running.
     /// </summary>
-    private static void DisplayControlInstructions()
+    private static void ShowRuntimeCommands()
     {
         Console.WriteLine();
-        Console.WriteLine(CreateFullWidthSeparator());
-        Console.WriteLine("CONTROL INSTRUCTIONS");
+        Console.WriteLine(ReadRuntimeCommands());
         Console.WriteLine(CreateThinSeparator());
-        Console.WriteLine("Starting text-to-speech for translation entries. Press Ctrl+C or ESC to stop.");
-        Console.WriteLine("Press Enter to pause for 10 seconds. Press space bar to pause and again to resume.");
         Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Reads the runtime control commands from <c>TextToSpeechApp.runtime_commands.txt</c>,
+    /// which ships alongside the executable. Falls back to a built-in one-liner when the
+    /// file cannot be found.
+    /// </summary>
+    /// <returns>The runtime control commands as a single line.</returns>
+    private static string ReadRuntimeCommands()
+    {
+        var runtimeCommandsFilePath = Path.Combine(AppContext.BaseDirectory, RuntimeCommandsFileName);
+        if (File.Exists(runtimeCommandsFilePath))
+        {
+            return File.ReadAllText(runtimeCommandsFilePath).TrimEnd();
+        }
+
+        return "Ctrl+C / ESC: stop   ·   Enter: pause 10 seconds   ·   Space: pause / resume";
     }
 
     /// <summary>
@@ -105,7 +122,7 @@ internal sealed class Program
 
         if (entriesLoadedAmount == 0)
         {
-            Console.WriteLine("No translation entries found. Exiting.");
+            ShowSyntaxAndExitWithError("Error! No translation entries found. Exiting.");
             return;
         }
 
@@ -150,12 +167,18 @@ internal sealed class Program
             if (provider != null)
             {
                 settings.TtsProvider = provider;
-                ConsoleColorHelper.WriteInfo($"TTS provider overridden via command line: {provider}");
+
+                // Piper adds the loading notice to the same message, so the live elapsed-time
+                // readout shown while the engine and voice models load sits right beneath it.
+                string providerMessage = $"TTS provider set from the command line: {provider}";
 
                 if (provider.Equals("Piper", StringComparison.OrdinalIgnoreCase))
                 {
-                    ConsoleColorHelper.WriteInfo(" .. loading. Please wait ... takes a few minutes.");
+                    providerMessage += ". Loading the Piper TTS engine and voice models." + Environment.NewLine
+                        + "The first run might take a few minutes. Please wait.";
                 }
+
+                ConsoleColorHelper.WriteInfo(providerMessage);
             }
             else
             {
@@ -169,6 +192,63 @@ internal sealed class Program
     }
 
     /// <summary>
+    /// Name of the syntax/help file that ships next to the executable.
+    /// </summary>
+    private const string SyntaxFileName = "TextToSpeechApp.syntax.txt";
+
+    /// <summary>
+    /// Name of the runtime-commands file that ships next to the executable.
+    /// </summary>
+    private const string RuntimeCommandsFileName = "TextToSpeechApp.runtime_commands.txt";
+
+    /// <summary>
+    /// Label printed in front of the live elapsed-time readout shown while a long step runs.
+    /// </summary>
+    private const string ElapsedTimeLabel = "Elapsed time: ";
+
+    /// <summary>
+    /// Determines whether a command-line argument requests the help/syntax information.
+    /// Accepts <c>/help</c>, <c>--help</c> and the <c>-h</c> shorthand, case-insensitively.
+    /// </summary>
+    /// <param name="arg">The command-line argument to test.</param>
+    /// <returns><c>true</c> when the argument requests help; otherwise <c>false</c>.</returns>
+    private static bool IsHelpArgument(string arg)
+    {
+        return arg.Equals("/help", StringComparison.OrdinalIgnoreCase)
+               || arg.Equals("--help", StringComparison.OrdinalIgnoreCase)
+               || arg.Equals("-h", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Displays the contents of <c>TextToSpeechApp.syntax.txt</c>, which ships alongside the
+    /// executable. Falls back to a short usage summary if the file cannot be found.
+    /// </summary>
+    private static void ShowSyntax()
+    {
+        var syntaxFilePath = Path.Combine(AppContext.BaseDirectory, SyntaxFileName);
+        if (File.Exists(syntaxFilePath))
+        {
+            Console.WriteLine(File.ReadAllText(syntaxFilePath));
+            return;
+        }
+
+        Console.WriteLine("TextToSpeechApp");
+        Console.WriteLine("Usage: TextToSpeechApp [path] [line number] [--tts:{provider}]");
+        Console.WriteLine("Run with /help or --help for the full syntax.");
+    }
+
+    /// <summary>
+    /// Shows the syntax help, then prints the error message in red and exits with a non-zero code.
+    /// </summary>
+    /// <param name="errorMessage">The error message to display in red.</param>
+    private static void ShowSyntaxAndExitWithError(string errorMessage)
+    {
+        ShowSyntax();
+        ConsoleColorHelper.WriteError(errorMessage);
+        Environment.Exit(1);
+    }
+
+    /// <summary>
     /// Parses command-line arguments to determine the translations CSV file path
     /// and an optional starting line number.
     /// </summary>
@@ -178,14 +258,9 @@ internal sealed class Program
     private static string ParseArguments(string[] args, out int startingLineNumber)
     {
         startingLineNumber = -1;
-        if (args.Contains("--help") || args.Contains("-h"))
+        if (args.Any(IsHelpArgument))
         {
-            Console.WriteLine("Usage: TextToSpeechApp [path to translations CSV file]");
-            Console.WriteLine("  [path]                Path to a translation CSV file");
-            Console.WriteLine("  [line number]         Starting line number (1-based)");
-            Console.WriteLine("  --tts:{provider}      TTS provider to use: Windows or Piper (case-insensitive)");
-            Console.WriteLine("  -tts:{provider}       Shorthand for --tts:");
-            Console.WriteLine("  --help, -h            Show this help message");
+            ShowSyntax();
             Environment.Exit(0);
         }
 
@@ -219,9 +294,8 @@ internal sealed class Program
                     var resolvedFilePath = arg[arg.IndexOf("csv_files", StringComparison.Ordinal)..];
                     if (!File.Exists(resolvedFilePath))
                     {
-                        Console.WriteLine("Error! CSV file not found from resolved file path '" + resolvedFilePath +
-                                          "' of `" + arg + "`.");
-                        Environment.Exit(1);
+                        ShowSyntaxAndExitWithError("Error! CSV file not found from resolved file path '" + resolvedFilePath +
+                                                   "' of `" + arg + "`.");
                     }
 
                     Console.WriteLine("Loading CSV key-value pairs will be loaded from resolved file path '" +
@@ -244,8 +318,7 @@ internal sealed class Program
 
                     if (!File.Exists(csvFilePath))
                     {
-                        Console.WriteLine("Error! CSV file not found: " + csvFilePath);
-                        Environment.Exit(1);
+                        ShowSyntaxAndExitWithError("Error! CSV file not found: " + csvFilePath);
                     }
 
                     Console.WriteLine("CSV key-value pairs will be loaded from file path '" + csvFilePath + "'.");
@@ -304,6 +377,77 @@ internal sealed class Program
     }
 
     /// <summary>
+    /// Initializes the text-to-speech service. While the Piper TTS engine and voice
+    /// models load, a live elapsed-time readout keeps the wait visible to the user.
+    /// </summary>
+    /// <param name="textToSpeechService">The service to initialize.</param>
+    /// <param name="settings">The loaded TTS settings selecting the provider in use.</param>
+    /// <param name="voiceLanguages">The voice languages to initialize.</param>
+    /// <returns>The initialization messages reported by the service.</returns>
+    private static async Task<List<string>> InitializeWithElapsedTimeReportAsync(
+        ITextToSpeechService textToSpeechService,
+        TtsSettings settings,
+        VoiceLanguageList voiceLanguages)
+    {
+        if (!string.Equals(settings.TtsProvider, "Piper", StringComparison.OrdinalIgnoreCase))
+        {
+            return await textToSpeechService.InitializeAsync(voiceLanguages);
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        using var cancellationSource = new CancellationTokenSource();
+        Task elapsedTimeTask = ShowElapsedTimeWhileWaitingAsync(stopwatch, cancellationSource.Token);
+
+        try
+        {
+            return await textToSpeechService.InitializeAsync(voiceLanguages);
+        }
+        finally
+        {
+            cancellationSource.Cancel();
+            await elapsedTimeTask;
+            stopwatch.Stop();
+
+            // Replace the last tick with the exact total, then close the live line.
+            Console.Write("\r" + ElapsedTimeLabel + FormatElapsedTime(stopwatch.Elapsed));
+            Console.WriteLine();
+        }
+    }
+
+    /// <summary>
+    /// Writes a live elapsed-time readout on the current console line, refreshed once
+    /// per second, until <paramref name="cancellationToken"/> is cancelled.
+    /// </summary>
+    /// <param name="stopwatch">The running stopwatch that measures the elapsed time.</param>
+    /// <param name="cancellationToken">The token that stops the readout.</param>
+    private static async Task ShowElapsedTimeWhileWaitingAsync(Stopwatch stopwatch, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            Console.Write("\r" + ElapsedTimeLabel + FormatElapsedTime(stopwatch.Elapsed));
+
+            try
+            {
+                await Task.Delay(1000, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Formats a duration as minutes and seconds, each padded to two digits.
+    /// </summary>
+    /// <param name="elapsed">The duration to format.</param>
+    /// <returns>The duration as <c>MM:SS</c>, for example <c>01:05</c>.</returns>
+    private static string FormatElapsedTime(TimeSpan elapsed)
+    {
+        return $"{(int)elapsed.TotalMinutes:D2}:{elapsed.Seconds:D2}";
+    }
+
+    /// <summary>
     /// Runs the main reciting loop that speaks translation entries using
     /// the text-to-speech service. The loop selects entries randomly and
     /// responds to console key input to pause or stop.
@@ -315,7 +459,7 @@ internal sealed class Program
     {
         using ITextToSpeechService textToSpeechService = TtsServiceFactory.Create(settings, entryList.VoiceLanguages, entryList.Entries);
 
-        List<string> initOutputs = await textToSpeechService.InitializeAsync(entryList.VoiceLanguages);
+        List<string> initOutputs = await InitializeWithElapsedTimeReportAsync(textToSpeechService, settings, entryList.VoiceLanguages);
         foreach (var output in initOutputs)
         {
             if (output.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
@@ -335,7 +479,7 @@ internal sealed class Program
         var entriesLoadedAmount = entryList.Count;
         var textStartingRecitingLoop = "Reciting " + entriesLoadedAmount + " entries, randomly.";
 
-        DisplayControlInstructions();
+        ShowRuntimeCommands();
 
         Console.WriteLine(textStartingRecitingLoop);
         
@@ -374,6 +518,12 @@ internal sealed class Program
                 }
 
                 await textToSpeechService.SpeakEntryAsync(entry);
+            }
+
+            // Refresh the runtime commands after every 10 recited entries.
+            if ((i + 1) % 10 == 0)
+            {
+                ShowRuntimeCommands();
             }
 
             // avoid burning CPU
