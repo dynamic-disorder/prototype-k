@@ -25,36 +25,51 @@ if [ -f local_user_files/nuget/env.sh ]; then
   . local_user_files/nuget/env.sh
 fi
 
-payload="$(cat)"
+# Two invocation modes:
+#   * harness hook (Claude Code / DSH) — the tool call's JSON arrives on stdin, so the command is inspected;
+#   * git hook via `core.hooksPath` — no payload at all, because git only calls it for a commit.
+# Never read stdin unconditionally: a git hook run from a terminal inherits a TTY, and a bare `cat`
+# would hang the commit until interrupted.
+payload=""
+if [ ! -t 0 ]; then
+  payload="$(cat)"
+fi
 
-# jq is present on both target platforms; python3 is the fallback. If neither parses the payload we
-# cannot tell what is being run, so stay out of the way rather than block a legitimate commit.
+# jq is present on both target platforms; python3 is the fallback.
 cwd=""
 command_text=""
-if command -v jq >/dev/null 2>&1; then
-  cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
-  command_text="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)"
-elif command -v python3 >/dev/null 2>&1; then
-  cwd="$(printf '%s' "$payload" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd",""))' 2>/dev/null)"
-  command_text="$(printf '%s' "$payload" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin).get("tool_input",{}).get("command",""))' 2>/dev/null)"
+if [ -n "$payload" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
+    command_text="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+  elif command -v python3 >/dev/null 2>&1; then
+    cwd="$(printf '%s' "$payload" \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd",""))' 2>/dev/null)"
+    command_text="$(printf '%s' "$payload" \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin).get("tool_input",{}).get("command",""))' 2>/dev/null)"
+  fi
+  # A payload we cannot parse means we cannot tell what is being run: stay out of the way rather
+  # than build on every tool call.
+  [ -n "$command_text" ] || exit 0
 fi
-[ -n "$command_text" ] || exit 0
 
-case "$command_text" in
-  *"git commit"*) ;;
-  *) exit 0 ;;
-esac
-
-# The DSH bridge mounts this hook process-wide with one absolute configPath, so it belongs to this
-# repository: a commit made in another workspace must not trigger a build here.
-if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -n "$cwd" ]; then
-  case "$cwd" in
-    "$CLAUDE_PROJECT_DIR"|"$CLAUDE_PROJECT_DIR"/*) ;;
+if [ -n "$command_text" ]; then
+  # Harness mode: only commits are interesting.
+  case "$command_text" in
+    *"git commit"*) ;;
     *) exit 0 ;;
   esac
+
+  # The DSH bridge mounts this hook process-wide with one absolute configPath, so it belongs to this
+  # repository: a commit made in another workspace must not trigger a build here.
+  if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -n "$cwd" ]; then
+    case "$cwd" in
+      "$CLAUDE_PROJECT_DIR"|"$CLAUDE_PROJECT_DIR"/*) ;;
+      *) exit 0 ;;
+    esac
+  fi
 fi
+# Git-hook mode (no payload) falls through to the check below: git only runs it for a commit.
 
 # Only C#-relevant changes need a build.
 staged="$(git diff --staged --name-only 2>/dev/null | grep -E '\.(cs|csproj|props|targets)$')"
@@ -75,6 +90,17 @@ if [ -z "$sln" ]; then
   sln="$(find . -maxdepth 2 -name '*.sln' -not -path './local_user_files/*' -print -quit 2>/dev/null)"
 fi
 [ -n "$sln" ] || exit 0
+
+# A harness can run this hook with a read-only view of the workspace (DSH's sandbox does). There a
+# build cannot write bin/obj, so MSBuild fails with EROFS/MSB3061 and its verdict says nothing about
+# the code. Check first: if the workspace is not writable, warn and allow rather than block a commit
+# on an environment failure.
+write_probe="$project_dir/.build-gate-write-probe.$$"
+if ! ( : > "$write_probe" ) 2>/dev/null; then
+  echo "[pre-commit] workspace is read-only here ($project_dir) — skipping the build check" >&2
+  exit 0
+fi
+rm -f "$write_probe"
 
 echo "[pre-commit] staged C# — building $sln" >&2
 if dotnet build "$sln" --no-incremental --verbosity quiet >&2 2>&1; then
