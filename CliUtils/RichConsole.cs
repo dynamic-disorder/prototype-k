@@ -55,6 +55,24 @@ public static class RichConsole
     }
     
     /// <summary>
+    /// Executes an asynchronous operation with a progress display whose rows are added by the
+    /// operation itself, for work whose item count is not known up front
+    /// </summary>
+    /// <param name="action">Action to execute with the progress context</param>
+    public static async Task WithLiveProgressAsync(Func<ProgressContext, Task> action)
+    {
+        await AnsiConsole.Progress()
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new ElapsedTimeColumn(),
+                new SpinnerColumn()
+            )
+            .StartAsync(action);
+    }
+
+    /// <summary>
     /// Prompts the user for input with a default value
     /// </summary>
     /// <typeparam name="T">Type of input</typeparam>

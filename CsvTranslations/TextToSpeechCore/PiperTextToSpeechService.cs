@@ -12,7 +12,10 @@ namespace TextToSpeechCore;
 /// <summary>
 ///     A cross-platform-capable <see cref="ITextToSpeechService"/> implementation backed by the
 ///     Piper neural TTS engine via the PiperSharp package. Downloads the Piper executable and any
-///     configured voice models on first use, caching them locally per PiperSharp's own conventions.
+///     configured voice models on first use and reuses them from a local cache (see
+///     <see cref="PiperAssetInstaller"/>) for two weeks before downloading them again; progress per
+///     asset, including the megabytes transferred, is reported through
+///     <see cref="InitializeAsync(VoiceLanguageList, IProgress{PiperAssetProgress})"/>.
 ///     Optionally selects a specific speaker for each configured language via the model's
 ///     <c>speaker_id_map</c> (<c>*.onnx.json</c>) and passes it to piper as <c>--speaker <id></c>.
 ///     Synthesized audio is played through an injected <see cref="IAudioPlayback"/>, so this class
@@ -24,6 +27,7 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
     private readonly IReadOnlyDictionary<string, PiperVoiceConfig> _voicesByLanguageName;
     private readonly IAudioPlayback _audioPlayback;
     private readonly List<TextEntryRow>? _rowEntries;
+    private readonly PiperAssetInstaller _assetInstaller;
 
     /// <summary>
     ///     Initializes a new instance of <see cref="PiperTextToSpeechService"/>.
@@ -38,16 +42,26 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
     ///     library does not have to reference a Windows-only audio package.
     /// </param>
     /// <param name="rowEntries">The translation entry rows this service may be asked to speak.</param>
+    /// <param name="initializationOptions">
+    ///     Where the Piper engine and voice models are cached and how long they stay fresh. When null,
+    ///     the defaults of <see cref="PiperInitializationOptions"/> are used (the current working
+    ///     directory and a two week cache).
+    /// </param>
     public PiperTextToSpeechService(
         VoiceLanguageList voiceLanguages,
         IReadOnlyDictionary<string, PiperVoiceConfig> voicesByLanguageName,
         IAudioPlayback audioPlayback,
-        List<TextEntryRow>? rowEntries = null)
+        List<TextEntryRow>? rowEntries = null,
+        PiperInitializationOptions? initializationOptions = null)
     {
         VoiceLanguages = voiceLanguages;
         _voicesByLanguageName = voicesByLanguageName;
         _audioPlayback = audioPlayback;
         _rowEntries = rowEntries;
+
+        var options = initializationOptions ?? new PiperInitializationOptions();
+        var assetCache = new PiperAssetCache(options.AssetRootDirectory, options.ResolveCacheTtl());
+        _assetInstaller = new PiperAssetInstaller(assetCache);
     }
 
     /// <summary>
@@ -56,30 +70,38 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
     public VoiceLanguageList VoiceLanguages { get; }
 
     /// <summary>
-    ///     Ensures the Piper executable is present and loads/downloads a voice model for each
-    ///     language in <paramref name="languageList"/> that has a configured Piper voice.
+    ///     Ensures the Piper engine is present and loads/downloads a voice model for each language in
+    ///     <paramref name="languageList"/> that has a configured Piper voice. Cached assets are reused
+    ///     until their time-to-live has passed, and every asset is reported through
+    ///     <paramref name="progress"/> together with the megabytes transferred.
     /// </summary>
     /// <param name="languageList">The list of languages to initialize.</param>
-    public async Task<List<string>> InitializeAsync(VoiceLanguageList languageList)
+    /// <param name="progress">Receives a report per Piper asset while it is prepared; may be null.</param>
+    public async Task<List<string>> InitializeAsync(
+        VoiceLanguageList languageList,
+        IProgress<PiperAssetProgress>? progress = null)
     {
         var output = new List<string>();
 
-        if (!File.Exists(PiperDownloader.DefaultPiperExecutableLocation))
+        PiperAssetInstallResult engineResult = await _assetInstaller.EnsureEngineAsync(progress);
+        output.Add("  • " + engineResult.Message);
+
+        if (!engineResult.IsAvailable)
         {
-            output.Add("Downloading the Piper TTS engine...");
-            await PiperDownloader.DownloadPiper().ExtractPiper();
+            output.Add("  ERROR: The Piper TTS engine is unavailable, so no Piper voice can be initialized. Check the connection and run the app again.");
+            return output;
         }
 
         foreach (VoiceLanguage language in languageList)
         {
-            List<string> outputs = await InitializeVoiceLanguage(language);
+            List<string> outputs = await InitializeVoiceLanguage(language, progress);
             output.AddRange(outputs);
         }
 
         return output;
     }
 
-    private async Task<List<string>> InitializeVoiceLanguage(VoiceLanguage language)
+    private async Task<List<string>> InitializeVoiceLanguage(VoiceLanguage language, IProgress<PiperAssetProgress>? progress)
     {
         var output = new List<string>();
 
@@ -91,14 +113,22 @@ public sealed class PiperTextToSpeechService : IDisposable, ITextToSpeechService
 
         var modelKey = voiceConfig.BuildModelKey();
 
-        // PiperSharp's downloader already skips re-fetching files that exist on disk, so it is
-        // safe to call this on every startup rather than tracking local cache state ourselves.
-        VoiceModel model = await PiperDownloader.DownloadModelByKey(modelKey);
+        // The engine and each voice model live in a local cache with a time-to-live, so a warm start
+        // reuses them without touching the network.
+        PiperAssetInstallResult modelResult = await _assetInstaller.EnsureVoiceModelAsync(modelKey, progress);
+        if (!modelResult.IsAvailable || modelResult.Model is null)
+        {
+            output.Add($"  WARNING: {modelResult.Message}");
+            return output;
+        }
+
+        VoiceModel model = modelResult.Model;
+        output.Add("  • " + modelResult.Message);
 
         var configuration = new PiperConfiguration
         {
-            ExecutableLocation = PiperDownloader.DefaultPiperExecutableLocation,
-            WorkingDirectory = PiperDownloader.DefaultPiperLocation,
+            ExecutableLocation = _assetInstaller.EngineExecutablePath,
+            WorkingDirectory = _assetInstaller.Cache.EngineDirectory,
             Model = model,
         };
 

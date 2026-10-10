@@ -5,6 +5,32 @@ using TextToSpeechCore;
 namespace TextToSpeechApp;
 
 /// <summary>
+///     Caching options for the Piper provider: where the engine and the voice models are stored and
+///     how long an already downloaded asset is reused before it is downloaded and extracted again.
+/// </summary>
+internal sealed class PiperCacheSettings
+{
+    /// <summary>
+    ///     The directory that holds the cached <c>piper</c> engine and <c>models</c> directory.
+    ///     <c>null</c> or empty keeps the default, which is the application's working directory.
+    /// </summary>
+    public string? Directory { get; set; }
+
+    /// <summary>
+    ///     How many days a cached engine or voice model is reused before it is downloaded again.
+    ///     Defaults to <see cref="PiperInitializationOptions.DefaultCacheTtlDays"/> (two weeks);
+    ///     <c>0</c> or a negative value keeps cached assets forever.
+    /// </summary>
+    public int CacheTtlDays { get; set; } = PiperInitializationOptions.DefaultCacheTtlDays;
+
+    /// <summary>
+    ///     Informational comment describing the cache configuration.
+    ///     Not used by the application logic.
+    /// </summary>
+    public string? Comment { get; set; }
+}
+
+/// <summary>
 ///     A named profile containing voice configuration for a TTS provider.
 ///     The provider name is the dictionary key, not a field here.
 /// </summary>
@@ -16,6 +42,12 @@ internal sealed class TtsProviderConfig
     ///     the provider is <c>"Piper"</c>.
     /// </summary>
     public Dictionary<string, PiperVoiceConfig> PiperVoices { get; set; } = new();
+
+    /// <summary>
+    ///     Where the Piper engine and voice models are cached and how long they stay fresh.
+    ///     Only used when the provider is <c>"Piper"</c>.
+    /// </summary>
+    public PiperCacheSettings PiperCache { get; set; } = new();
 
     /// <summary>
     ///     Informational comment describing the provider configuration.

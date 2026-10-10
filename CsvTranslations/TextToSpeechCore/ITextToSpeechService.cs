@@ -17,8 +17,13 @@ public interface ITextToSpeechService : IDisposable
     ///     Initializes the underlying speech engine for each language in the provided list.
     /// </summary>
     /// <param name="languageList">The list of languages to initialize.</param>
+    /// <param name="progress">
+    ///     Optional receiver for per-asset progress. Only providers that download assets (Piper)
+    ///     report anything; providers that use assets already installed in the operating system
+    ///     (Windows) ignore it.
+    /// </param>
     /// <returns>A task producing human-readable initialization log lines (info/warning/error).</returns>
-    Task<List<string>> InitializeAsync(VoiceLanguageList languageList);
+    Task<List<string>> InitializeAsync(VoiceLanguageList languageList, IProgress<PiperAssetProgress>? progress = null);
 
     /// <summary>
     ///     List all voices available to this provider.

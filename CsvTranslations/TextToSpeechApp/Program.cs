@@ -377,8 +377,9 @@ internal sealed class Program
     }
 
     /// <summary>
-    /// Initializes the text-to-speech service. While the Piper TTS engine and voice
-    /// models load, a live elapsed-time readout keeps the wait visible to the user.
+    ///     Initializes the text-to-speech service. While Piper downloads and extracts the engine and
+    ///     its voice models, a live progress display shows one row per asset, the megabytes already
+    ///     received and the elapsed time; the total elapsed time is printed once it finishes.
     /// </summary>
     /// <param name="textToSpeechService">The service to initialize.</param>
     /// <param name="settings">The loaded TTS settings selecting the provider in use.</param>
@@ -395,46 +396,20 @@ internal sealed class Program
         }
 
         var stopwatch = Stopwatch.StartNew();
-        using var cancellationSource = new CancellationTokenSource();
-        Task elapsedTimeTask = ShowElapsedTimeWhileWaitingAsync(stopwatch, cancellationSource.Token);
+        List<string> outputs = [];
 
-        try
+        await RichConsole.WithLiveProgressAsync(async progressContext =>
         {
-            return await textToSpeechService.InitializeAsync(voiceLanguages);
-        }
-        finally
-        {
-            cancellationSource.Cancel();
-            await elapsedTimeTask;
-            stopwatch.Stop();
+            var progressReporter = new PiperProgressReporter(progressContext);
+            outputs = await textToSpeechService.InitializeAsync(voiceLanguages, progressReporter);
+        });
 
-            // Replace the last tick with the exact total, then close the live line.
-            Console.Write("\r" + ElapsedTimeLabel + FormatElapsedTime(stopwatch.Elapsed));
-            Console.WriteLine();
-        }
-    }
+        stopwatch.Stop();
 
-    /// <summary>
-    /// Writes a live elapsed-time readout on the current console line, refreshed once
-    /// per second, until <paramref name="cancellationToken"/> is cancelled.
-    /// </summary>
-    /// <param name="stopwatch">The running stopwatch that measures the elapsed time.</param>
-    /// <param name="cancellationToken">The token that stops the readout.</param>
-    private static async Task ShowElapsedTimeWhileWaitingAsync(Stopwatch stopwatch, CancellationToken cancellationToken)
-    {
-        while (true)
-        {
-            Console.Write("\r" + ElapsedTimeLabel + FormatElapsedTime(stopwatch.Elapsed));
+        // The progress display clears itself, so the total is written as an ordinary line.
+        Console.WriteLine(ElapsedTimeLabel + FormatElapsedTime(stopwatch.Elapsed));
 
-            try
-            {
-                await Task.Delay(1000, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-        }
+        return outputs;
     }
 
     /// <summary>
@@ -462,11 +437,14 @@ internal sealed class Program
         List<string> initOutputs = await InitializeWithElapsedTimeReportAsync(textToSpeechService, settings, entryList.VoiceLanguages);
         foreach (var output in initOutputs)
         {
-            if (output.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
+            // The services indent their log lines, so classify on the trimmed text.
+            var trimmedOutput = output.TrimStart();
+
+            if (trimmedOutput.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
             {
                 ConsoleColorHelper.WriteWarning(output);
             }
-            else if (output.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+            else if (trimmedOutput.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
             {
                 ConsoleColorHelper.WriteError(output);
             }

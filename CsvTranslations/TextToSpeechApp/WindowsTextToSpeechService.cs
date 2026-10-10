@@ -80,7 +80,7 @@ internal sealed class WindowsTextToSpeechService : IDisposable, ITextToSpeechSer
     }
 
     /// <inheritdoc/>
-    public Task<List<string>> InitializeAsync(VoiceLanguageList languageList)
+    public Task<List<string>> InitializeAsync(VoiceLanguageList languageList, IProgress<PiperAssetProgress>? progress = null)
     {
         var output = new List<string>();
         List<InstalledVoice> installedVoices = ListInstalledVoices();

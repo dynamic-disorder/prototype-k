@@ -24,7 +24,7 @@ The solution is **`CsvTranslations.sln`** (in this directory).
 ```bash
 cd CsvTranslations
 dotnet build CsvTranslations.sln            # or -c Release
-dotnet test  CsvTranslations.sln            # 164 tests: 25 + 27 + 81 + 31
+dotnet test  CsvTranslations.sln            # 231 tests: 82 + 27 + 81 + 41
 ```
 
 - **Windows-targeted projects cross-compile.** `TextToSpeechApp` targets
@@ -55,28 +55,34 @@ dotnet test  CsvTranslations.sln            # 164 tests: 25 + 27 + 81 + 31
 - **TextToSpeechApp**: Windows-only at runtime (uses Windows.Media.SpeechSynthesis). Depends on `TextToSpeechCore` (PiperSharp, platform-neutral) and, directly, on `NAudio` for the WinMM playback implementation it injects.
 - Test projects: xUnit-based unit tests
 
-## Test project status (updated 2026-10-10, after the .NET 10 migration fixes)
+## Test project status (updated 2026-10-11, after the Piper asset cache work)
 
 All test projects now build clean (0 warnings) and the four that can run on Linux are green:
 
 | Project | In `CsvTranslations.sln` | Status |
 | :------ | :----------------------- | :----- |
-| `TextToSpeechCore.Tests` | yes | 25/25 pass (platform-neutral: fakes `IAudioPlayback`) |
+| `TextToSpeechCore.Tests` | yes | 82/82 pass (platform-neutral: fakes `IAudioPlayback`, stubs the Piper downloads) |
 | `OllamaTranslatorApi.Tests` | yes | 27/27 pass |
 | `TranslationTools.Tests` | yes | 81/81 pass (was an empty project with no test sources) |
-| `OllamaTranslatorApp.Tests` | yes | 31/31 pass (was 36 compile errors; now added to the solution) |
+| `OllamaTranslatorApp.Tests` | yes | 41/41 pass |
 | `TextToSpeechApp.Tests` | **no** | builds (Windows-only target, cannot run on Linux) |
 
-`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **164 tests**
-(25 + 27 + 81 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
+`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **231 tests**
+(82 + 27 + 81 + 41). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
 adding it would make `dotnet test` try to *execute* a `net10.0-windows…`/`win-x64`
 assembly on Linux. Build it explicitly with its `.csproj` path.
+
+Some `TranslationTools.Tests` parser tests render a console separator via
+`Console.WindowWidth`, so they need a console handle: under a headless test host they fail
+with `IOException: The handle is invalid` while the counts above still hold.
 
 `TextToSpeechCore.Tests` targets `net10.0` and substitutes `IAudioPlayback`, so it needs no
 audio device and runs in the normal Linux gate. Note what it can and cannot reach: the
 positive playback path (synthesized WAV reaching playback) still requires a provider, which
-`InitializeAsync` only creates after downloading the Piper engine and models — so these tests
-cover the service's guards, voice listing and disposal, not synthesis.
+`InitializeAsync` only creates once the Piper engine and voice models are on disk — so these
+tests cover the service's guards, voice listing, disposal and the asset cache, not synthesis.
+The cache and download paths are covered with stubbed HTTP and injected asset providers
+(`PiperAssetCacheTests`, `PiperAssetInstallerTests`), so they never touch the network.
 
 ## CSV Format
 
