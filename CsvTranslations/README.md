@@ -21,6 +21,7 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 
 ### Test Projects
 
+- **TextToSpeechCore.Tests** — Unit tests for the platform-neutral Piper TTS core (speak guards, voice listing, config) — in the solution, 25 tests pass; target `net10.0` and fake `IAudioPlayback`, so they need no audio device
 - **OllamaTranslatorApi.Tests** — Unit tests for the Ollama translation API (CsvFileTranslator, OllamaTranslator) — in the solution, 27 tests pass
 - **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app (real `TranslateCommand` helpers, `TextFileTranslator`, and `Program.TranslateFileAsync` routing) — in the solution, 31 tests pass
 - **TextToSpeechApp.Tests** — Unit tests for the TTS app — not in the solution; Windows-only target, builds but cannot run on Linux

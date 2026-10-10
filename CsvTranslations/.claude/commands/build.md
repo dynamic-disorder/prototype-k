@@ -20,7 +20,8 @@ The solution contains these projects:
 - OllamaTranslatorApp (console app)
 - TextToSpeechApp (Windows TTS app, cross-compiles on Linux via `EnableWindowsTargeting`)
 - TextToSpeechCore (library)
-- Test projects: `OllamaTranslatorApi.Tests` (27 tests, part of the solution),
+- Test projects: `TextToSpeechCore.Tests` (25 tests, part of the solution),
+  `OllamaTranslatorApi.Tests` (27 tests, part of the solution),
   `TranslationTools.Tests` (81 tests, part of the solution),
   `OllamaTranslatorApp.Tests` (31 tests, part of the solution).
 

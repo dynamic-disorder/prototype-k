@@ -24,7 +24,7 @@ The solution is **`CsvTranslations.sln`** (in this directory).
 ```bash
 cd CsvTranslations
 dotnet build CsvTranslations.sln            # or -c Release
-dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
+dotnet test  CsvTranslations.sln            # 164 tests: 25 + 27 + 81 + 31
 ```
 
 - **Windows-targeted projects cross-compile.** `TextToSpeechApp` targets
@@ -57,19 +57,26 @@ dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
 
 ## Test project status (updated 2026-10-10, after the .NET 10 migration fixes)
 
-All test projects now build clean (0 warnings) and the three that can run on Linux are green:
+All test projects now build clean (0 warnings) and the four that can run on Linux are green:
 
 | Project | In `CsvTranslations.sln` | Status |
 | :------ | :----------------------- | :----- |
+| `TextToSpeechCore.Tests` | yes | 25/25 pass (platform-neutral: fakes `IAudioPlayback`) |
 | `OllamaTranslatorApi.Tests` | yes | 27/27 pass |
 | `TranslationTools.Tests` | yes | 81/81 pass (was an empty project with no test sources) |
 | `OllamaTranslatorApp.Tests` | yes | 31/31 pass (was 36 compile errors; now added to the solution) |
 | `TextToSpeechApp.Tests` | **no** | builds (Windows-only target, cannot run on Linux) |
 
-`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **139 tests**
-(27 + 81 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
+`dotnet build`/`dotnet test` on `CsvTranslations.sln` therefore runs **164 tests**
+(25 + 27 + 81 + 31). Only `TextToSpeechApp.Tests` stays outside the solution on purpose:
 adding it would make `dotnet test` try to *execute* a `net10.0-windows…`/`win-x64`
 assembly on Linux. Build it explicitly with its `.csproj` path.
+
+`TextToSpeechCore.Tests` targets `net10.0` and substitutes `IAudioPlayback`, so it needs no
+audio device and runs in the normal Linux gate. Note what it can and cannot reach: the
+positive playback path (synthesized WAV reaching playback) still requires a provider, which
+`InitializeAsync` only creates after downloading the Piper engine and models — so these tests
+cover the service's guards, voice listing and disposal, not synthesis.
 
 ## CSV Format
 

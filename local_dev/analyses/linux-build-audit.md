@@ -290,13 +290,20 @@ Notable package work:
   NAudio at all — verified by compiling a plain `net10.0` consumer against it. General lesson:
   when a dependency's *packaging* pushes a platform constraint into a library, prefer
   refactoring the seam over widening the target.
+
+  The seam also made the core testable off Windows: `TextToSpeechCore.Tests` (`net10.0`, 25
+  tests) substitutes `IAudioPlayback`, so the service's speak guards, voice listing, config and
+  disposal are asserted without an audio device. The positive path (synthesized WAV reaching
+  playback) still needs a provider, which `InitializeAsync` only creates after downloading the
+  Piper engine and models.
 - `PiperSharp` 1.0.7 also lifts transitive `SharpCompress` 0.36.0 → 0.50.1, clearing `NU1902`.
 - `Spectre.Console(.Cli)` 0.49.1 → 0.57.2 required adding a `CancellationToken` parameter to
   `AsyncCommand<T>.ExecuteAsync` overrides.
 
-Test projects now wired into `CsvTranslations.sln`: `OllamaTranslatorApi.Tests` (27),
-`TranslationTools.Tests` (81), `OllamaTranslatorApp.Tests` (31) = **139 tests**, plus
-`FilenameSanitizer.Tests` (78) = **217** repo-wide, all green in Debug and Release.
+Test projects now wired into `CsvTranslations.sln`: `TextToSpeechCore.Tests` (25),
+`OllamaTranslatorApi.Tests` (27), `TranslationTools.Tests` (81),
+`OllamaTranslatorApp.Tests` (31) = **164 tests**, plus `FilenameSanitizer.Tests` (78) =
+**242** repo-wide, all green in Debug and Release.
 
 ### Why `TextToSpeechApp.Tests` stays out of the solution
 
