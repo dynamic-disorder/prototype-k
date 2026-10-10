@@ -64,3 +64,9 @@ python vscode_cache_cleaner.py
   `ProjectReference` and `EnableWindowsTargeting` failures, the `git core.ignorecase` rename trap,
   open issues, and a cross-platform checklist for future changes.
 - [`analyses/tts_analysis.md`](analyses/tts_analysis.md) — text-to-speech implementation analysis.
+
+## Documentation
+
+- [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
+  `.gitignore` (root `.claude/`, `launchSettings.json`, `local_user_files/` tooling): what changed, what is
+  tracked-but-ignored, and how to persist any of it with `git add -f`.
