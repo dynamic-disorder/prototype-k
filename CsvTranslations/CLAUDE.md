@@ -108,10 +108,16 @@ Use Claude Code slash commands for distribution:
 - **`/publish-net10`** — Publish supported apps as self-contained `.exe` bundles
   - Creates standalone executable files with bundled .NET 10 runtime
   - Larger file sizes but no .NET 10 installation required on target machines
-  - Output: `bin\Release\net10.0-windows10.0.19041.0\win-x64\publish\<app>.exe` for each project
+  - Output: `publish/<App>/<runtime>/<configuration>/<app>.exe` (git-ignored)
+  - Runs on Linux and Windows, since it only drives `dotnet publish`
 
 - **`/install-net10-runtime`** — Install .NET 10 runtime on target machines
   - Semi-automatic installer for end-user deployment
   - Smaller distribution size; requires .NET 10 to be installed before running apps
 
-These commands wrap PowerShell scripts in the repository root (`publish-net10-selfcontained.ps1` and `install-net10-runtime.ps1`).
+Wrappers, both in the repository root:
+
+| Wrapper | Language | Why |
+| :------ | :------- | :-- |
+| `publish-selfcontained.mjs` | Node (dependency-free) | Developer tool. Node runs on both Linux and Windows; `pwsh` is not installed on the Linux box |
+| `install-net10-runtime.ps1` | PowerShell | Runs on **end-user** machines, where PowerShell 5.1 is guaranteed and Node is not |

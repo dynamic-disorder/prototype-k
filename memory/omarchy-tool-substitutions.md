@@ -10,7 +10,7 @@ are **not installed**; the alternatives below are the ones actually verified to 
 | Arithmetic in shell (summing counts) | `bc`, `dc`, `calc` | `awk '{s+=$1} END{print s}'`, or shell `$(( ))` |
 | Disassemble / inspect a .NET assembly's IL, types, member accessibility | `ildasm`, `ikdasm`, `monodis`, `ilspycmd` | Write a small tool on `System.Reflection.Metadata` + `PEReader` (see `local_user_files/ildump/`); `strings` for a rough check; the package `.xml` doc files list the public API |
 | Parse PE/CLR metadata from Python | `dnfile`, `pefile` | `System.Reflection.Metadata` in C# instead |
-| Run the repo's PowerShell scripts (`.ps1`, PS hooks) | `pwsh`, `powershell` | **None — cannot run here.** They are Windows-only in practice. Read/edit them, but they must be executed on Windows |
+| Run the repo's PowerShell scripts | `pwsh`, `powershell` | **Partly resolved by porting to Node.** `publish-selfcontained.mjs` and `ai-context-token-estimate.mjs` replaced their `.ps1` versions and run here. `install-net10-runtime.ps1` (end-user) and `CsvTranslations/scripts/build-translations.ps1` remain PowerShell and must run on Windows |
 | Split a diff/patch into hunks non-interactively | `filterdiff`, `interdiff`, `combinediff` (patchutils) | `git add -p` (interactive), or craft the patch and `git apply --cached`; edit files deliberately instead of splitting |
 | Inspect CSV from the shell | `csvkit` (`csvcut`, `csvlook`), `xsv`, `mlr`, `qsv` | `python3` with the stdlib `csv` module (`import csv, io`) — handles quoting correctly |
 | Query/edit XML | `xmlstarlet`, `yq` | `xmllint` (present) for validation/xpath; the edit tool for targeted edits |
@@ -36,4 +36,8 @@ Treat as a starting point, confirm before trusting: `bc`, `tree`, `7zip`, `dos2u
 ## Related
 
 - `../local_dev/scripts/build-all-linux.sh` is the cross-platform build entry point (bash, works here).
-- The repo's `.ps1` distribution scripts are Windows-only; see `../local_dev/git-ignored-local-files.md`.
+- Node is a first-class tool here: `../publish-selfcontained.mjs` and
+  `../local_dev/scripts/ai-context-token-estimate.mjs` are dependency-free Node ESM precisely
+  because `pwsh` is unavailable. Prefer Node over PowerShell for new cross-platform scripts.
+- Remaining PowerShell is deliberate: `../install-net10-runtime.ps1` runs on end-user Windows
+  machines. See `../local_dev/git-ignored-local-files.md`.
