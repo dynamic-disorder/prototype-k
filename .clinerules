@@ -21,8 +21,9 @@
 - Node scripts are cross-platform and dependency-free: `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`.
 
 ## Local AI configuration
-- `.claude/` is git-ignored and machine-local; it holds personal/work configuration that is **not** sanitised for publication. Do not commit it.
+- `.claude/` is git-ignored and machine-local; it holds personal/work configuration that is **not** sanitised for publication. The deliberate force-adds are the exception, and they are listed in `local_dev/git-ignored-local-files.md`.
 - Skills live under `.agents/skills/` (tracked and tool-neutral). Claude Code reaches the same files through the local `.claude/skills` symlink — see `local_dev/git-ignored-local-files.md`.
+- **A `git commit` with staged C# is gated by a build.** `.claude/settings.json` wires a `PreToolUse` hook (matcher `bash|Bash`, so it fires in both Claude Code and DeepSeek Harness) that runs `.claude/hooks/pre-commit-build-check.sh`. A failing build blocks the commit, with the errors as the reason.
 
 ## Utility
 - VS Code cache problems: `python3 local_dev/scripts/vscode_cache_cleaner.py` (closes VS Code, clears caches, keeps settings and extensions).

@@ -31,6 +31,9 @@ left here now:
 | `.claude/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
 | `.claude/skills` | A **symlink** to `../.agents/skills` so Claude Code finds the tracked skills. Covered by the `.claude/` rule; it owns no content of its own |
 
+Also present in the tree but **tracked**, so not part of the ignored set:
+`.claude/settings.json` and `.claude/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
+
 Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
 `skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
 `skills/unit-test-generator`, `skills/git-commit-message-writer`, `hooks/` (3, never wired),
@@ -94,29 +97,48 @@ A **user-global** bridge was deliberately not created: these skills encode this 
 `~/.agents/skills/` would make them fire in unrelated projects. Omarchy uses that mechanism for the
 distro's own machine-level skills, which is the right scope for them.
 
-Two related notes:
+Three related notes:
 
-- **Hooks are not Claude-only here.** DSH ships `dsh-hooks-claude-code`, which runs command hooks from
-  an existing Claude Code `hooks.json` or settings file during DSH runs. So `.claude/settings.json` is
-  a live configuration surface for both, not just Claude Code — worth remembering now that its empty
-  file and unwired hook were removed.
+- **Hooks are not Claude-only here, and the build gate is wired again.** DSH ships
+  `dsh-hooks-claude-code`, which runs command hooks from a Claude Code `hooks.json` or settings file
+  during DSH runs, so `.claude/settings.json` is a live surface for **both** harnesses. That is now
+  used: `.claude/settings.json` declares a `PreToolUse` hook and
+  `.claude/hooks/pre-commit-build-check.sh` blocks a `git commit` whose staged C# does not build.
+  Three details matter:
+  - The matcher is `bash|Bash`. The two harnesses name the tool differently — Claude Code matches
+    `Bash`, DeepSeek Harness matches `bash` — and a literal pattern (word chars and `|`) is compared
+    by exact, case-sensitive membership, so `Bash` alone silently never fires in DSH.
+  - The command is `${CLAUDE_PROJECT_DIR}/.claude/hooks/…`, so the tracked file carries no machine
+    path; the absolute path lives only in the machine-local profile.
+  - The bridge reads its `configPath` **once at process load**, so a change to the hook config needs a
+    DSH restart (or a genuine patch reload) before it takes effect, and the mount itself is
+    process-wide with one `configPath`.
 - **User-global DSH config is outside this repository** — `~/.dsh/` (settings, profiles, sessions) and
   `~/.agents/skills/` — and outside the agent sandbox's writable area. Granting permission in
   conversation does **not** lift that: writes there are refused unless elevated sandbox access is
   approved per operation, so treat those paths as the user's to edit.
+- **The bridge mount lives in the profile**, not here: `~/.dsh/profiles/web/cordis.patch.yml` carries
+  the `hooks-claude-code` entry with the absolute `configPath` and `projectDir`. The hook script
+  re-checks the session `cwd` from the payload and exits early when a session is outside this
+  repository, so a commit made in another workspace cannot trigger a build here.
 
 ## 2. Ignored *but* tracked — already public, same review applies
 
-Force-added before the policy above was remembered, so these **are in the remote history** and deserve
-the same review as `.claude/`:
+Force-added despite the ignore rules, so these **are in the remote history**:
 
 - `.clinerules`
+- `.claude/settings.json` — the shareable settings layer; now carries the `PreToolUse` build gate
+- `.claude/hooks/pre-commit-build-check.sh` — the enforcement itself
 - `CsvTranslations/.claude/commands/build.md`
 - `CsvTranslations/.claude/rules/windows-development.md`
 - `CsvTranslations/.claude/settings.json`
 - `FilenameTools/.claude/commands/build.md`
 - `FilenameTools/.claude/rules/filename-sanitization.md`
 - `FilenameTools/.claude/settings.json`
+
+This matters for the hook in particular: it was **untracked** when it existed before, which is exactly
+why it was unrecoverable and had to be rewritten. A new file in these directories is still skipped by
+`git add -A` and needs `git add -f`.
 
 A scan for personal markers in these found only a generic Windows path *example* in
 `CsvTranslations/.claude/rules/windows-development.md` (`C:\Users\...`) — no real leak. They are still
@@ -182,7 +204,7 @@ skills (to `.agents/skills/`).
 
 | File | Role | Tracked? |
 | :--- | :--- | :------- |
-| `settings.json` | Shareable project settings — permissions, hooks, whatever the repo agrees on | **Tracked** where it exists: `CsvTranslations/.claude/`, `FilenameTools/.claude/` |
+| `settings.json` | Shareable project settings — permissions, hooks, whatever the repo agrees on | **Tracked** where it exists: the root (the build gate), `CsvTranslations/.claude/`, `FilenameTools/.claude/` |
 | `settings.local.json` | Personal overlay, applied on top of `settings.json`. Per-machine by definition | **Never.** Ignored at the root, in `CsvTranslations/.claude/` and in `CsvTranslations/TextToSpeechApp/.claude/` |
 
 Their permissions are local only; sharing the file would push one machine's allow-list onto everyone.
