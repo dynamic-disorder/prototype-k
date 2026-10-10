@@ -283,6 +283,13 @@ Notable package work:
   `TextToSpeechCore` had to become `net10.0-windows`, and the renamed
   `WaveOutEvent` → `WaveOut` API was adopted (`WaveOutEvent` survives only as `[Obsolete]`).
   PiperSharp 1.0.7 was verified member-by-member to still bind against NAudio 3.1.0.
+
+  **This TFM widening is a workaround, not a design requirement, and should not be
+  widened further.** Only our own `new WaveOut()` playback call needs Windows —
+  PiperSharp's synthesis and `WaveFileReader` are platform-neutral. The intended fix
+  is to refactor rather than align: put playback behind an interface owned by
+  `TextToSpeechCore` and move the NAudio implementation into `TextToSpeechApp`
+  (already Windows-targeted), which lets `TextToSpeechCore` return to `net10.0`.
 - `PiperSharp` 1.0.7 also lifts transitive `SharpCompress` 0.36.0 → 0.50.1, clearing `NU1902`.
 - `Spectre.Console(.Cli)` 0.49.1 → 0.57.2 required adding a `CancellationToken` parameter to
   `AsyncCommand<T>.ExecuteAsync` overrides.

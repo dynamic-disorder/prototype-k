@@ -37,6 +37,13 @@ dotnet test  CsvTranslations.sln            # 139 tests: 27 + 81 + 31
   (home of the `WaveOut` playback class) only ships a Windows TFM, so the library
   must be Windows-targeted to consume it. Its only consumers are Windows-targeted
   too, and playback was already Windows-only at runtime.
+  - **This is a workaround for NAudio's packaging, not a design requirement.**
+    Only our own playback call (`new WaveOut()` in `PiperTextToSpeechService`)
+    needs Windows — PiperSharp's synthesis and `WaveFileReader` are
+    platform-neutral. To restore `net10.0` rather than keep bending the TFM, the
+    intended refactor is to put playback behind an interface owned by
+    `TextToSpeechCore` and move the NAudio implementation into the already-Windows
+    `TextToSpeechApp`. Prefer that over widening this library's target further.
 - **`NETSDK1100`** ("To build a project targeting Windows on this operating
   system, set the EnableWindowsTargeting property") means that property was lost
   from `Directory.Build.props`. `NETSDK1127` means the .NET 10 targeting pack is
