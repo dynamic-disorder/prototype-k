@@ -27,7 +27,7 @@ Current inventory (11 files, none tracked):
 | Path | Note |
 | :--- | :--- |
 | `.claude/skills/*/SKILL.md` (10) | `csharp-conventions`, `csharp-build-verify`, `csharp-refactor`, `explain`, `git-commit`, `unit-test-writer`, `issue-investigate`, `spike`, `publish`, `install-net10-runtime` |
-| `.claude/settings.local.json` | Local permission allow-list only |
+| `.claude/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
 
 Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
 `skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
@@ -113,13 +113,24 @@ files** in the working tree. That fix stands regardless of whether the files are
 
 ## Persisting any of this
 
-`.claude/` has now been sanitised, so versioning it is a legitimate choice — it is currently kept
-local by preference, not because it is unsafe. If you do version it:
+`.claude/` has now been sanitised, so versioning the **skills** is a legitimate choice — they are kept
+local by preference, not because they are unsafe:
 
 ```bash
 git add -f .claude/skills          # force-add despite the ignore rule
 ```
 
-Add `settings.local.json` only if you want the local permission list shared; it is per-machine by
-design. The rest of the entries in this file (per-machine IDE state, scratch tooling) should stay
-untracked.
+`settings.local.json` is **never** versioned. It is the personal overlay on the shareable
+`settings.json` — Claude Code's own layering — so it belongs in `.gitignore` permanently. The rest of
+the entries in this file (per-machine IDE state, scratch tooling) stay untracked as well.
+
+### The two settings files
+
+| File | Role | Tracked? |
+| :--- | :--- | :------- |
+| `settings.json` | Shareable project settings — permissions, hooks, whatever the repo agrees on | **Tracked** where it exists: `CsvTranslations/.claude/`, `FilenameTools/.claude/` |
+| `settings.local.json` | Personal overlay, applied on top of `settings.json`. Per-machine by definition | **Never.** Ignored at the root, in `CsvTranslations/.claude/` and in `CsvTranslations/TextToSpeechApp/.claude/` |
+
+Their permissions are local only; sharing the file would push one machine's allow-list onto everyone.
+`.gitignore` lists `settings.local.json` explicitly *in addition to* the blanket `.claude/` rule, so
+that narrowing the blanket rule later (for example to version skills) cannot accidentally expose it.

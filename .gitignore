@@ -27,6 +27,9 @@ launchSettings.json
 .claude/
 .claudeignore
 CLAUDE.local.md
+# settings.local.json is the *personal* overlay on the shareable settings.json, which is tracked in
+# the sub-projects. Keep this rule even though `.claude/` above already covers it: it is what keeps
+# the personal file ignored if that broader rule is ever narrowed (e.g. to version skills).
 .claude/settings.local.json
 .claude/agent-memory-local/
 __pycache__/
