@@ -145,6 +145,9 @@ internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-aud
 
 ## Documentation
 
+- [`deepseek-harness.md`](deepseek-harness.md) — how DeepSeek Harness consumes this repository:
+  instruction and skill discovery, and the build-gate activation that git cannot carry (a per-machine
+  profile mount plus a DSH restart).
 - [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
   `.gitignore` (root `.claude/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
   changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.

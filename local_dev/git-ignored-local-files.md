@@ -97,30 +97,17 @@ A **user-global** bridge was deliberately not created: these skills encode this 
 `~/.agents/skills/` would make them fire in unrelated projects. Omarchy uses that mechanism for the
 distro's own machine-level skills, which is the right scope for them.
 
-Three related notes:
+Two related notes:
 
-- **Hooks are not Claude-only here, and the build gate is wired again.** DSH ships
-  `dsh-hooks-claude-code`, which runs command hooks from a Claude Code `hooks.json` or settings file
-  during DSH runs, so `.claude/settings.json` is a live surface for **both** harnesses. That is now
-  used: `.claude/settings.json` declares a `PreToolUse` hook and
-  `.claude/hooks/pre-commit-build-check.sh` blocks a `git commit` whose staged C# does not build.
-  Three details matter:
-  - The matcher is `bash|Bash`. The two harnesses name the tool differently — Claude Code matches
-    `Bash`, DeepSeek Harness matches `bash` — and a literal pattern (word chars and `|`) is compared
-    by exact, case-sensitive membership, so `Bash` alone silently never fires in DSH.
-  - The command is `${CLAUDE_PROJECT_DIR}/.claude/hooks/…`, so the tracked file carries no machine
-    path; the absolute path lives only in the machine-local profile.
-  - The bridge reads its `configPath` **once at process load**, so a change to the hook config needs a
-    DSH restart (or a genuine patch reload) before it takes effect, and the mount itself is
-    process-wide with one `configPath`.
+- **The build gate's configuration is shared; its activation is not.** `.claude/settings.json` and
+  `.claude/hooks/pre-commit-build-check.sh` are tracked, so every clone has them — but DSH only runs
+  them once `dsh-hooks-claude-code` is mounted in the machine's profile *and* DSH has been restarted.
+  The mechanism, the `bash|Bash` matcher subtlety and the verification steps are documented in
+  [`deepseek-harness.md`](deepseek-harness.md).
 - **User-global DSH config is outside this repository** — `~/.dsh/` (settings, profiles, sessions) and
   `~/.agents/skills/` — and outside the agent sandbox's writable area. Granting permission in
   conversation does **not** lift that: writes there are refused unless elevated sandbox access is
   approved per operation, so treat those paths as the user's to edit.
-- **The bridge mount lives in the profile**, not here: `~/.dsh/profiles/web/cordis.patch.yml` carries
-  the `hooks-claude-code` entry with the absolute `configPath` and `projectDir`. The hook script
-  re-checks the session `cwd` from the payload and exits early when a session is outside this
-  repository, so a commit made in another workspace cannot trigger a build here.
 
 ## 2. Ignored *but* tracked — already public, same review applies
 
