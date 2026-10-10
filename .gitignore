@@ -33,6 +33,11 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/agent-memory-local/
 __pycache__/
+# Python virtualenvs. `.venv/` currently protects itself with the `.gitignore` (`*`) that
+# `python -m venv` writes, but that file is not ours to rely on — this keeps the ~22 MB tree out
+# of `git add -A` even if it is removed.
+.venv/
+venv/
 
 
 # Continue Dev personal/local files
