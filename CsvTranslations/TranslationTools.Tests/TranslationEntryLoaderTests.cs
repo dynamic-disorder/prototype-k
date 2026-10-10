@@ -85,8 +85,37 @@ public sealed class TranslationEntryLoaderTests : IDisposable
         sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
         sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
         sut[0][0].Text.ShouldBe("abdomen");
+        sut[0][0].EntryType.ShouldBe(TextEntryType.Source);
         sut[0][1].Text.ShouldBe("vatsa/vatsan alue");
+        sut[0][1].EntryType.ShouldBe(TextEntryType.Target);
         sut[2][1].Text.ShouldBe("taidokkaasti");
+
+        // Then: the hashtag column is preserved as metadata, not as spoken text
+        sut[0].Count.ShouldBe(3);
+        sut[0][2].Text.ShouldBe("#anatomy");
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Hashtags);
+    }
+
+    /// <summary>
+    ///     Verifies that a five-column file with a single data row is loaded without error.
+    /// </summary>
+    [Fact]
+    public void LoadTranslationEntriesFromCsv_SingleDataRow_ReturnsParsedEntry()
+    {
+        // Given: a five-column CSV file with a single data row
+        var path = WriteCsv(
+            "translations.csv",
+            FiveColumnHeader,
+            FiveColumnRow("abdomen", "vatsa/vatsan alue", "#anatomy"));
+
+        // When: loading the entries
+        var sut = TranslationEntryLoader.LoadTranslationEntriesFromCsv(path);
+
+        // Then: the row and both languages are resolved
+        sut.Count.ShouldBe(1);
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[0][1].Text.ShouldBe("vatsa/vatsan alue");
     }
 
     /// <summary>

@@ -25,8 +25,7 @@ public sealed class TranslationsParserTests
         "[Source Language],[Source Text],[Target Language],[Target Text],[Hashtags]";
 
     /// <summary>
-    ///     Creates three well-formed data rows for the five-column header. Three rows are
-    ///     required because the parser reads the target language from the third data row.
+    ///     Creates three well-formed data rows for the five-column header.
     /// </summary>
     private static string[] ThreeDataRows()
     {
@@ -87,23 +86,20 @@ public sealed class TranslationsParserTests
     }
 
     /// <summary>
-    ///     Documents the actual (buggy) behaviour of doubled-quote handling. The implementation
-    ///     bumps a separate position counter for the lookahead but the foreach loop still visits
-    ///     the second quote of the pair, so the quote state drifts and the remainder of the line
-    ///     is swallowed into a single field. This test asserts the current output, not the
-    ///     documented intent of unescaping "" to ".
+    ///     Verifies that a doubled quote inside a quoted field is unescaped to a single quote
+    ///     without swallowing the remaining separator or field.
     /// </summary>
     [Fact]
-    public void SplitCsvLine_DoubledQuotes_AreNotUnescapedCorrectly()
+    public void SplitCsvLine_DoubledQuotes_AreUnescaped()
     {
-        // Given: a quoted field containing escaped quotes ("" is documented to become one ")
+        // Given: a quoted field containing escaped quotes ("" becomes one ")
         const string line = "\"He said \"\"hi\"\"\",x";
 
         // When: splitting the line
         var actual = TranslationsParser.SplitCsvLine(line);
 
-        // Then: the escaped quote pair corrupts the parse and the trailing field is merged in
-        actual.ShouldBe(["He said \"hi,x"]);
+        // Then: the escaped quotes collapse and the trailing field stays separate
+        actual.ShouldBe(["He said \"hi\"", "x"]);
     }
 
     /// <summary>
@@ -173,10 +169,11 @@ public sealed class TranslationsParserTests
     }
 
     /// <summary>
-    ///     Verifies the documented five-column layout produces source and target entries.
+    ///     Verifies the documented five-column layout produces source, target and hashtag entries
+    ///     with the correct entry types.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_FiveColumnLayout_ParsesSourceAndTargetEntries()
+    public void ParseTranslationsCsvLines_FiveColumnLayout_ParsesSourceTargetAndHashtagEntries()
     {
         // Given: the five-column header and three data rows
         var lines = ThreeDataRows();
@@ -193,21 +190,25 @@ public sealed class TranslationsParserTests
         sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
         sut.VoiceLanguages[1].LanguageType.ShouldBe(LanguageTypes.Target);
 
-        // Then: each row has only the source and target text entries (language/hashtag columns are skipped)
-        sut[0].Count.ShouldBe(2);
+        // Then: each row carries source text, target text and the hashtag metadata
+        sut[0].Count.ShouldBe(3);
         sut[0][0].Language.LanguageName.ShouldBe("English");
         sut[0][0].Text.ShouldBe("abdomen");
+        sut[0][0].EntryType.ShouldBe(TextEntryType.Source);
         sut[0][1].Language.LanguageName.ShouldBe("Finnish");
         sut[0][1].Text.ShouldBe("vatsa/vatsan alue");
+        sut[0][1].EntryType.ShouldBe(TextEntryType.Target);
+        sut[0][2].Text.ShouldBe("#anatomy");
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Hashtags);
         sut[2][1].Text.ShouldBe("taidokkaasti");
     }
 
     /// <summary>
-    ///     Documents the actual behaviour: the target language is read from the third data row
-    ///     (csvLines[2]) rather than from the header, so a differing value in that row wins.
+    ///     Verifies the source and target language values are taken from the first data row,
+    ///     so a differing language in a later row does not change the detected languages.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_TargetLanguageComesFromThirdDataRow()
+    public void ParseTranslationsCsvLines_LanguagesComeFromFirstDataRow()
     {
         // Given: three rows where only the third row declares a different target language
         string[] lines =
@@ -220,17 +221,20 @@ public sealed class TranslationsParserTests
         // When: parsing the lines
         var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
 
-        // Then: the detected target language is taken from row 3, column 3
-        sut.VoiceLanguages[1].LanguageName.ShouldBe("Swedish");
-        sut[0][1].Language.LanguageName.ShouldBe("Swedish");
+        // Then: the languages declared by the first data row win
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[0][1].Language.LanguageName.ShouldBe("Finnish");
+
+        // Then: the outstanding third-row value is still parsed as ordinary target text
+        sut[2][1].Text.ShouldBe("cc");
     }
 
     /// <summary>
-    ///     Documents the actual behaviour: a five-column file needs at least three data rows
-    ///     because the parser indexes csvLines[2] while resolving the target language.
+    ///     Verifies that a five-column file with fewer than three data rows parses without error.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_FewerThanThreeDataRows_ThrowsIndexOutOfRange()
+    public void ParseTranslationsCsvLines_TwoDataRows_AreParsedWithoutError()
     {
         // Given: only two data rows for the five-column header
         string[] lines =
@@ -239,56 +243,85 @@ public sealed class TranslationsParserTests
             "\"English\",\"b\",\"Finnish\",\"bb\",\"#x\""
         ];
 
-        // When/Then: the parser indexes beyond the supplied rows
-        Should.Throw<IndexOutOfRangeException>(() =>
-            TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines));
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
+
+        // Then: both rows are parsed with the languages taken from the first row
+        sut.Count.ShouldBe(2);
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[1][1].Text.ShouldBe("bb");
     }
 
     /// <summary>
-    ///     Verifies the documented short "Hashtags" header is accepted (it needs five data rows
-    ///     because the parser indexes csvLines[4] for that column).
+    ///     Verifies that a single data row is enough to resolve the languages and parse the row.
+    /// </summary>
+    [Fact]
+    public void ParseTranslationsCsvLines_SingleDataRow_IsParsed()
+    {
+        // Given: a five-column file with exactly one data row
+        string[] lines = ["\"English\",\"a\",\"Finnish\",\"aa\",\"#x\""];
+
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
+
+        // Then: the row and both languages are resolved
+        sut.Count.ShouldBe(1);
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[0].Count.ShouldBe(3);
+    }
+
+    /// <summary>
+    ///     Verifies the documented short "Hashtags" header is accepted with any number of rows
+    ///     and produces a hashtag entry.
     /// </summary>
     [Fact]
     public void ParseTranslationsCsvLines_DocumentedHashtagsHeader_IsAccepted()
     {
-        // Given: the documented header and five data rows
+        // Given: the documented header and two data rows
         string[] lines =
         [
             "\"English\",\"a\",\"Finnish\",\"aa\",\"#one\"",
-            "\"English\",\"b\",\"Finnish\",\"bb\",\"#two\"",
-            "\"English\",\"c\",\"Finnish\",\"cc\",\"#three\"",
-            "\"English\",\"d\",\"Finnish\",\"dd\",\"#four\"",
-            "\"English\",\"e\",\"Finnish\",\"ee\",\"#five\""
+            "\"English\",\"b\",\"Finnish\",\"bb\",\"#two\""
         ];
 
         // When: parsing the lines
         var sut = TranslationsParser.ParseTranslationsCsvLines(DocumentedHashtagsHeader, lines);
 
-        // Then: all rows are parsed and the hashtag column is not part of the entries
-        sut.Count.ShouldBe(5);
+        // Then: both rows are parsed and the hashtag is represented as metadata
+        sut.Count.ShouldBe(2);
         sut.IsTranslationEntryTranslations.ShouldBeTrue();
-        sut[0].Count.ShouldBe(2);
+        sut[0].Count.ShouldBe(3);
+        sut[0][2].Text.ShouldBe("#one");
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Hashtags);
     }
 
     /// <summary>
-    ///     Documents the actual behaviour: the "Hashtags" column makes the parser read csvLines[4],
-    ///     so a four-row file is rejected with an index error.
+    ///     Verifies that hashtag recognition is based on the column name containing "Hashtags"
+    ///     (case-insensitive), not on it starting with that literal.
     /// </summary>
-    [Fact]
-    public void ParseTranslationsCsvLines_HashtagsHeaderWithFewerThanFiveRows_ThrowsIndexOutOfRange()
+    [Theory]
+    [InlineData("Context Categorization Hashtags")]
+    [InlineData("hashtags")]
+    [InlineData("Category HASHTAGS column")]
+    public void ParseTranslationsCsvLines_HashtagColumnNameVariants_AreRecognised(string hashtagColumnName)
     {
-        // Given: four data rows for the documented hashtags header
+        // Given: a five-column header whose last column uses the supplied hashtag column name
+        var header = "[Source Language],[Source Text],[Target Language],[Target Text],[" + hashtagColumnName + "]";
         string[] lines =
         [
             "\"English\",\"a\",\"Finnish\",\"aa\",\"#one\"",
-            "\"English\",\"b\",\"Finnish\",\"bb\",\"#two\"",
-            "\"English\",\"c\",\"Finnish\",\"cc\",\"#three\"",
-            "\"English\",\"d\",\"Finnish\",\"dd\",\"#four\""
+            "\"English\",\"b\",\"Finnish\",\"bb\",\"#two\""
         ];
 
-        // When/Then: the parser indexes beyond the supplied rows
-        Should.Throw<IndexOutOfRangeException>(() =>
-            TranslationsParser.ParseTranslationsCsvLines(DocumentedHashtagsHeader, lines));
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(header, lines);
+
+        // Then: the column is treated as hashtag metadata
+        sut[0].Count.ShouldBe(3);
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Hashtags);
+        sut[0][2].Text.ShouldBe("#one");
     }
 
     /// <summary>
@@ -322,29 +355,35 @@ public sealed class TranslationsParserTests
     }
 
     /// <summary>
-    ///     Documents the actual (buggy) behaviour: a colon-style header that also uses the long
-    ///     column names is cleaned by removing spaces, so the "Source Language"/"Target Language"
-    ///     detection fails and the fallback language extractor splits the "SourceText" column on
-    ///     a colon that it does not contain.
+    ///     Verifies a colon-style header that also uses the long column names parses the declared
+    ///     source and target languages without tripping over the columns that carry no value.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_ColonStyleFiveColumnHeader_ThrowsIndexOutOfRange()
+    public void ParseTranslationsCsvLines_ColonStyleFiveColumnHeader_ParsesLongLanguageNames()
     {
         // Given: a five-column header expressed with colons and long column names
         const string header =
             "Source Language:English, Source Text, Target Language:Finnish, Target Text, Hashtags";
         string[] lines = ["\"English\",\"a\",\"Finnish\",\"aa\",\"#x\""];
 
-        // When/Then: space stripping breaks the language detection and the fallback split fails
-        Should.Throw<IndexOutOfRangeException>(() =>
-            TranslationsParser.ParseTranslationsCsvLines(header, lines));
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(header, lines);
+
+        // Then: the declared languages are detected and the row is parsed
+        sut.VoiceLanguages.Count.ShouldBe(2);
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[0].Count.ShouldBe(3);
+        sut[0][0].Text.ShouldBe("a");
+        sut[0][1].Text.ShouldBe("aa");
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Hashtags);
     }
 
     /// <summary>
-    ///     Verifies that columns beyond the header definition cause an index error.
+    ///     Verifies that columns beyond the header definition are ignored instead of throwing.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_ExtraDataColumn_ThrowsIndexOutOfRange()
+    public void ParseTranslationsCsvLines_ExtraDataColumn_IsIgnored()
     {
         // Given: rows with one more column than the header defines
         string[] lines =
@@ -354,9 +393,15 @@ public sealed class TranslationsParserTests
             "\"English\",\"c\",\"Finnish\",\"cc\",\"#x\",\"extra\""
         ];
 
-        // When/Then: the parser looks up a header column that does not exist
-        Should.Throw<IndexOutOfRangeException>(() =>
-            TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines));
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
+
+        // Then: the extra column is dropped and the known columns are parsed
+        sut.Count.ShouldBe(3);
+        sut[0].Count.ShouldBe(3);
+        sut[0][0].Text.ShouldBe("a");
+        sut[0][1].Text.ShouldBe("aa");
+        sut[0][2].Text.ShouldBe("#x");
     }
 
     /// <summary>
@@ -407,28 +452,29 @@ public sealed class TranslationsParserTests
     }
 
     /// <summary>
-    ///     Documents the actual (buggy) behaviour: a row containing escaped quotes is split
-    ///     incorrectly, so the source entry absorbs the rest of the line and the target entry
-    ///     is lost. See <see cref="TranslationsParser.SplitCsvLine" />.
+    ///     Verifies that a row containing escaped quotes keeps its source and target fields
+    ///     with the quotes unescaped. See <see cref="TranslationsParser.SplitCsvLine" />.
     /// </summary>
     [Fact]
-    public void ParseTranslationsCsvLines_DoubledQuotes_CorruptTheRow()
+    public void ParseTranslationsCsvLines_DoubledQuotes_KeepBothFields()
     {
-        // Given: three rows whose text contains escaped quotes
+        // Given: three rows whose text contains escaped quotes in the middle of the value
         string[] lines =
         [
-            "\"English\",\"He said \"\"hi\"\"\",\"Finnish\",\"Hän sanoi \"\"hei\"\"\",\"#x\"",
-            "\"English\",\"He said \"\"hi\"\"\",\"Finnish\",\"Hän sanoi \"\"hei\"\"\",\"#x\"",
-            "\"English\",\"He said \"\"hi\"\"\",\"Finnish\",\"Hän sanoi \"\"hei\"\"\",\"#x\""
+            "\"English\",\"He said \"\"hi\"\" today\",\"Finnish\",\"Hän sanoi \"\"hei\"\" tänään\",\"#x\"",
+            "\"English\",\"He said \"\"hi\"\" today\",\"Finnish\",\"Hän sanoi \"\"hei\"\" tänään\",\"#x\"",
+            "\"English\",\"He said \"\"hi\"\" today\",\"Finnish\",\"Hän sanoi \"\"hei\"\" tänään\",\"#x\""
         ];
 
         // When: parsing the lines
         var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
 
-        // Then: the row collapses into one merged source entry and loses the target entry
-        sut[0].Count.ShouldBe(1);
+        // Then: the row keeps its source, target and hashtag entries with the quotes unescaped
+        sut[0].Count.ShouldBe(3);
         sut[0][0].Language.LanguageName.ShouldBe("English");
-        sut[0][0].Text.ShouldBe("He said \"hi,Finnish,Hän sanoi hei,#x");
+        sut[0][0].Text.ShouldBe("He said \"hi\" today");
+        sut[0][1].Language.LanguageName.ShouldBe("Finnish");
+        sut[0][1].Text.ShouldBe("Hän sanoi \"hei\" tänään");
     }
 
     /// <summary>
@@ -448,10 +494,11 @@ public sealed class TranslationsParserTests
         // When: parsing the lines
         var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
 
-        // Then: the entries exist but carry empty text
-        sut[0].Count.ShouldBe(2);
+        // Then: the source and target entries exist but carry empty text
+        sut[0].Count.ShouldBe(3);
         sut[0][0].Text.ShouldBeEmpty();
         sut[0][1].Text.ShouldBeEmpty();
+        sut[0][2].Text.ShouldBe("#x");
     }
 
     /// <summary>
@@ -474,6 +521,95 @@ public sealed class TranslationsParserTests
         // Then: the entry text is trimmed
         sut[0][0].Text.ShouldBe("abdomen");
         sut[0][1].Text.ShouldBe("vatsa");
+    }
+
+    /// <summary>
+    ///     Verifies that the language values are read with CSV-aware splitting, so a quoted comma
+    ///     in an earlier column does not shift the target language value.
+    /// </summary>
+    [Fact]
+    public void ParseTranslationsCsvLines_QuotedCommaInFirstRow_LanguagesStayAligned()
+    {
+        // Given: a first data row whose source text contains a comma
+        string[] lines =
+        [
+            "\"English\",\"a, b\",\"Finnish\",\"c, d\",\"#x\"",
+            "\"English\",\"e\",\"Finnish\",\"f\",\"#y\""
+        ];
+
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
+
+        // Then: the target language is still resolved from the correct column
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBe("Finnish");
+        sut[0][1].Text.ShouldBe("c, d");
+    }
+
+    /// <summary>
+    ///     Verifies that a first data row shorter than the header yields an empty language
+    ///     instead of throwing an index error.
+    /// </summary>
+    [Fact]
+    public void ParseTranslationsCsvLines_FirstDataRowShorterThanHeader_YieldsEmptyLanguage()
+    {
+        // Given: a five-column header but a first data row with only two fields
+        string[] lines =
+        [
+            "\"English\",\"a\"",
+            "\"English\",\"b\",\"Finnish\",\"bb\",\"#x\""
+        ];
+
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(FiveColumnHeader, lines);
+
+        // Then: the missing target language column becomes an empty language rather than an error
+        sut.Count.ShouldBe(2);
+        sut.VoiceLanguages[0].LanguageName.ShouldBe("English");
+        sut.VoiceLanguages[1].LanguageName.ShouldBeEmpty();
+        sut[0].Count.ShouldBe(1);
+    }
+
+    /// <summary>
+    ///     Verifies a semantics column produces a semantics entry and does not throw when the
+    ///     column carries no language value.
+    /// </summary>
+    [Fact]
+    public void ParseTranslationsCsvLines_SemanticsColumn_ProducesSemanticsEntry()
+    {
+        // Given: a five-column header whose last column is a semantics column
+        const string header =
+            "[Source Language],[Source Text],[Target Language],[Target Text],[Semantics]";
+        string[] lines =
+        [
+            "\"English\",\"a\",\"Finnish\",\"aa\",\"category\"",
+            "\"English\",\"b\",\"Finnish\",\"bb\",\"category\""
+        ];
+
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines(header, lines);
+
+        // Then: the column is represented as a semantics entry without a declared language
+        sut[0].Count.ShouldBe(3);
+        sut[0][2].Text.ShouldBe("category");
+        sut[0][2].EntryType.ShouldBe(TextEntryType.Semantics);
+    }
+
+    /// <summary>
+    ///     Verifies that non-translation-entry rows leave the entry type at its default.
+    /// </summary>
+    [Fact]
+    public void ParseTranslationsCsvLines_NonTranslationColumns_LeaveEntryTypeNone()
+    {
+        // Given: a compact colon header (non translation-entry mode)
+        string[] lines = ["\"hello\",\"bonjour\""];
+
+        // When: parsing the lines
+        var sut = TranslationsParser.ParseTranslationsCsvLines("Source:English, Target:French", lines);
+
+        // Then: the entries keep the default entry type
+        sut[0][0].EntryType.ShouldBe(TextEntryType.None);
+        sut[0][1].EntryType.ShouldBe(TextEntryType.None);
     }
 
     /// <summary>

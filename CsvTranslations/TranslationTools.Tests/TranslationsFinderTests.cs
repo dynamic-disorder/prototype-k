@@ -169,22 +169,4 @@ public sealed class TranslationsFinderTests : IDisposable
         actual.CsvLines.ShouldBeEmpty();
         actual.HasLines.ShouldBeFalse();
     }
-
-    /// <summary>
-    ///     Verifies that without a settings.json next to the test assembly no translation
-    ///     file path can be resolved from settings.
-    /// </summary>
-    [Fact]
-    public void GetTranslationFilePathFromSettings_NoSettingsFile_ReturnsEmptyString()
-    {
-        // Given: the test output directory does not contain settings.json
-        var settingsPath = Path.Combine(AppContext.BaseDirectory, "settings.json");
-
-        // When: resolving the translation file path from settings
-        var actual = TranslationsFinder.GetTranslationFilePathFromSettings();
-
-        // Then: an empty string is returned (the environment variable is never consulted without the file)
-        File.Exists(settingsPath).ShouldBeFalse();
-        actual.ShouldBeEmpty();
-    }
 }

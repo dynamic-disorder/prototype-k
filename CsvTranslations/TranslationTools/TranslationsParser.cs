@@ -144,10 +144,15 @@ public class TranslationsParser
     /// </summary>
     /// <param name="rawHeader">The original header line</param>
     /// <returns>The cleaned header line</returns>
+    /// <remarks>
+    ///     Internal spaces are preserved so that a colon-style header using the long column names
+    ///     (for example "Source Language:English") keeps those names detectable. Individual
+    ///     columns are trimmed later by <see cref="GetHeaderColumns" />.
+    /// </remarks>
     private static string GetCleanHeaderLine(string rawHeader)
     {
         var cleanedHeaderLine
-            = rawHeader.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(" ", "").Trim();
+            = rawHeader.Replace("\"", "").Replace("[", "").Replace("]", "").Trim();
         return cleanedHeaderLine;
     }
 
@@ -165,6 +170,10 @@ public class TranslationsParser
             targetPattern = ColumnTargetLanguage;
         }
 
+        // Language values live in the data rows, never in the header. Read them from the first
+        // data row at the matching column index, using SplitCsvLine so quoted values are handled.
+        List<string> firstDataRow = csvLines.Length > 0 ? SplitCsvLine(csvLines[0]) : [];
+
         var columns = new List<string>();
         var headerLineArray = headerLine.Replace("[", string.Empty).Replace("]", string.Empty).Trim().Split(',');
         for (var index = 0; index < headerLineArray.Length; index++)
@@ -173,7 +182,7 @@ public class TranslationsParser
             var columnValue = column.Trim();
             if (columnValue.StartsWith(sourcePattern, StringComparison.InvariantCulture))
             {
-                var sourceLanguage = csvLines[index].Split(',')[index].Trim('"');
+                var sourceLanguage = GetColumnValue(firstDataRow, index);
                 var sourceWithLanguage = columnValue + ":" + sourceLanguage;
                 columns.Add(sourceWithLanguage);
                 continue;
@@ -181,24 +190,33 @@ public class TranslationsParser
 
             if (columnValue.StartsWith(targetPattern, StringComparison.OrdinalIgnoreCase))
             {
-                var targetLanguage = csvLines[index].Split(',')[index].Trim('"');
+                var targetLanguage = GetColumnValue(firstDataRow, index);
                 var targetWithLanguage = columnValue + ":" + targetLanguage;
                 columns.Add(targetWithLanguage);
                 continue;
             }
 
-            if (columnValue.StartsWith("Hashtags", StringComparison.OrdinalIgnoreCase))
-            {
-                var targetLanguage = csvLines[index].Split(',')[index].Trim('"');
-                var targetWithLanguage = columnValue + ":" + targetLanguage;
-                columns.Add(targetWithLanguage);
-                continue;
-            }
-
+            // Any other column (including hashtags) carries no language, so it is kept as-is.
             columns.Add(columnValue);
         }
         var languageHeaderLines = string.Join(",", columns);
         return languageHeaderLines;
+    }
+
+    /// <summary>
+    ///     Safely returns the value of a column from a parsed data row.
+    /// </summary>
+    /// <param name="row">The parsed data row values.</param>
+    /// <param name="index">The zero-based column index.</param>
+    /// <returns>The trimmed column value, or an empty string when the row does not contain that column.</returns>
+    private static string GetColumnValue(List<string> row, int index)
+    {
+        if (index < 0 || index >= row.Count)
+        {
+            return string.Empty;
+        }
+
+        return row[index].Trim('"').Trim();
     }
 
     /// <summary>
@@ -220,10 +238,16 @@ public class TranslationsParser
     private static LanguageExtractionResult ExtractSourceAndTargetLanguages(string[] headerColumns)
     {
         var sources = headerColumns.Where(h => h.StartsWith(ColumnSource, StringComparison.OrdinalIgnoreCase))
-            .Select(x => x.Split(':')[1]).ToArray();
+            .Select(x => x.Split(':'))
+            .Where(parts => parts.Length > 1)
+            .Select(parts => parts[1].Trim())
+            .ToArray();
 
         var targets = headerColumns.Where(h => h.StartsWith(ColumnTarget, StringComparison.OrdinalIgnoreCase))
-            .Select(x => x.Split(':')[1]).ToArray();
+            .Select(x => x.Split(':'))
+            .Where(parts => parts.Length > 1)
+            .Select(parts => parts[1].Trim())
+            .ToArray();
 
         return new LanguageExtractionResult(sources, targets);
     }
@@ -249,13 +273,13 @@ public class TranslationsParser
 
             if (headerColumn.Contains(ColumnSourceLanguage, StringComparison.InvariantCultureIgnoreCase))
             {
-                sources.Add(split[1]);
+                sources.Add(split[1].Trim());
                 continue;
             }
 
             if (headerColumn.Contains(ColumnTargetLanguage, StringComparison.InvariantCultureIgnoreCase))
             {
-                targets.Add(split[1]);
+                targets.Add(split[1].Trim());
             }
         }
 
@@ -307,56 +331,84 @@ public class TranslationsParser
     {
         var entryRow = new TextEntryRow();
         var columns = SplitCsvLine(line).ToArray();
-        for (var i = 0; i < columns.Length; i++)
-        {
-            var isSource = headerColumns[i].StartsWith(ColumnSourceText, StringComparison.InvariantCultureIgnoreCase);
-            var isTarget = headerColumns[i].StartsWith(ColumnTargetText, StringComparison.InvariantCultureIgnoreCase);
 
-            var isSemantics = headerColumns[i].StartsWith(ColumnSemantics, StringComparison.InvariantCultureIgnoreCase);
+        // Only the columns present in both the header and the data row are used, so extra data
+        // columns are ignored and short rows simply produce fewer entries.
+        var columnCount = Math.Min(columns.Length, headerColumns.Length);
+        for (var i = 0; i < columnCount; i++)
+        {
+            var headerColumn = headerColumns[i];
+            var isSource = headerColumn.StartsWith(ColumnSourceText, StringComparison.InvariantCultureIgnoreCase);
+            var isTarget = headerColumn.StartsWith(ColumnTargetText, StringComparison.InvariantCultureIgnoreCase);
+            var isSemantics = headerColumn.StartsWith(ColumnSemantics, StringComparison.InvariantCultureIgnoreCase);
+            var isHashtags = headerColumn.Contains(ColumnHashtags, StringComparison.InvariantCultureIgnoreCase);
 
             string languageName;
+            TextEntryType entryType;
 #pragma warning disable IDE0045 // Convert to conditional expression
             if (isSource)
             {
-                languageName = headerColumns
-                    .First(x => x.StartsWith(ColumnSourceLanguage, StringComparison.InvariantCultureIgnoreCase))
-                    .Split(':')[1];
+                languageName = GetLanguageNameFromHeaderColumn(headerColumns, ColumnSourceLanguage);
+                entryType = TextEntryType.Source;
+            }
+            else if (isTarget)
+            {
+                languageName = GetLanguageNameFromHeaderColumn(headerColumns, ColumnTargetLanguage);
+                entryType = TextEntryType.Target;
+            }
+            else if (isSemantics)
+            {
+                languageName = GetLanguageNameFromHeaderColumn(headerColumns, ColumnSemantics);
+                entryType = TextEntryType.Semantics;
+            }
+            else if (isHashtags)
+            {
+                // A hashtag column carries no language.
+                languageName = string.Empty;
+                entryType = TextEntryType.Hashtags;
             }
             else
             {
-                if (isTarget)
-                {
-                    languageName = headerColumns
-                        .First(x => x.StartsWith(ColumnTargetLanguage, StringComparison.InvariantCultureIgnoreCase))
-                        .Split(':')[1];
-                }
-                else
-                {
-                    if (isSemantics)
-                    {
-                        languageName = headerColumns
-                            .First(x => x.StartsWith(ColumnSemantics, StringComparison.InvariantCultureIgnoreCase))
-                            .Split(':')[1];
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
+                continue;
             }
 #pragma warning restore IDE0045 // Convert to conditional expression
+
             var column = columns[i];
             var entry = new TextEntry
             {
-                Language = voiceLanguages.FirstOrDefault(x => x.LanguageName == languageName) ??
-                           VoiceLanguage.System,
-                Text = column.Trim('"').Trim()
+                Language = isHashtags
+                    ? VoiceLanguage.Empty
+                    : voiceLanguages.FirstOrDefault(x => x.LanguageName == languageName) ?? VoiceLanguage.System,
+                Text = column.Trim('"').Trim(),
+                EntryType = entryType
             };
 
             entryRow.Add(entry);
         }
 
         return entryRow;
+    }
+
+    /// <summary>
+    ///     Reads the language value that follows the colon in a header column (for example
+    ///     "Source Language:English" yields "English"). Returns an empty string when the column
+    ///     is missing or does not declare a value.
+    /// </summary>
+    /// <param name="headerColumns">The parsed header columns.</param>
+    /// <param name="columnName">The column name to look for.</param>
+    /// <returns>The declared language value, or an empty string.</returns>
+    private static string GetLanguageNameFromHeaderColumn(string[] headerColumns, string columnName)
+    {
+        var headerColumn = headerColumns.FirstOrDefault(
+            x => x.StartsWith(columnName, StringComparison.InvariantCultureIgnoreCase));
+
+        if (headerColumn is null)
+        {
+            return string.Empty;
+        }
+
+        var split = headerColumn.Split(':');
+        return split.Length > 1 ? split[1].Trim() : string.Empty;
     }
 
 
@@ -377,17 +429,18 @@ public class TranslationsParser
         var result = new List<string>();
         var current = new StringBuilder();
         var inQuotes = false;
-        var position = 0;
 
-        foreach (var c in line)
+        for (var index = 0; index < line.Length; index++)
         {
+            var c = line[index];
+
             if (c == '"')
             {
                 // Toggle quoted state, unless it's an escaped quote ("")
-                if (inQuotes && position + 1 < line.Length && line[position + 1] == '"')
+                if (inQuotes && index + 1 < line.Length && line[index + 1] == '"')
                 {
                     current.Append('"'); // escaped quote
-                    position++; // skip next quote
+                    index++; // consume the second quote of the pair
                 }
                 else
                 {
@@ -404,8 +457,6 @@ public class TranslationsParser
             {
                 current.Append(c);
             }
-
-            position++;
         }
 
         // Add last field

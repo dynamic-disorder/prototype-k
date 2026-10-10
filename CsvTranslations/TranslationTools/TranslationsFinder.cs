@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text.Json;
 
 using CliUtils;
 
@@ -215,15 +216,22 @@ public class TranslationsFinder
     }
 
     /// <summary>
-    ///     Parses the translation file path from the provided environment variable.
+    ///     Parses the translation file path from the supplied settings JSON, falling back to the
+    ///     user- and machine-level <c>translation_filepath</c> environment variables when the JSON
+    ///     has no usable value.
     /// </summary>
     private static string GetTranslationFilepathFromEnvironmentVariable(string json)
     {
         const string environmentVariableName = "translation_filepath";
 
-        var pathValue = Environment.GetEnvironmentVariable(environmentVariableName, EnvironmentVariableTarget.User);
+        var pathValue = GetTranslationFilepathFromJson(json);
 
-        if (string.IsNullOrEmpty(pathValue))
+        if (string.IsNullOrWhiteSpace(pathValue))
+        {
+            pathValue = Environment.GetEnvironmentVariable(environmentVariableName, EnvironmentVariableTarget.User);
+        }
+
+        if (string.IsNullOrWhiteSpace(pathValue))
         {
             pathValue = Environment.GetEnvironmentVariable(environmentVariableName, EnvironmentVariableTarget.Machine);
         }
@@ -240,6 +248,38 @@ public class TranslationsFinder
         {
             ConsoleLogger.WriteLine($"Translation file path found  in environment variable {environmentVariableName}: {tidyPath}");
             return tidyPath;
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    ///     Reads the <c>translation_filepath</c> property from the supplied settings JSON.
+    /// </summary>
+    /// <param name="json">The settings JSON content.</param>
+    /// <returns>The configured path, or an empty string when absent or the JSON is malformed.</returns>
+    private static string GetTranslationFilepathFromJson(string json)
+    {
+        const string propertyName = "translation_filepath";
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty(propertyName, out var property)
+                && property.ValueKind == JsonValueKind.String)
+            {
+                return property.GetString() ?? string.Empty;
+            }
+        }
+        catch (JsonException)
+        {
+            ConsoleLogger.WriteLine("Settings file is not valid JSON; falling back to environment variables.");
         }
 
         return string.Empty;

@@ -47,6 +47,12 @@ internal sealed class Program
     {
         foreach (TextEntry entry in entryRow)
         {
+            // Hashtags are metadata, not spoken text.
+            if (entry.EntryType == TextEntryType.Hashtags)
+            {
+                continue;
+            }
+
             var originalColor = Console.ForegroundColor;
             var languageCode = entry.Language.LanguageCulture.TwoLetterISOLanguageName.ToLower(CultureInfo.InvariantCulture);
 
@@ -361,6 +367,12 @@ internal sealed class Program
 
             foreach (TextEntry entry in entryRow)
             {
+                // Hashtags are metadata, not spoken text.
+                if (entry.EntryType == TextEntryType.Hashtags)
+                {
+                    continue;
+                }
+
                 await textToSpeechService.SpeakEntryAsync(entry);
             }
 
