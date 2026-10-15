@@ -11,14 +11,17 @@
 | **Change** | Three phases: (1) cleanup in place, (2) consolidation of the root/meta layer, (3) split into five project repositories plus a thin umbrella. |
 | **Verify** | `./local_dev/scripts/build-all-linux.sh --test` after each phase, a link/reference sweep, and a fresh-clone check per new repository before its first push. |
 
-The repository has **49 commits**, rooted at `3404ecc chore: initial import of prototype-k monorepo`.
-An earlier draft of this plan claimed the history was a single import commit, which was wrong — it came
-from a truncated `git log`, not from a count. That makes history the first thing to settle:
+The repository carries its own history — 50 commits at the time of writing, rooted at
+`3404ecc chore: initial import of prototype-k monorepo`. An earlier draft of this plan claimed it was
+a single import commit, which was wrong: that came from a truncated `git log`, not from a count.
+History is therefore the first thing to settle:
 
 | Approach | Effect |
 | :--- | :--- |
 | **Copy the subtree, fresh `git init`** | Simple, no rewriting; every new repository starts at one commit and loses its per-project history |
-| **`git filter-repo --path <project>`** | Keeps each project's history, but rewrites it per repository and must happen before that repository's first push |
+| **`git filter-repo --path <project>`** | Keeps each project's history, but rewrites it per repository and must happen before that repository's first push. **`git filter-repo` is not installed on this box** — only `filter-branch`, which is slower and easier to misuse |
+
+**Decision outstanding:** which route. Section 5 assumes one of the two.
 
 ## Decisions (2026-10-15)
 
@@ -84,14 +87,29 @@ Consolidation rules:
 
 1. **Root of a project repo holds only** `README.md`, `CLAUDE.md`, `.gitignore`, `.gitattributes`,
    `.editorconfig`, `Directory.Build.props`, the source folders, and optionally `.github/`.
-2. **The 30 KB `local_dev/Claude_Code_*guide*.md` vendor reference leaves the repositories** — it is
-   third-party material, not repo context; keep it outside git or drop it.
+2. **Third-party reference leaves the repositories** — it is third-party material, not repo context.
+   *Done*: the 30 KB vendor guide is archived out.
 3. **Plans are archived on completion**; finished plans do not stay as AI context in a repo.
-4. **Box-level notes** (`memory/omarchy-tool-substitutions.md`) describe this machine, not a project.
-   Under D4 they would be copied into every repo; recommend keeping such notes user-global
-   (`~/.claude/`) and copying only project-level notes. *Confirm before Phase 2.*
+   *Done*: three finished plans archived out.
+4. **Machine- and user-level notes go user-global, not into every repo.** *Confirmed 2026-10-15.*
+   A review of `memory/` found that **neither note is project-level**: `omarchy-tool-substitutions.md`
+   describes this box, and `non-programmable-fallback.md` is generic agent-behaviour feedback whose
+   frontmatter is user-memory format. So `memory/` has no place in the split repositories: at split
+   time its contents move to user-global configuration and the folder disappears. It stays in the
+   tree until then — there is exactly one copy today, so moving it early only breaks repo-local
+   context for the agents working here.
 5. **Every cross-layer link is rewritten.** `FilenameTools/CLAUDE.md`, `CsvTranslations/CLAUDE.md`,
    `ai_offline/CLAUDE.md` and the root `CLAUDE.md` all point into `../local_dev/…` today.
+
+### Phase 2 status
+
+| Item | Status |
+| :--- | :--- |
+| Bootstrap on a read-only `$HOME` | **Done** — `local_dev/scripts/sandbox-env.sh` is tracked; verified by restoring a project with an empty package cache |
+| Third-party reference archived out | **Done** — vendor guide |
+| Finished plans archived out | **Done** — three plans |
+| `memory/` de-duplicated | **Done** — one index file instead of two |
+| Cross-layer references trimmed for the split | **Open** — blocked on the history decision in section 5 |
 
 ## 4. Phase 3 — multi-repository target
 
@@ -104,10 +122,10 @@ Consolidation rules:
 | `ai-offline` | `ai_offline/**`, `Modelfile`, `cc.cmd` | **private** | — |
 | `prototype-k` | thin umbrella README linking the above; cross-project docs | public | — |
 
-**Open sub-decision (D1a): which NuGet feed.** GitHub Packages (`nuget.pkg.github.com`) requires a
-PAT for **restore** even though the packages are public, which adds friction to every clone and to
-CI; nuget.org needs no auth to consume but publishes globally and permanently; a committed local
-`packages/` folder avoids any feed but puts binaries in git.
+**Sub-decision (D1a): the NuGet feed — resolved 2026-10-15: nuget.org.** No auth to consume, so a
+clone or CI restores without credentials. The accepted trade-off: a published package ID is
+effectively permanent. Rejected: GitHub Packages needs a PAT even for public packages, and a
+committed `packages/` folder puts binaries in git.
 
 Per-repo `.gitignore` (customized, not copied wholesale):
 
@@ -144,6 +162,8 @@ Guards before the first push of each repo:
 
 - `git ls-files` reviewed against an exclusion list (`local_user_files/`, `.venv/`, `bin`, `obj`,
   `models/`, `piper/`, `publish/`, real `.env` files).
+- A repo that must build on a read-only-`$HOME` box carries its own copy of
+  `local_dev/scripts/sandbox-env.sh`, or nothing can restore.
 - Build and tests green on this box.
 - No `../local_dev/…` or `../CliUtils/…` references left in code, docs or `.csproj` files.
 - For `csv-translations`: `CliUtils` resolves from the feed, not from a sibling folder.

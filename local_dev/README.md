@@ -4,6 +4,7 @@ Use it for scripts, utilities, or documentation that assist with local setup, te
 ## Organization Guidelines
 
 - **Plans & Documentation**: Store development plans, architectural documents, and implementation guides in the `plans/` subdirectory.
+- **Completed work leaves the tree**: finished plans and third-party reference documents are archived out (kept in the git-ignored `local_user_files/archive/`, and always recoverable from git history). In the tree they are only AI context.
 - **Analyses**: Store code analysis, performance evaluations, and technical assessments in the `analyses/` subdirectory.
 - **Sensitive or Raw Ideas**: For sensitive data, personal notes, or very raw brainstorming ideas, use the `local_user_files/` directory at the repository root instead.
 - **External References**: For CLI library recommendations, tool comparisons, and external resource documentation, store in the root of `local_dev/`.
@@ -71,6 +72,24 @@ Builds every `.sln` in the repository on Linux/macOS and prints a per-solution s
 - Covers solutions only. `CsvTranslations/OllamaTranslatorApp.Tests` and
   `CsvTranslations/TextToSpeechApp.Tests` are not part of any solution and must be
   built from their `.csproj` paths.
+
+### Sandbox builds (read-only `$HOME`)
+
+Where `$HOME` is not writable — the agent sandbox on this box, or any locked-down environment —
+the first `dotnet restore` fails with `Read-only file system: /home/<user>/.nuget/packages` and
+nothing builds. Source the cache redirection first:
+
+```bash
+source local_dev/scripts/sandbox-env.sh
+./local_dev/scripts/build-all-linux.sh --test
+```
+
+**Notes**:
+- It exports `NUGET_PACKAGES`, `NUGET_HTTP_CACHE_PATH`, `DOTNET_CLI_HOME` and `XDG_*`, all pointed
+  at the git-ignored `local_user_files/`, and creates them. Source it — executing it does nothing.
+- Paths are derived from the script's own location, so it works from any working directory and
+  hard-codes no machine path.
+- Harmless elsewhere: it only relocates caches, and a normal machine can ignore it entirely.
 
 ### AI Context Token Estimate (`ai-context-token-estimate.mjs`)
 
