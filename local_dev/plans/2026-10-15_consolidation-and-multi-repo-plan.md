@@ -84,7 +84,7 @@ Because D4 rejects a shared config repo, the layer model is **template + per-rep
 | **Project-owned** | each project repo | code, `README.md`, `CLAUDE.md`, `.gitignore`, `.gitattributes`, `.editorconfig`, `Directory.Build.props`, its own `.github/copilot-instructions.md` |
 | **Copied scaffolding** | every project repo, trimmed | the `local_dev/scripts/` pairs a repo actually uses, the relevant `.agents/skills/` subset, the build-gate hook if the repo wants it |
 | **Durable notes** | project notes: in the repository that owns them. Machine and user notes: user-global, never in a repository | The split found no project-level notes; both machine notes moved out |
-| **Personal scratch** | `local_user_files/` (git-ignored) | never a migration source; the local data and history bundles that once sat in a scratch directory went with the retired mono-repo clone on 2026-10-16. The pre-split history they captured survives as ancestors of this repository's own history |
+| **Personal scratch** | `local_user_files/` (git-ignored) | never a migration source; the **2026-10-10 archives remain the backup of record** — two `.tar.zst` snapshots kept beside the repositories, outside version control. Verified on 2026-10-16: they hold the untracked local data (the sentence corpora, both history bundles, a `.git` backup and the notes), which is what made the loose copies in the retired mono-repo clone disposable |
 
 Consolidation rules:
 
