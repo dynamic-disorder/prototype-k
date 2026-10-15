@@ -176,7 +176,9 @@ Guards before the first push of each repo:
 | `mediarenamer` | **Pushed** — public, 21 files. Builds clean standalone; the solution has no test projects |
 | `ai-offline` | **Pushed** — **private**, 37 files, including the model definition and the launcher |
 | `csv-translations` | **Tree built and verified; push held** — the eight project references became one central `PackageVersion` plus `PackageReference` entries, the solution no longer lists the library project, and the tree builds clean with 231/231 tests running against the package. It cannot be pushed until the package is on nuget.org, or a fresh clone would fail to restore |
-| `prototype-k` umbrella | **Not started** — waits until the last project has left |
+| `prototype-k` umbrella | **Done** — 43 tracked files: the index README, the umbrella context file, the tooling and documentation templates, and the full history |
+| Meta layer (D4) | **Done** — the repository-neutral skills are copied per project: 7 each, plus the test skill where a test project exists and the two publishing skills where apps ship, so 7-10 per repository. Each also carries the git-ignored scratch directory the investigation and spike skills write into. The umbrella keeps the full set as the source |
+| Licenses | **Done** — MIT in every public repository and in the package metadata |
 
 Every repository was checked before its first push: no build output, no IDE state, no real
 environment files, and no machine paths or account names in the content.
