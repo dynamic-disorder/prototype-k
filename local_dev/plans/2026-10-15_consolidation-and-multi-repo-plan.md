@@ -99,7 +99,10 @@ Consolidation rules:
    `omarchy-tool-substitutions.md` describes this box, and `non-programmable-fallback.md` is generic
    agent-behaviour feedback whose frontmatter is user-memory format. Both moved out of the tree to
    `local_user_files/user-global-memory/` as staging, for installation wherever user-global agent
-   configuration is read. `memory/` no longer exists in any repository.
+   configuration is read. `memory/` no longer exists in any repository. *Installed 2026-10-16:* both
+   notes now live user-globally as the skills `tool-substitutions` and `manual-fallback` under
+   `~/.agents/skills/`, symlinked into `~/.claude/skills/` so both harnesses discover them. The staged
+   copies in `local_user_files/user-global-memory/` are a record of the installation, not a source.
 5. **Every cross-layer link is rewritten.** `FilenameTools/CLAUDE.md`, `CsvTranslations/CLAUDE.md`,
    `ai_offline/CLAUDE.md` and the root `CLAUDE.md` all point into `../local_dev/…` today.
 
@@ -111,7 +114,7 @@ Consolidation rules:
 | Third-party reference archived out | **Done** — vendor guide |
 | Finished plans archived out | **Done** — three plans |
 | `memory/` resolved | **Done** — de-duplicated, then moved out of the tree entirely (rule 4) |
-| Cross-layer references trimmed for the split | **Open** — blocked on the history decision in section 5 |
+| Cross-layer references trimmed for the split | **Done** — the split rewrote every one, and the last stragglers were repaired on 2026-10-16: three Python helpers in `csv-translations` still imported a `repo_paths` module through a path pointing outside the repository, and two of them called a helper removed during the cleanup |
 
 ## 4. Phase 3 — multi-repository target
 
@@ -178,6 +181,8 @@ Guards before the first push of each repo:
 | `csv-translations` | **Pushed** — public, 160 files. Consumes the console library as a package; restored straight from nuget.org, built clean and passed 231/231 tests before its first push |
 | `prototype-k` umbrella | **Done** — 43 tracked files: the index README, the umbrella context file, the tooling and documentation templates, and the full history |
 | Meta layer (D4) | **Done** — every project repository carries the repository-neutral skills (7, plus the test skill where tests exist and the two publishing skills where apps ship, so 7-10), Cline rules trimmed to its own build and test commands, a Claude Code ignore list, and Copilot instructions. The translations ignore list deliberately keeps CSVs visible, because the dictionary and the corpora are tracked content there. Each also carries the git-ignored scratch directory the investigation and spike skills write into. The umbrella keeps the full set as the source |
+| Build gate | **Done** — every C# repository carries the gate (`.claude/settings.json`, the hook script, `.githooks/pre-commit`) with `core.hooksPath` activated, each verified by a real commit. It found two real defects on first use: `mediarenamer` could not build on Linux at all, because the repo-root `Directory.Build.props` its own `CLAUDE.md` describes was missing, and `cliutils` documented a repo-wide props file it does not carry |
+| Machine notes user-global | **Done** — rule 4 executed: `tool-substitutions` and `manual-fallback` installed under `~/.agents/skills/` and symlinked into `~/.claude/skills/`; the harness picked both up in the same session |
 | Licenses | **Done** — MIT in every public repository and in the package metadata |
 
 Every repository was checked before its first push: no build output, no IDE state, no real

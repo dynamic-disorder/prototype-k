@@ -37,6 +37,31 @@ and it serves two entry points:
 | **Git hook** — [`.githooks/pre-commit`](../.githooks/pre-commit), a thin wrapper that `exec`s the gate | `git config core.hooksPath .githooks` (repo-local, one line per clone) | **Working, and the path to rely on.** Verified: a passing build commits, a failing build aborts the commit with the compiler output. Gates your commits *and* an agent's. |
 | **Harness hook** — a `PreToolUse` entry in [`.claude/settings.json`](../.claude/settings.json) | Claude Code reads that file natively | Works in Claude Code. In DSH it has **never been observed to run** (see below), so it is a bonus rather than the mechanism. |
 
+### Where the gate lives after the split
+
+Each C# project repository - `cliutils`, `csv-translations`, `filenametools`, `mediarenamer` - carries
+its own copy of the three files, with `core.hooksPath` set per clone. `ai-offline` holds no C# and so
+carries no gate.
+
+Two changes came out of that distribution:
+
+- The script prefers the tracked `local_dev/scripts/sandbox-env.sh` and only falls back to the older
+  scratch `local_user_files/nuget/env.sh`, so a repository carrying the tracked script builds on a
+  read-only `$HOME` without needing a scratch file.
+- A repository holding a single project and no solution is gated too: the script builds that project.
+  `cliutils` has no `.sln`, and the script previously found nothing there and let every commit through
+  unchecked.
+
+Installing it was not cosmetic: the first probe blocked `mediarenamer`, whose repo-root
+`Directory.Build.props` had not survived the split, so a plain `dotnet build` there failed with
+`NETSDK1100`. That repository was publicly broken on Linux until the file was restored.
+
+To activate it in a clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 The gate is dual-mode, which is why one file suffices: on a harness call it reads the tool-call JSON
 from stdin and gates on `git commit`; as a git hook there is no payload at all, and it treats that as
 "this is a commit, check it". It never reads stdin unconditionally — a git hook run from a terminal
