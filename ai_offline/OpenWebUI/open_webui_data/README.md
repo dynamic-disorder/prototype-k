@@ -1,1 +1,0 @@
-The open_webui_data folder contains runtime data (a database file), not source code. Database files and generated data should not be committed to version control—each environment should have its own local data.

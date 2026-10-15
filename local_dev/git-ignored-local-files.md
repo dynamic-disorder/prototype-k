@@ -124,12 +124,7 @@ directory and re-includes the shared paths explicitly, so the rule and the track
 | :--- | :--- |
 | `.claude/settings.json` | Shareable settings layer; carries the `PreToolUse` build gate |
 | `.claude/hooks/pre-commit-build-check.sh` | The enforcement itself |
-| `CsvTranslations/.claude/commands/build.md` | Project command |
-| `CsvTranslations/.claude/rules/windows-development.md` | Project rule |
-| `CsvTranslations/.claude/settings.json` | Per-project settings |
-| `FilenameTools/.claude/commands/build.md` | Project command |
-| `FilenameTools/.claude/rules/filename-sanitization.md` | Project rule |
-| `FilenameTools/.claude/settings.json` | Per-project settings |
+| the per-project `CsvTranslations/…`, `FilenameTools/…` entries | Commands, rules and settings for a project. **Moved with their projects on 2026-10-15** — they live in those repositories now, which carry the same ignore and re-include rules |
 | `.clinerules` | Cline rules, shared on purpose |
 | `.claudeignore` | Claude Code's file-exclusion list for this repository |
 
@@ -148,15 +143,15 @@ Two details that are easy to get wrong:
 
 - **`**/.claude/*`, not `.claude/`.** Git cannot re-include a file whose parent directory is
   excluded, so the directory itself must stay un-ignored and only its contents ignored.
-- **`**/` prefix.** It keeps the single rule working for the root, `CsvTranslations/` and
-  `FilenameTools/` without repeating three near-identical blocks.
+- **`**/` prefix.** One rule covered the root and every nested project directory while the projects
+  lived here, without repeating near-identical blocks. The projects have moved out; the prefix stays
+  so the rule keeps working if a project directory ever reappears.
 
 This matters for the hook in particular: it was **untracked** when it existed before, which is exactly
 why it was unrecoverable and had to be rewritten.
 
-A scan for personal markers in these found only a generic Windows path *example* in
-`CsvTranslations/.claude/rules/windows-development.md` (`C:\Users\...`) — no real leak. They are still
-worth an out-of-date check.
+A scan for personal markers in these found only a generic path *example* in one project rule file —
+no real leak. That file has since moved to its project repository, where the example was reworded.
 
 **Still skipped by `git add -A`:** everything else inside a `.claude/` directory —
 `settings.local.json`, the `.claude/skills` symlink, `agent-memory-local/`. A new *shared* file added
@@ -187,7 +182,7 @@ reports the *directory* as not ignored even though its contents are — and
 
 | Present in scratch | Purpose | Durable? |
 | :--- | :------ | :------- |
-| `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox (see `../memory/omarchy-tool-substitutions.md` for how to recreate `pwsh`). `nuget/env.sh` is pre-existing and still needed: it redirects the caches because `$HOME` is read-only. | No — all reproducible |
+| `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox, created by [`scripts/sandbox-env.sh`](scripts/sandbox-env.sh), which points every cache variable here because `$HOME` is read-only. | No — all reproducible |
 | `compatcheck/` | One-off: resolved every member reference PiperSharp 1.0.7 makes against NAudio 3.1.0 to prove zero missing members. | No — the finding is recorded in `analyses/linux-build-audit.md` |
 | `parsecheck/` | One-off: ran the real `translations.csv` through `TranslationTools` to validate the parser fixes (3077/3077 rows). | No — the finding is recorded in the audit |
 | `CSV files/`, `samples/`, `*.bundles`, `tmp-rewrite.git/`, `dot-git-backup/`, `*.md` | Local data, backups and notes. | Deliberately local |

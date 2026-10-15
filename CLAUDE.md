@@ -1,30 +1,37 @@
-# CLAUDE.md — Repository Context
+# CLAUDE.md — umbrella repository
 
-**TL;DR** — Mono-repo of independent .NET 10 hobby projects: five majors plus support folders. Every solution builds and tests on both Linux (Omarchy/Arch) and Windows.
+**TL;DR** — This repository is an index and a toolbox. The five projects that used to live here are
+separate repositories; what remains is the cross-project documentation, the tooling templates they
+were created from, and the complete history.
 
-**Verify everything:** `./local_dev/scripts/build-all-linux.sh --test`
+**Verify everything:** there is no solution and no application code here any more — only the
+standalone `ildump` inspector under `local_dev/tools/`. Verification belongs to the project
+repositories; `local_dev/scripts/build-all-linux.sh` is kept as the template and reports
+"no .sln files found" in this tree.
 
 ## Executive summary
 
 | | |
 | :--- | :--- |
-| **Problem** | Five unrelated projects share one working tree, two operating systems, and one build gate — a change in one can silently break another. |
-| **Value** | Each project keeps its own `.sln` and `CLAUDE.md`, so scope stays isolated and every command is local to its project. |
-| **Change** | LF-everywhere line endings, `core.ignorecase=false`, and `EnableWindowsTargeting=true` are settled; Windows-only projects cross-compile on Linux. |
-| **Verify** | `./local_dev/scripts/build-all-linux.sh --test` builds each `.sln` and prints a per-solution summary. |
-| **Top risk** | Wrong-case project paths fail *silently* during restore on Linux and surface only later, at compile time. |
+| **Problem** | Five unrelated projects shared one working tree, one `.gitignore`, one build gate and one instruction tree; one of them needed different visibility. |
+| **Value** | Each project now has its own repository, history, `.gitignore` and instruction files; this repository keeps the cross-project picture and the original history. |
+| **Change** | Cleanup, consolidation of the root and meta layer, then the split — one project per repository, with the AI stack private. |
+| **Verify** | Builds and tests run in the project repositories; each was built and tested from a fresh tree before its first push. |
+| **Top risk** | Editing a file here that belongs to a project. Check the project table first. |
 
 ## Non-negotiables
 
 - **LF line endings everywhere** — repository *and* working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`).
-- **Never hard-code a machine path** — source `local_dev/scripts/repo-env.sh` (or the PowerShell/Python sibling) instead.
+- **Never hard-code a machine path** — source `local_dev/scripts/repo-env.sh` (or the PowerShell/Python sibling) instead. The project repositories carry the same rule.
 - **Commit messages are public** — never name a user folder, profile path or account, and never describe content that was removed or anonymised. Rules in `.agents/skills/git-commit/SKILL.md`.
-- **Match on-disk path case exactly** in every `ProjectReference` / `Include`.
+- **No cross-repository relative paths** — reference another project by repository name or by its package, never by `../`.
+- **Match on-disk path case exactly** in every `ProjectReference` / `Include` — wrong-case paths are silently skipped during restore on Linux.
 - **Keep git `core.ignorecase=false`** in this clone.
 
 ## Writing & response style
 
-Applies to responses and to any document written in this repo. Write for fast comprehension; assume limited reader time and mixed technical backgrounds.
+Applies to responses and to any document written here. Write for fast comprehension; assume limited
+reader time and mixed technical backgrounds.
 
 - **Lead with**: Problem → Impact/value → Change → Verification.
 - **Executive summary first**, then details in their own sections.
@@ -35,63 +42,48 @@ Applies to responses and to any document written in this repo. Write for fast co
 
 ## Projects
 
-Each major project owns its `.sln`, `CLAUDE.md`, and `README.md` with build/test/run commands.
+Each project lives in its own repository. This table is the index, with the state each was verified in.
 
-| Project | Path | Type | Summary | Linux build |
-| :------ | :--- | :--- | :------ | :---------- |
-| **CliUtils** | `CliUtils/` | Library | Shared console utilities (Spectre.Console wrappers, colored logging). See [CLAUDE.md](CliUtils/CLAUDE.md) | OK |
-| **FilenameTools** | `FilenameTools/` | Solution | Filename sanitization (Unicode NFKD, pattern rules, JSON config). See [CLAUDE.md](FilenameTools/CLAUDE.md) | OK, 78/78 tests |
-| **CsvTranslations** | `CsvTranslations/` | Solution | English-Finnish dictionary tools (Ollama translation, TTS, CSV mgmt). See [CLAUDE.md](CsvTranslations/CLAUDE.md) | OK; TTS cross-compiles, Windows-only at runtime |
-| **MediaRenamer** | `MediaRenamer/` | WPF | Rename media files by EXIF metadata (.NET 10). See [CLAUDE.md](MediaRenamer/CLAUDE.md) | Cross-compiles; runs on Windows only |
-| **ai_offline** | `ai_offline/` | Docker | Ollama + Open WebUI stack. Docker Compose, GPU setup, guides | n/a (Docker) |
+| Project | Repository | Type | Verified |
+| :--- | :--- | :--- | :--- |
+| **CliUtils** | [cliutils](https://github.com/dynamic-disorder/cliutils) | Library | builds and packs standalone |
+| **CsvTranslations** | [csv-translations](https://github.com/dynamic-disorder/csv-translations) | Solution | builds clean, 231/231 tests pass — prepared, not yet pushed |
+| **FilenameTools** | [filenametools](https://github.com/dynamic-disorder/filenametools) | Solution | builds clean, 78/78 tests pass |
+| **MediaRenamer** | [mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF | builds clean; the solution has no test projects |
+| **ai_offline** | [ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Docker | compose setups and guides |
 
-## Support folders
+## What lives here
 
-| Folder | Purpose |
-| :----- | :------ |
-| `local_dev/` | Dev artifacts, analyses, scripts, docs |
-| `memory/` | Personal notes, reference configs |
-| `local_user_files/` | Ephemeral files (git-ignored) |
+| Path | Purpose |
+| :--- | :--- |
+| `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, the token estimator, the VS Code cache cleaner |
+| `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
+| `local_dev/plans/` | The consolidation and split plan, and the relocated hosting/DI design note |
+| `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
+| `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
+| `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
+| `.github/`, `.clinerules`, `.claudeignore`, `.claude/`, `.githooks/` | Instruction and gate configuration, kept as templates |
+| `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
+
+Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
+not live in this repository: they belong to the machine, in user-global agent configuration.
 
 ## Where to look next
 
 Read this index first, then open only the file you need.
 
-**Authoritative project and build facts**
-
-- **Per-project context**: `<Project>/CLAUDE.md` — commands, conventions, and gotchas for that project.
-- **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md` — per-solution results, root causes, open issues, cross-platform checklist.
-- **Build script**: `local_dev/scripts/build-all-linux.sh` — build/test every solution on Linux.
-- **Paths & environment**: `local_dev/scripts/repo-env.sh` (bash), `repo-env.ps1` (PowerShell), `repo_paths.py` (Python) — resolve the repository root and probe the environment. Details in `local_dev/README.md`.
-- **Build gate**: `.claude/settings.json` wires a `PreToolUse` hook (`.claude/hooks/pre-commit-build-check.sh`) that blocks a `git commit` with staged C# until the affected solution builds. Both are tracked, and `.gitignore` re-includes them explicitly (`**/.claude/*` plus negations) while still ignoring personal `.claude/` content — see `local_dev/git-ignored-local-files.md` §2.
-
-**Conventions and guidance**
-
-- **Conventions**: `.editorconfig` is the source of truth for formatting and style, alongside each `<Project>/CLAUDE.md`. Repo-specific C# and test guidance lives in the tracked skills under `.agents/skills/`.
-- **Copilot instructions**: `.github/copilot-instructions.md` (+ subfolder files).
-- **Cline rules**: root `.clinerules`.
-- **Personal memory/reference**: `memory/` (committed, stable) — includes `omarchy-tool-substitutions.md` (tools missing on this Linux box and their working alternatives); Claude Code auto-memory lives in `~/.claude/projects/*/memory/` (git-ignored, ephemeral).
-- **Analyses & plans**: `local_dev/analyses/`, `local_dev/plans/`.
-
-**Tooling that must be set up outside git**
-
-- **Harness compatibility**: skills are tracked once at `.agents/skills/` — DeepSeek Harness's project skill root — and Claude Code reaches the same files through the local `.claude/skills` symlink, so neither harness keeps its own copy. Instructions are shared the same way: DSH reads `AGENTS.md` **and** `CLAUDE.md` (plus the `.local.md` overlays), so the existing `CLAUDE.md` files serve both and no duplicate file is needed. Details in `local_dev/git-ignored-local-files.md`.
-- **DeepSeek Harness setup**: `local_dev/deepseek-harness.md` — what DSH reads from here, and the part git cannot carry: the build gate only fires once the hook bridge is mounted in the machine's DSH profile and DSH has been restarted.
-- **Git-ignored local files**: `local_dev/git-ignored-local-files.md` — why `.claude/` is excluded (personal, unsanitised config), what else lives outside version control, and how to persist it once reviewed.
+- **The split and its rationale**: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md` — decisions, per-repository `.gitignore` tables, progress.
+- **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md`.
+- **Tooling**: `local_dev/README.md`.
+- **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and the build-gate activation git cannot carry.
+- **Git-ignored files**: `local_dev/git-ignored-local-files.md` — what stays out of version control and why.
+- **Working on a project**: clone it and read that repository's own `CLAUDE.md`.
 
 ## Environment & style
 
 - **Platforms**: Omarchy Linux (Arch-based, primary since Oct 2026) and Windows 11.
-- **SDK**: .NET 10.0.x on Linux. Every project targets `net10.0` (MediaRenamer: `net10.0-windows`, TextToSpeechApp: `net10.0-windows10.0.19041.0`).
-- **Runtime**: only the .NET 10 runtime is installed on the Linux box, and it runs everything in the repo — no roll-forward needed.
+- **SDK**: .NET 10.0.x. Every project targets `net10.0` (MediaRenamer: `net10.0-windows`, TextToSpeechApp: `net10.0-windows10.0.19041.0`).
+- **Runtime**: only the .NET 10 runtime is installed on the Linux box, and it runs every project — no roll-forward needed.
 - **Shell**: bash on Linux; PowerShell (preferred) or Git Bash on Windows.
-- **Line endings**: **LF everywhere** per `.gitattributes` (`* text=auto eol=lf`) with `core.autocrlf=false`. The old Windows-first CRLF-for-`.cs` policy was dropped in Oct 2026: it produced constant "LF will be replaced by CRLF" / "CRLF will be replaced by LF" warnings and left files with mixed endings.
-
-## Cross-platform builds (Linux / macOS) — details
-
-- **Build and test everything**: `./local_dev/scripts/build-all-linux.sh --test` (add `-c Release` for Release). It builds each `.sln` and prints a per-solution summary.
-- **Windows-targeted projects cross-compile**: `EnableWindowsTargeting=true` is set in both `Directory.Build.props` files (repo root and `CsvTranslations/`), so WPF (`MediaRenamer`) and `net*-windows` (`TextToSpeechApp`) restore and compile on Linux. They still only *run* on Windows.
-- **Case-sensitive paths**: a wrong-case `ProjectReference`/`Include` is silently *skipped* by restore on Linux (`Skipping project ... because it was not found`) and only fails later at compile time. Always match the on-disk case exactly — this already broke `FilenameSanitizer.Tests.csproj` once.
-- **net10.0 execution**: every project targets `net10.0` and the .NET 10 runtime is installed, so tests and apps run directly — no roll-forward or extra runtime install required.
-- **git `core.ignorecase`**: now `false` in this clone. It used to be `true` on a case-sensitive filesystem, which made the `FileNameSanitizer/` → `FilenameSanitizer/` directory rename stage as a **deletion** of every tracked file. Keep it `false`; if a case-only rename ever shows up as `deleted:` entries, that setting is the cause.
-- **Full findings**: `local_dev/analyses/linux-build-audit.md`.
+- **Read-only `$HOME`**: source `local_dev/scripts/sandbox-env.sh` before restoring, or the package caches cannot be written.
+- **Line endings**: **LF everywhere** per `.gitattributes` with `core.autocrlf=false`. The old Windows-first CRLF-for-`.cs` policy was dropped in Oct 2026.

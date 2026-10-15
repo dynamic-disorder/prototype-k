@@ -46,7 +46,7 @@ therefore not needed and is not installed.
 | `MediaRenamer/` | 17 | 3 projects, WPF (runs on Windows only) |
 | `.agents/skills/` | 10 | repo-specific skills, shared by Claude Code via a symlink |
 | `CliUtils/` | 7 | library, **no solution**, one consumer |
-| `memory/` | 4 | durable notes |
+| `memory/` | 4 | durable notes — since moved out of the tree entirely, see rule 4 |
 | `.github/`, `.claude/`, `.vscode/`, `.githooks/` | 3 + 2 + 1 + 1 | instruction/gate files |
 | root files | 12 | `.editorconfig` (24 KB), `Directory.Build.props`, README, CLAUDE, launchers |
 | `translations_csv/` | 2 | stub — backlog item 1 |
@@ -83,7 +83,7 @@ Because D4 rejects a shared config repo, the layer model is **template + per-rep
 | :--- | :--- | :--- |
 | **Project-owned** | each project repo | code, `README.md`, `CLAUDE.md`, `.gitignore`, `.gitattributes`, `.editorconfig`, `Directory.Build.props`, its own `.github/copilot-instructions.md` |
 | **Copied scaffolding** | every project repo, trimmed | the `local_dev/scripts/` pairs a repo actually uses, the relevant `.agents/skills/` subset, the build-gate hook if the repo wants it |
-| **Durable notes** | every repo that needs them, trimmed | `memory/` entries relevant to that repo |
+| **Durable notes** | project notes: in the repository that owns them. Machine and user notes: user-global, never in a repository | The split found no project-level notes; both machine notes moved out |
 | **Personal scratch** | `local_user_files/` (git-ignored) | never a migration source; the 2026-10-10 archives remain the backup of record |
 
 Consolidation rules:
@@ -94,13 +94,12 @@ Consolidation rules:
    *Done*: the 30 KB vendor guide is archived out.
 3. **Plans are archived on completion**; finished plans do not stay as AI context in a repo.
    *Done*: three finished plans archived out.
-4. **Machine- and user-level notes go user-global, not into every repo.** *Confirmed 2026-10-15.*
-   A review of `memory/` found that **neither note is project-level**: `omarchy-tool-substitutions.md`
-   describes this box, and `non-programmable-fallback.md` is generic agent-behaviour feedback whose
-   frontmatter is user-memory format. So `memory/` has no place in the split repositories: at split
-   time its contents move to user-global configuration and the folder disappears. It stays in the
-   tree until then — there is exactly one copy today, so moving it early only breaks repo-local
-   context for the agents working here.
+4. **Machine- and user-level notes go user-global, not into every repo.** *Confirmed and executed
+   2026-10-15 (round 3).* A review of `memory/` found that **neither note is project-level**:
+   `omarchy-tool-substitutions.md` describes this box, and `non-programmable-fallback.md` is generic
+   agent-behaviour feedback whose frontmatter is user-memory format. Both moved out of the tree to
+   `local_user_files/user-global-memory/` as staging, for installation wherever user-global agent
+   configuration is read. `memory/` no longer exists in any repository.
 5. **Every cross-layer link is rewritten.** `FilenameTools/CLAUDE.md`, `CsvTranslations/CLAUDE.md`,
    `ai_offline/CLAUDE.md` and the root `CLAUDE.md` all point into `../local_dev/…` today.
 
@@ -111,7 +110,7 @@ Consolidation rules:
 | Bootstrap on a read-only `$HOME` | **Done** — `local_dev/scripts/sandbox-env.sh` is tracked; verified by restoring a project with an empty package cache |
 | Third-party reference archived out | **Done** — vendor guide |
 | Finished plans archived out | **Done** — three plans |
-| `memory/` de-duplicated | **Done** — one index file instead of two |
+| `memory/` resolved | **Done** — de-duplicated, then moved out of the tree entirely (rule 4) |
 | Cross-layer references trimmed for the split | **Open** — blocked on the history decision in section 5 |
 
 ## 4. Phase 3 — multi-repository target

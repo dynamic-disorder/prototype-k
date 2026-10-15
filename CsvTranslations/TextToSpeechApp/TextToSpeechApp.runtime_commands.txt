@@ -1,1 +1,0 @@
-Ctrl+C / ESC: stop   ·   Enter: pause 10 seconds   ·   Space: pause / resume
