@@ -47,7 +47,7 @@ Each project lives in its own repository. This table is the index, with the stat
 | Project | Repository | Type | Verified |
 | :--- | :--- | :--- | :--- |
 | **CliUtils** | [cliutils](https://github.com/dynamic-disorder/cliutils) | Library | builds and packs standalone |
-| **CsvTranslations** | [csv-translations](https://github.com/dynamic-disorder/csv-translations) | Solution | builds clean, 231/231 tests pass — prepared, not yet pushed |
+| **CsvTranslations** | [csv-translations](https://github.com/dynamic-disorder/csv-translations) | Solution | builds clean, 231/231 tests pass |
 | **FilenameTools** | [filenametools](https://github.com/dynamic-disorder/filenametools) | Solution | builds clean, 78/78 tests pass |
 | **MediaRenamer** | [mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF | builds clean; the solution has no test projects |
 | **ai_offline** | [ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Docker | compose setups and guides |

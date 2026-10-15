@@ -175,7 +175,7 @@ Guards before the first push of each repo:
 | `filenametools` | **Pushed** — public, 41 files. Builds clean and 78/78 tests pass standalone |
 | `mediarenamer` | **Pushed** — public, 21 files. Builds clean standalone; the solution has no test projects |
 | `ai-offline` | **Pushed** — **private**, 37 files, including the model definition and the launcher |
-| `csv-translations` | **Tree built and verified; push held** — the eight project references became one central `PackageVersion` plus `PackageReference` entries, the solution no longer lists the library project, and the tree builds clean with 231/231 tests running against the package. It cannot be pushed until the package is on nuget.org, or a fresh clone would fail to restore |
+| `csv-translations` | **Pushed** — public, 160 files. Consumes the console library as a package; restored straight from nuget.org, built clean and passed 231/231 tests before its first push |
 | `prototype-k` umbrella | **Done** — 43 tracked files: the index README, the umbrella context file, the tooling and documentation templates, and the full history |
 | Meta layer (D4) | **Done** — every project repository carries the repository-neutral skills (7, plus the test skill where tests exist and the two publishing skills where apps ship, so 7-10), Cline rules trimmed to its own build and test commands, a Claude Code ignore list, and Copilot instructions. The translations ignore list deliberately keeps CSVs visible, because the dictionary and the corpora are tracked content there. Each also carries the git-ignored scratch directory the investigation and spike skills write into. The umbrella keeps the full set as the source |
 | Licenses | **Done** — MIT in every public repository and in the package metadata |

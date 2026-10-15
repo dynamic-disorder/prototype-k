@@ -15,9 +15,6 @@ complete history of how everything was built.
 | **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata | public |
 | **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides | **private** |
 
-> **`csv-translations` is prepared and verified but not yet pushed.** It consumes the console library
-> as a NuGet package, so a fresh clone cannot restore until that package is published to nuget.org.
-
 ## What lives here
 
 | Path | Purpose |
