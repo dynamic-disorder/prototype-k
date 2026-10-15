@@ -109,11 +109,11 @@ A real commit is what exercises the git hook — `git commit --dry-run` does **n
 `PreToolUse` hook fires only for harness tool calls. Neither substitutes for the other:
 
 ```bash
-printf 'class T {}\n' > FilenameTools/FilenameSanitizer/__probe.cs
-git add FilenameTools/FilenameSanitizer/__probe.cs
+printf 'class T {}\n' > local_dev/__probe.cs
+git add local_dev/__probe.cs
 git commit -m "probe"      # expect "[pre-commit] staged C# — building …", then "build OK" and a commit
-git reset --soft HEAD~1 && git reset -q FilenameTools/FilenameSanitizer/__probe.cs
-rm -f FilenameTools/FilenameSanitizer/__probe.cs
+git reset --soft HEAD~1 && git reset -q local_dev/__probe.cs
+rm -f local_dev/__probe.cs
 ```
 
 To watch it block without creating anything, put a failing `dotnet` stub first on `PATH`

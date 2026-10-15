@@ -96,9 +96,9 @@ Verified end to end: DSH's catalog picked up `csharp-conventions`, `csharp-build
 `publish`, `explain`, `csharp-refactor` and `install-net10-runtime` because they declare
 `disable-model-invocation: true` — so that frontmatter is portable between the two harnesses.
 
-A **user-global** bridge was deliberately not created: these skills encode this repository
-(`FilenameTools` paths, its `.editorconfig`, its commit scopes), so placing them in
-`~/.agents/skills/` would make them fire in unrelated projects. Omarchy uses that mechanism for the
+A **user-global** bridge was deliberately not created: these skills encode a repository's layout
+and conventions, so placing them in `~/.agents/skills/` would make them fire in unrelated projects.
+Each project repository therefore carries its own copy. Omarchy uses that mechanism for the
 distro's own machine-level skills, which is the right scope for them.
 
 Two related notes:
@@ -170,7 +170,7 @@ git ls-files | git check-ignore -v --no-index --stdin || true   # expect no outp
 
 | Path | Note |
 | :--- | :--- |
-| `CsvTranslations/OllamaTranslatorApp/Properties/launchSettings.json` | `workingDirectory` `bin\Debug\net9.0` → `net10.0`. Left untracked deliberately: per-machine IDE state that VS regenerates |
+| `launchSettings.json`, any project | Per-machine IDE state that VS regenerates, deliberately untracked everywhere. The instances that were here moved out with their projects |
 
 ## 4. Ephemeral scratch (`local_user_files/`)
 
@@ -222,8 +222,8 @@ skills (to `.agents/skills/`).
 
 | File | Role | Tracked? |
 | :--- | :--- | :------- |
-| `settings.json` | Shareable project settings — permissions, hooks, whatever the repo agrees on | **Tracked** where it exists: the root (the build gate), `CsvTranslations/.claude/`, `FilenameTools/.claude/` |
-| `settings.local.json` | Personal overlay, applied on top of `settings.json`. Per-machine by definition | **Never.** Ignored at the root, in `CsvTranslations/.claude/` and in `CsvTranslations/TextToSpeechApp/.claude/` |
+| `settings.json` | Shareable project settings — permissions, hooks, whatever the repo agrees on | **Tracked** where it exists: here at the root (the build gate), and in the project repositories that keep one |
+| `settings.local.json` | Personal overlay, applied on top of `settings.json`. Per-machine by definition | **Never.** Ignored here and in every project repository |
 
 Their permissions are local only; sharing the file would push one machine's allow-list onto everyone.
 `.gitignore` lists `settings.local.json` explicitly *in addition to* the blanket `.claude/` rule, so

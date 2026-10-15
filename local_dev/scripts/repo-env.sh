@@ -7,7 +7,7 @@
 # Source it (recommended) and use the exported variables:
 #
 #   source local_dev/scripts/repo-env.sh
-#   dotnet build "$REPO_ROOT/CsvTranslations/CsvTranslations.sln"
+#   dotnet build "$REPO_ROOT/<Project>/<Project>.sln"
 #   [ "$HAS_PWSH" = 1 ] || echo "pwsh is unavailable here"
 #
 # Or run it directly for a summary or machine-readable form:

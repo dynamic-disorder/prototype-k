@@ -17,24 +17,16 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-// Explicit relative paths. Wildcards are handed to glob so `.claude/rules/*.md` expands.
-// The root `.claude/` tree is git-ignored and now holds only skills, which load on demand rather
-// than being injected, so it is deliberately not counted. The per-project `.claude/rules/` files
-// are committed and are counted.
+// Repository-agnostic globs, so the script works in any of these repositories - the umbrella or
+// a project repository that copied it. Skills are deliberately excluded: they load on demand
+// rather than being injected at session start, so they are not part of the always-on context.
 const patterns = [
   'CLAUDE.md',
-  'CliUtils/CLAUDE.md',
-  'FilenameTools/CLAUDE.md',
-  'FilenameTools/.claude/rules/*.md',
-  'FilenameTools/.github/copilot-instructions.md',
-  'CsvTranslations/CLAUDE.md',
-  'CsvTranslations/.claude/rules/*.md',
-  'CsvTranslations/.github/copilot-instructions.md',
-  'MediaRenamer/CLAUDE.md',
-  'ai_offline/CLAUDE.md',
+  '**/CLAUDE.md',
   '.clinerules',
   '.github/copilot-instructions.md',
-  '.github/clean_code_general_instructions.md',
+  '**/.github/copilot-instructions.md',
+  '**/.claude/rules/*.md',
 ];
 
 const { values } = parseArgs({
@@ -47,6 +39,9 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const found = new Set();
 for (const pattern of patterns) {
   for (const match of globSync(pattern, { cwd: repoRoot })) {
+    // The git-ignored scratch is never injected context, and in the umbrella it holds whole
+    // working copies of the project trees.
+    if (match.split('\\').join('/').startsWith('local_user_files/')) continue;
     found.add(resolve(repoRoot, match));
   }
 }

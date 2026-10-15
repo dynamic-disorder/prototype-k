@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "local_dev" / "scripts"))
-from repo_paths import repo_root, translations_csv, local_user_files, solution
+from repo_paths import repo_root, solution, local_user_files
 ```
 
 Provided: `REPO_ROOT` / `$RepoRoot`, `REPO_NAME`, `HOST_OS` (linux/macos/windows), `IS_WINDOWS`,

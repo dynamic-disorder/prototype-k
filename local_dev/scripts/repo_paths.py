@@ -9,9 +9,10 @@ Import it from a script elsewhere in the repo:
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "local_dev" / "scripts"))
-    from repo_paths import repo_root, local_user_files, translations_csv
+    from repo_paths import repo_root, local_user_files, solution
 
-    target = translations_csv()
+    scratch = local_user_files()
+    project = solution("CliUtils")
 
 Run it directly for a summary:
 
@@ -27,7 +28,6 @@ __all__ = [
     "local_dev",
     "local_user_files",
     "solution",
-    "translations_csv",
     "host_os",
 ]
 
@@ -49,13 +49,14 @@ def local_user_files() -> Path:
 
 
 def solution(name: str) -> Path:
-    """Absolute path of a solution by project directory name, e.g. ``solution("FilenameTools")``."""
-    return repo_root() / name / f"{name}.sln"
+    """Absolute path of a solution by name, e.g. ``solution("FilenameTools")``.
 
-
-def translations_csv() -> Path:
-    """Absolute path of the English-Finnish dictionary CSV."""
-    return repo_root() / "CsvTranslations" / "translations.csv"
+    Handles both layouts: a solution at the repository root, and a solution inside a
+    directory named after it. Returns whichever exists, preferring the root.
+    """
+    at_root = repo_root() / f"{name}.sln"
+    nested = repo_root() / name / f"{name}.sln"
+    return at_root if at_root.exists() or not nested.exists() else nested
 
 
 def host_os() -> str:
@@ -77,5 +78,8 @@ if __name__ == "__main__":
     print(f"scratch    : {local_user_files()}")
     print(f"host OS    : {host_os()}")
     print("solutions  :")
-    for path in sorted(repo_root().glob("*/[A-Za-z]*.sln")):
+    found = sorted(repo_root().glob("*.sln")) + sorted(repo_root().glob("*/[A-Za-z]*.sln"))
+    for path in found:
         print(f"  {path.relative_to(repo_root()).as_posix()}")
+    if not found:
+        print("  (none in this repository)")
