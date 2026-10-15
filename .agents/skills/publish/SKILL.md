@@ -6,27 +6,26 @@ disable-model-invocation: true
 
 # Publish self-contained bundles
 
-Run the wrapper from the repo root:
+Run the repository's wrapper from its root:
 
 ```bash
-node publish-selfcontained.mjs                          # every supported app
-node publish-selfcontained.mjs AddEntryApp              # one app
-node publish-selfcontained.mjs AddEntryApp,OllamaTranslatorApp
-node publish-selfcontained.mjs AddEntryApp --no-trim
+node publish-selfcontained.mjs                        # every supported app
+node publish-selfcontained.mjs <App>                  # one app
+node publish-selfcontained.mjs <App>,<OtherApp>       # several
+node publish-selfcontained.mjs <App> --no-trim
 ```
 
-It is dependency-free Node, so it runs on Linux and Windows alike, and cross-publishing
-`win-x64` from Linux works because it only drives `dotnet publish`. Defaults are
-`--runtime win-x64` and `--configuration Release`.
+It is dependency-free Node, so it runs on Linux and Windows alike, and cross-publishing `win-x64`
+from Linux works because it only drives `dotnet publish`. Defaults are `--runtime win-x64` and
+`--configuration Release`.
 
-Supported app names: `AddEntryApp`, `OllamaTranslatorApp`, `TextFileSplitterApp`,
-`TextToSpeechApp`. Output lands in `publish/<App>/<runtime>/<configuration>/`, which is
-git-ignored.
+The wrapper knows the app names it supports — run it with `--help` to list them. Output lands in
+`publish/<App>/<runtime>/<configuration>/`, which the repository's `.gitignore` excludes.
 
 ## Trimming caveat
 
-`PublishTrimmed` is on by default. These apps use reflection-based JSON, so trimming emits
-`IL2026`/`IL2090` warnings and can break a bundle at runtime. Verify a bundle on Windows before
+`PublishTrimmed` is on by default. Apps that use reflection-based JSON emit `IL2026`/`IL2090`
+warnings under trimming and can break a bundle at runtime. Verify a bundle on Windows before
 shipping, or pass `--no-trim` when unsure.
 
 If a self-contained bundle is too large to distribute, ship a framework-dependent build and

@@ -24,13 +24,13 @@ Optional body: why the change was made, wrapped at 72 characters.
 ```
 
 - **type** — `feat`, `fix`, `docs`, `refactor`, `test` or `chore`.
-- **scope** — the project or area (`FilenameTools`, `CsvTranslations`, `build`); omit it when the
-  change spans the repo.
+- **scope** — the project or area (`parser`, `build`, `docs`); omit it when the change spans the
+  repository.
 - **subject** — imperative ("Add", not "Added"), under 50 characters, no trailing period, and
   specific: never "update", "various improvements" or "misc fixes".
 
 ```
-fix(FilenameTools): keep the extension when sanitizing a name
+fix(parser): keep the extension when sanitizing a name
 docs: describe the publish script in the README
 ```
 

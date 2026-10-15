@@ -1,6 +1,6 @@
 ---
 name: csharp-conventions
-description: Non-obvious C# style rules for this repo that .editorconfig and the analyzers do not catch.
+description: Non-obvious C# style rules these repositories follow that .editorconfig and the analyzers do not catch.
 ---
 
 # C# conventions
@@ -13,8 +13,7 @@ silently unenforced, or were stated wrongly in the past.
 
 **No expression-bodied members.** Every `csharp_style_expression_bodied_*` is `false:none`, so
 analyzers stay silent. Use block bodies even for one-liners. Lambdas (`x => x.Name`) are
-unaffected. The one accepted exception is an existing thin delegating wrapper such as
-`FilenameTools/FilenameSanitizer/FileSystem.cs`; leave it alone.
+unaffected. An existing thin delegating wrapper is the one accepted exception; leave it alone.
 
 **Null checks.** Prefer `is null` / `is not null` over `== null` / `!= null`. `.editorconfig`
 enforces that only for `ReferenceEquals` (`IDE0041`), not for `==`.
@@ -27,11 +26,10 @@ differ: document the test class only, never individual `[Fact]` methods.
 
 Use the C# keyword for BCL types, including on member access: `int.Parse(...)`,
 `string.IsNullOrEmpty(...)`, `bool.TryParse(...)`. `.editorconfig` sets
-`dotnet_style_predefined_type_for_member_access = true`, so the old claim that this repo wants
-`Int32.Parse` / `String.IsNullOrEmpty` was backwards.
+`dotnet_style_predefined_type_for_member_access = true`, so `Int32.Parse` / `String.IsNullOrEmpty`
+are the wrong way round.
 
-Async methods likewise keep the `Async` suffix — `TranslateFileAsync`, `SpeakTextAsync`,
-`InitializeAsync` are the codebase norm, not names to "fix".
+Async methods likewise keep the `Async` suffix — it is the codebase norm, not a name to "fix".
 
 ## Enforced already, but worth knowing
 

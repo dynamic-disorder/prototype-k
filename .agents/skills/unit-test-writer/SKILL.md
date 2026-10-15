@@ -1,20 +1,19 @@
 ---
 name: unit-test-writer
-description: Write xUnit tests with Shouldly assertions and NSubstitute substitutes for this repo's C# code.
+description: Write xUnit tests with Shouldly assertions and NSubstitute substitutes for the C# projects that have tests.
 ---
 
 # unit-test-writer
 
 xUnit, **Shouldly** for assertions, **NSubstitute** for substitutes. **Moq is banned** (its
-SponsorLink history) — use `Substitute.For<T>()` or a hand-written fake.
+SponsorLink history) — use `Substitute.For<T>()` or a hand-written fake. Confirm against the
+target test project's package references before adding a new dependency.
 
 ## Where tests live
 
-Flat beside the code in a sibling `{Project}.Tests/` directory — this repo does not mirror
-production subfolders — with namespace `{Project}.Tests`:
-
-- `FilenameTools/FilenameSanitizer/FilenameNormalizer.cs` →
-  `FilenameTools/FilenameSanitizer.Tests/FilenameNormalizerTests.cs`
+Flat beside the code in a sibling `{Project}.Tests/` directory — these repositories do not mirror
+production subfolders — with namespace `{Project}.Tests`. A class in `{Project}/Thing.cs` is
+covered by `{Project}.Tests/ThingTests.cs`.
 
 Directory casing must match the disk exactly: a wrong-case `ProjectReference` is silently skipped
 at restore on Linux.
@@ -32,25 +31,25 @@ at restore on Linux.
 - Don't run the tests unless asked.
 
 ```csharp
-namespace FilenameSanitizer.Tests;
+namespace Parser.Tests;
 
-/// <summary>Covers renaming files for OS requirements and applying configured patterns.</summary>
-public sealed class FilenameNormalizerTests
+/// <summary>Covers parsing a row and reporting the fields it found.</summary>
+public sealed class ParserTests
 {
-    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly IStore _store = Substitute.For<IStore>();
 
     [Fact]
-    public void RenameFiles_DirtyName_RenamesToSanitizedForm()
+    public void Parse_DirtyName_ReturnsSanitizedForm()
     {
-        // Given: a file whose name needs sanitizing
-        _fileSystem.GetFiles(Arg.Any<string>()).Returns(["bad name.txt"]);
-        var sut = CreateNormalizerWithPatterns();
+        // Given: a row whose value needs normalising
+        _store.GetRows(Arg.Any<string>()).Returns(["bad name"]);
+        var sut = CreateParser();
 
-        // When: the renamer runs
-        sut.RenameFilesToMeetOsRequirements();
+        // When: the parser runs
+        sut.Parse();
 
-        // Then: the file has the sanitized name
-        _fileSystem.Received().MoveFile("bad name.txt", "bad_name.txt");
+        // Then: the value was normalised before it was stored
+        _store.Received().Save("bad name", "bad_name");
     }
 }
 ```

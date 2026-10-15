@@ -1,6 +1,6 @@
 ---
 name: csharp-build-verify
-description: Build the affected .NET solution and recover from the build failures this repo actually hits.
+description: Build the affected .NET solution and recover from the build failures these repositories actually hit.
 ---
 
 # Build verification
@@ -8,18 +8,16 @@ description: Build the affected .NET solution and recover from the build failure
 Once `.cs`, `.csproj` or `.sln` files change, the affected solution must build before the work
 counts as done.
 
-There is one solution per major project: `FilenameTools/FilenameTools.sln`,
-`CsvTranslations/CsvTranslations.sln` and `MediaRenamer/MediaRenamer.sln`. `CliUtils` has none of
-its own — it compiles as a dependency of the projects that reference it. Build only what the
-change touches, from the repo root:
+Build only what the change touches. A repository usually has one solution at its root; a library
+with no solution of its own compiles as a dependency of the projects that reference it:
 
 ```bash
-dotnet build CsvTranslations/CsvTranslations.sln --no-incremental
+dotnet build <Solution>.sln --no-incremental
 ```
 
-`--no-incremental` matters: it stops a stale `obj/` from hiding errors. For everything at once,
-`./local_dev/scripts/build-all-linux.sh --test` (`-c Release` for Release). `dotnet build`
-restores on its own, so do not run `dotnet restore` first.
+`--no-incremental` matters: it stops a stale `obj/` from hiding errors. Where the repository ships
+a build script it covers every solution at once — `scripts/build-all-linux.sh --test`, `-c Release`
+for Release. `dotnet build` restores on its own, so do not run `dotnet restore` first.
 
 ## Recovery
 
