@@ -1,3 +1,9 @@
+# TTS hosting and DI notes
+
+> Relocated from `CsvTranslations/TextToSpeechCore/` on 2026-10-15; the file name there was a full
+> sentence. The interface sketched below as `ITtsService` shipped as `ITextToSpeechService`, and the
+> DI approach described here is the one `TextToSpeechCore` follows.
+
 An app to host C# libraries and console apps and mobile GUI frontend.
 
 Pragmatic with **pure DI in MAUI** + **tiny static factory in console apps** gives clean dependency flow, easy mocking later if needed, almost zero ceremony, and no Clean Architecture overhead.
