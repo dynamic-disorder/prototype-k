@@ -6,13 +6,13 @@ disable-model-invocation: true
 
 # Publish self-contained bundles
 
-Run the repository's wrapper from its root:
+Run the repository's wrapper:
 
 ```bash
-node publish-selfcontained.mjs                        # every supported app
-node publish-selfcontained.mjs <App>                  # one app
-node publish-selfcontained.mjs <App>,<OtherApp>       # several
-node publish-selfcontained.mjs <App> --no-trim
+node local_dev/scripts/publish-selfcontained.mjs                        # every supported app
+node local_dev/scripts/publish-selfcontained.mjs <App>                  # one app
+node local_dev/scripts/publish-selfcontained.mjs <App>,<OtherApp>       # several
+node local_dev/scripts/publish-selfcontained.mjs <App> --no-trim
 ```
 
 It is dependency-free Node, so it runs on Linux and Windows alike, and cross-publishing `win-x64`

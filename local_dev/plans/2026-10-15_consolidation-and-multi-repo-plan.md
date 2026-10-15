@@ -124,7 +124,7 @@ Consolidation rules:
 | `csv-translations` | `CsvTranslations/**` (no `CliUtils` folder) | public | `CliUtils` **package** |
 | `filenametools` | `FilenameTools/**` | public | — |
 | `mediarenamer` | `MediaRenamer/**` | public | — |
-| `ai-offline` | `ai_offline/**`, `Modelfile`, `cc.cmd` | **private** | — |
+| `ai-offline` | `ai_offline/**` — the compose setups, the guides and the proxy | **private** | — |
 | `prototype-k` | thin umbrella README linking the above; cross-project docs | public | — |
 
 **Sub-decision (D1a): the NuGet feed — resolved 2026-10-15: nuget.org.** No auth to consume, so a
@@ -183,6 +183,7 @@ Guards before the first push of each repo:
 | Meta layer (D4) | **Done** — every project repository carries the repository-neutral skills (7, plus the test skill where tests exist and the two publishing skills where apps ship, so 7-10), Cline rules trimmed to its own build and test commands, a Claude Code ignore list, and Copilot instructions. The translations ignore list deliberately keeps CSVs visible, because the dictionary and the corpora are tracked content there. Each also carries the git-ignored scratch directory the investigation and spike skills write into. The umbrella keeps the full set as the source |
 | Build gate | **Done** — every C# repository carries the gate (`.claude/settings.json`, the hook script, `.githooks/pre-commit`) with `core.hooksPath` activated, each verified by a real commit. It found two real defects on first use: `mediarenamer` could not build on Linux at all, because the repo-root `Directory.Build.props` its own `CLAUDE.md` describes was missing, and `cliutils` documented a repo-wide props file it does not carry |
 | Machine notes user-global | **Done** — rule 4 executed: `tool-substitutions` and `manual-fallback` installed under `~/.agents/skills/` and symlinked into `~/.claude/skills/`; the harness picked both up in the same session |
+| Root discipline (rule 1) | **Done** — the two release wrappers left the repository root for `local_dev/scripts/`, and the private repository dropped the model override and its launcher, which nothing referenced |
 | Licenses | **Done** — MIT in every public repository and in the package metadata |
 
 Every repository was checked before its first push: no build output, no IDE state, no real

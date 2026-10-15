@@ -6,10 +6,10 @@ disable-model-invocation: true
 
 # Install the .NET 10 runtime
 
-Run `install-net10-runtime.ps1` from the repo root on the end-user Windows machine:
+Run `local_dev/scripts/install-net10-runtime.ps1` on the end-user Windows machine:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File install-net10-runtime.ps1
+powershell -ExecutionPolicy Bypass -File local_dev/scripts/install-net10-runtime.ps1
 ```
 
 It checks `dotnet --list-runtimes` for `Microsoft.NETCore.App 10.0` and, when missing, downloads

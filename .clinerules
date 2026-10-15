@@ -18,7 +18,7 @@
   their own location.
 - `.editorconfig` is the single source of truth for formatting and style.
 - LF everywhere — in the repository *and* the working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`). Do not reintroduce CRLF, and do not add automatic line-ending normalisation.
-- Node scripts are cross-platform and dependency-free: `publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`.
+- Node scripts are cross-platform and dependency-free: `local_dev/scripts/publish-selfcontained.mjs`, `local_dev/scripts/ai-context-token-estimate.mjs`.
 
 ## Local AI configuration
 - `.claude/` is git-ignored and machine-local; it holds personal/work configuration that is **not** sanitised for publication. The deliberate force-adds are the exception, and they are listed in `local_dev/git-ignored-local-files.md`.
