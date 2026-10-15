@@ -11,8 +11,14 @@
 | **Change** | Three phases: (1) cleanup in place, (2) consolidation of the root/meta layer, (3) split into five project repositories plus a thin umbrella. |
 | **Verify** | `./local_dev/scripts/build-all-linux.sh --test` after each phase, a link/reference sweep, and a fresh-clone check per new repository before its first push. |
 
-The current history is a **single import commit** plus three small doc/cfg commits, so the split needs
-**no history rewrite** — it is a copy-and-init, not a `filter-repo` job.
+The repository has **49 commits**, rooted at `3404ecc chore: initial import of prototype-k monorepo`.
+An earlier draft of this plan claimed the history was a single import commit, which was wrong — it came
+from a truncated `git log`, not from a count. That makes history the first thing to settle:
+
+| Approach | Effect |
+| :--- | :--- |
+| **Copy the subtree, fresh `git init`** | Simple, no rewriting; every new repository starts at one commit and loses its per-project history |
+| **`git filter-repo --path <project>`** | Keeps each project's history, but rewrites it per repository and must happen before that repository's first push |
 
 ## Decisions (2026-10-15)
 
