@@ -168,14 +168,19 @@ Guards before the first push of each repo:
 - A repo that must build on a read-only-`$HOME` box carries its own copy of
   `local_dev/scripts/sandbox-env.sh`, or nothing can restore.
 
-### Phase 3 progress (2026-10-15)
+### Phase 3 progress (round 2)
 
-| Step | Status |
+| Repository | Status |
 | :--- | :--- |
-| `cliutils` repo tree | **Built and verified in scratch** — builds standalone and `dotnet pack` produces `DynamicDisorder.CliUtils.0.1.0.nupkg` with the expected nuspec identity (id, version, authors, `Unlicense`, repository URL). The id is prefixed because plain `CliUtils` is taken on nuget.org |
-| `cliutils` published to nuget.org | **Needs a nuget.org API key** |
-| Consumer swap (`ProjectReference` → `PackageReference`) | Next — verifiable against a local package folder before any feed exists |
-| Remaining repo trees, per-repo `.gitignore`, umbrella README | Not started |
+| `cliutils` | **Pushed** — public, 11 files. Builds and packs standalone; `DynamicDisorder.CliUtils.0.1.0.nupkg` verified |
+| `filenametools` | **Pushed** — public, 41 files. Builds clean and 78/78 tests pass standalone |
+| `mediarenamer` | **Pushed** — public, 21 files. Builds clean standalone; the solution has no test projects |
+| `ai-offline` | **Pushed** — **private**, 37 files, including the model definition and the launcher |
+| `csv-translations` | **Tree built and verified; push held** — the eight project references became one central `PackageVersion` plus `PackageReference` entries, the solution no longer lists the library project, and the tree builds clean with 231/231 tests running against the package. It cannot be pushed until the package is on nuget.org, or a fresh clone would fail to restore |
+| `prototype-k` umbrella | **Not started** — waits until the last project has left |
+
+Every repository was checked before its first push: no build output, no IDE state, no real
+environment files, and no machine paths or account names in the content.
 - Build and tests green on this box.
 - No `../local_dev/…` or `../CliUtils/…` references left in code, docs or `.csproj` files.
 - For `csv-translations`: `CliUtils` resolves from the feed, not from a sibling folder.
