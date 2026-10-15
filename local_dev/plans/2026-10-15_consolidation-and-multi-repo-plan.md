@@ -58,26 +58,9 @@ ai_offline      ─── docs only (links to the translator app)
 | 1 | `translations_csv/` stub + 24 stale references | **Done** (`3d95c00`): stub deleted, references retargeted, dead `TryEntryAssemblyPath` removed |
 | 2 | `memory/README.md` stale index | **Done**: now points at `omarchy-tool-substitutions.md` |
 | 3 | Misplaced documents inside code projects | **Done**: the raw AddEntryApp analysis left the repo (kept in `local_user_files/`); the TTS hosting/DI note moved to `local_dev/plans/tts-hosting-and-di-notes.md` |
-| 4 | Duplicate Ollama guides | **Open** — see below |
+| 4 | Duplicate Ollama guides | **Done**: merged into the canonical `ollama-integrations-with-claude-code.md` on the current hardware spec; the dated duplicate and the two stale specs (in the guide and in `ai_offline/CLAUDE.md`) are gone |
 | 5 | `.claude/commands/build.md` files | **Not an issue**: the `!`-prefixed lines are slash-command execution, not stale snapshots; only the test counts were stale and are now corrected |
 | 6 | Duplicated build props | **Deferred**: the files are identical, but every repo gets its own copy at split time, so deduping now is churn |
-
-### Item 4 — why the guides are not merged yet
-
-`ai_offline/ollama-integrations-with-claude-code-2026-07-10.md` is a superset of the undated file
-**except** for two things it lacks: the environment-variable explanations
-(`CLAUDE_CODE_ATTRIBUTION_HEADER`, `CLAUDE_CODE_BLOCKING_LIMIT_OVERRIDE`,
-`CLAUDE_CODE_MAX_OUTPUT_TOKENS`) and the `ministral-3` pull/launch commands. The two also disagree
-about the machine:
-
-| | Undated file | Dated (2026-07-10) file |
-| :--- | :--- | :--- |
-| VRAM | 12 GB | 24 GB (2× 12 GB) |
-| System RAM | 96 GB DDR3 | ~48 GB |
-| CPU | dual Xeon E5-2690 v2 | Xeon E5-2660 v4 |
-
-Merging needs to know which spec is current; until then both files stay.
-
 Verification: `./local_dev/scripts/build-all-linux.sh --test` + `ai-context-token-estimate.mjs`.
 
 ## 3. Phase 2 — consolidation of the root/meta layer

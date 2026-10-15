@@ -92,7 +92,7 @@ Example: `"English","word","Finnish","translation","#category"`
 
 ## Ollama Integration
 
-The OllamaTranslatorApi/App requires a running Ollama instance. See `../../ai_offline/ollama-integrations-with-claude-code.md` for setup:
+The OllamaTranslatorApi/App requires a running Ollama instance. See `../ai_offline/ollama-integrations-with-claude-code.md` for setup:
 - Install Ollama: https://ollama.com/download
 - Pull model: `ollama pull qwen3.5:9b`
 - Run translator: `dotnet run --project OllamaTranslatorApp`

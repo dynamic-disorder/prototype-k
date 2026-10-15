@@ -14,15 +14,15 @@ This directory contains experiments with locally-hosted AI models and tools. No 
 
 See `ollama-integrations-with-claude-code.md` for:
 - Installing Ollama on Windows
-- Compatible models for local hardware (ministral-3, qwen3.5, glm-4.7-flash)
+- Compatible models for local hardware (gemma4:12b, qwen3.5:9b, glm-4.7-flash)
 - Launching Claude Code with offline models: `ollama launch claude --model qwen3.5:9b`
 
 ## Hardware Requirements
 
-Local setup tested on:
-- RTX 3060 12 GB VRAM
-- 100 GB RAM DDR3
-- Dual Xeon E5-2690 v2 (20 cores, 40 threads)
+Local setup:
+- 2x NVIDIA RTX 3060 - 24 GB VRAM total (12 GB each)
+- ~48 GB system RAM
+- Intel Xeon E5-2660 v4
 
 Smaller models (7B-14B parameters) work well with this configuration.
 
