@@ -14,10 +14,11 @@ Rule of thumb: `git status` will **never** show changes to the paths in sections
 
 Why it was ignored originally, and why the cleanup was needed:
 
-1. **Personal / work configuration.** It had been adapted for a work Claude Code setup and carried
-   machine paths, a work username, a ticket-tracker key and work-domain example types. The tracked
-   files under `.agents/skills/`, `.clinerules` and `.claudeignore` were reviewed for exactly these
-   markers at the same time; the unsanitised snapshot stayed out of git.
+1. **Personal / work configuration.** It had been adapted for a work Claude Code setup as well as for
+   this repository, so it mixed two kinds of machine state: the author's own Windows profile path and
+   drive letters, and a ticket-tracker key with work-domain example types. The tracked files under
+   `.agents/skills/`, `.clinerules` and `.claudeignore` were reviewed for exactly these markers at the
+   same time; the unsanitised snapshot stayed out of git.
 2. **Outdated.** Written months earlier; practice had moved on, and several rules contradicted the
    repo's own `.editorconfig` and code.
 3. **The layout had changed.** Claude Code no longer separates user-initiated *commands* from
@@ -44,11 +45,11 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
 
 ### What the sanitisation removed
 
-- A **work username** in `settings.local.json`, plus `D:` drive-letter paths and a dead
-  `outputStyle`.
+- The author's own Windows profile path (`C:\Users\…` — a personal machine account, not an employer
+  identity) in `settings.local.json`, plus `D:` drive-letter paths and a dead `outputStyle`.
 - The owner **surname**, `whoami` and a personal `C:\_myFiles` path from `personal-cc-exporter`.
-- A **work ticket key** (`REV-…`) and branch convention; work-domain example types
-  (patient/health, `BatchConsumer`/`IConsumerMessage`).
+- A **work ticket key** and branch convention, and work-domain example types: ticket-tracker IDs and
+  domain model names taken from an employer codebase. The literals are deliberately not repeated here.
 - References to files that no longer exist (`scripts/statusline.js`, the CRLF fixers) and to a
   non-existent `temp_user_files/` (the real directory is `local_user_files/`).
 - **Rules that contradicted the repo** — corrected with evidence rather than kept: the `int`/`Int32`
