@@ -21,7 +21,10 @@ History is therefore the first thing to settle:
 | **Copy the subtree, fresh `git init`** | Simple, no rewriting; every new repository starts at one commit and loses its per-project history |
 | **`git filter-repo --path <project>`** | Keeps each project's history, but rewrites it per repository and must happen before that repository's first push. **`git filter-repo` is not installed on this box** — only `filter-branch`, which is slower and easier to misuse |
 
-**Decision outstanding:** which route. Section 5 assumes one of the two.
+**Decided 2026-10-15: fresh start per repository.** Each new repo is a copy plus `git init` — one
+commit, no rewriting. The full history stays in `prototype-k`, which remains as the umbrella, so
+per-project history is still browsable there; it simply is not distributed. `git filter-repo` is
+therefore not needed and is not installed.
 
 ## Decisions (2026-10-15)
 
@@ -164,6 +167,15 @@ Guards before the first push of each repo:
   `models/`, `piper/`, `publish/`, real `.env` files).
 - A repo that must build on a read-only-`$HOME` box carries its own copy of
   `local_dev/scripts/sandbox-env.sh`, or nothing can restore.
+
+### Phase 3 progress (2026-10-15)
+
+| Step | Status |
+| :--- | :--- |
+| `cliutils` repo tree | **Built and verified in scratch** — builds standalone and `dotnet pack` produces `DynamicDisorder.CliUtils.0.1.0.nupkg` with the expected nuspec identity (id, version, authors, `Unlicense`, repository URL). The id is prefixed because plain `CliUtils` is taken on nuget.org |
+| `cliutils` published to nuget.org | **Needs a nuget.org API key** |
+| Consumer swap (`ProjectReference` → `PackageReference`) | Next — verifiable against a local package folder before any feed exists |
+| Remaining repo trees, per-repo `.gitignore`, umbrella README | Not started |
 - Build and tests green on this box.
 - No `../local_dev/…` or `../CliUtils/…` references left in code, docs or `.csproj` files.
 - For `csv-translations`: `CliUtils` resolves from the feed, not from a sibling folder.
