@@ -6,7 +6,7 @@
 - Pick the shell that matches the host; do not assume Windows. `pwsh` is not on `PATH` on the Linux box by default, but it installs without root as a local .NET tool — see your user-global tool notes, which list what this box is missing and the verified alternative.
 
 ## Repository
-- The projects live in their own repositories; this repository holds the shared tooling, documentation and templates. Work in the repository that owns the code.
+- `CsvTranslations/` lives in this repository; the other four projects are separate repositories. Check the project table in `CLAUDE.md` before editing anything that looks like project code.
 - Build + test everything: `./local_dev/scripts/build-all-linux.sh --test` (add `-c Release`).
 - Per-solution detail and project conventions live in each `<Project>/CLAUDE.md`.
 - `local_dev/`: development artifacts, analyses, tooling (committed).

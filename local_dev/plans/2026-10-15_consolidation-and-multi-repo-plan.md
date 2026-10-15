@@ -178,7 +178,7 @@ Guards before the first push of each repo:
 | `filenametools` | **Pushed** — public, 41 files. Builds clean and 78/78 tests pass standalone |
 | `mediarenamer` | **Pushed** — public, 21 files. Builds clean standalone; the solution has no test projects |
 | `ai-offline` | **Pushed** — **private**, 37 files, including the model definition and the launcher |
-| `csv-translations` | **Pushed** — public, 160 files. Consumes the console library as a package; restored straight from nuget.org, built clean and passed 231/231 tests before its first push |
+| `csv-translations` | **Superseded 2026-10-16** — merged back into this repository at `CsvTranslations/` and its own repository deleted; see the post-split change below |
 | `prototype-k` umbrella | **Done** — 43 tracked files: the index README, the umbrella context file, the tooling and documentation templates, and the full history |
 | Meta layer (D4) | **Done** — every project repository carries the repository-neutral skills (7, plus the test skill where tests exist and the two publishing skills where apps ship, so 7-10), Cline rules trimmed to its own build and test commands, a Claude Code ignore list, and Copilot instructions. The translations ignore list deliberately keeps CSVs visible, because the dictionary and the corpora are tracked content there. Each also carries the git-ignored scratch directory the investigation and spike skills write into. The umbrella keeps the full set as the source |
 | Build gate | **Done** — every C# repository carries the gate (`.claude/settings.json`, the hook script, `.githooks/pre-commit`) with `core.hooksPath` activated, each verified by a real commit. It found two real defects on first use: `mediarenamer` could not build on Linux at all, because the repo-root `Directory.Build.props` its own `CLAUDE.md` describes was missing, and `cliutils` documented a repo-wide props file it does not carry |
@@ -191,6 +191,28 @@ environment files, and no machine paths or account names in the content.
 - Build and tests green on this box.
 - No `../local_dev/…` or `../CliUtils/…` references left in code, docs or `.csproj` files.
 - For `csv-translations`: `CliUtils` resolves from the feed, not from a sibling folder.
+
+### Post-split change (2026-10-16): CsvTranslations merged back
+
+At the author's request the translations project returned to the umbrella at `CsvTranslations/`, and its
+own repository was retired. This partially reverses **D3**: the umbrella is no longer purely an index.
+
+The merge copied the project's 135 tracked files and *incorporated* everything that already had a home
+here, rather than duplicating it:
+
+| Carried by the project repository | What happened |
+| :--- | :--- |
+| `.editorconfig`, `.gitattributes`, `Directory.Build.props` | already identical — left to the umbrella, so the nested projects inherit the root properties |
+| `.agents/skills/`, `.claude/`, `.githooks/`, `.github/`, `.clinerules`, `.claudeignore` | the umbrella already carries these. Its blanket CSV rule was dropped: it would have hidden the dictionary the project exists for |
+| `Directory.Packages.props`, `Directory.Build.TTS.props` | copied into `CsvTranslations/`, keeping central package management and the TTS properties scoped to that tree |
+| `local_dev/scripts/publish-selfcontained.mjs`, `install-net10-runtime.ps1` | moved into the umbrella's tooling, with the project paths prefixed `CsvTranslations/` |
+| `local_dev/scripts/repo_paths.py` | its `translations_csv()` merged into the umbrella's resolver; the project's Python helpers moved one import level deeper |
+| `.gitignore` rules for TTS assets, publish output and test/IDE output | merged into the umbrella's single ignore file |
+
+Verified after the merge: `build-all-linux.sh --test` found `CsvTranslations/CsvTranslations.sln`,
+built it and passed 231/231 tests — which also confirms the nested tree inherits the umbrella's
+`Directory.Build.props` (the Windows-targeting property the WPF app needs) and that central package
+management resolves `DynamicDisorder.CliUtils` from nuget.org.
 
 ## 6. Risks
 

@@ -28,6 +28,7 @@ __all__ = [
     "local_dev",
     "local_user_files",
     "solution",
+    "translations_csv",
     "host_os",
 ]
 
@@ -59,6 +60,11 @@ def solution(name: str) -> Path:
     return at_root if at_root.exists() or not nested.exists() else nested
 
 
+def translations_csv() -> Path:
+    """Absolute path of the merged dictionary, ``CsvTranslations/translations.csv``."""
+    return repo_root() / "CsvTranslations" / "translations.csv"
+
+
 def host_os() -> str:
     """``"windows"``, ``"macos"``, ``"linux"`` or ``"unknown"``."""
     import sys
@@ -76,6 +82,7 @@ if __name__ == "__main__":
     print(f"repository : {repo_root()}")
     print(f"local_dev  : {local_dev()}")
     print(f"scratch    : {local_user_files()}")
+    print(f"dictionary : {translations_csv()}")
     print(f"host OS    : {host_os()}")
     print("solutions  :")
     found = sorted(repo_root().glob("*.sln")) + sorted(repo_root().glob("*/[A-Za-z]*.sln"))

@@ -1,13 +1,12 @@
 # CLAUDE.md — umbrella repository
 
-**TL;DR** — This repository is an index and a toolbox. The five projects that used to live here are
-separate repositories; what remains is the cross-project documentation, the tooling templates they
-were created from, and the complete history.
+**TL;DR** — This repository is an umbrella. One project lives here, `CsvTranslations/`; the other four
+are separate repositories. Beyond that it holds the cross-project documentation, the tooling templates
+they were created from, and the complete history.
 
-**Verify everything:** there is no solution and no application code here any more — only the
-standalone `ildump` inspector under `local_dev/tools/`. Verification belongs to the project
-repositories; `local_dev/scripts/build-all-linux.sh` is kept as the template and reports
-"no .sln files found" in this tree.
+**Verify everything:** `./local_dev/scripts/build-all-linux.sh --test` builds and tests the solution
+in `CsvTranslations/` (231 tests); the `ildump` inspector under `local_dev/tools/` is the only other C#
+here. The four separate projects verify in their own repositories.
 
 ## Executive summary
 
@@ -15,8 +14,8 @@ repositories; `local_dev/scripts/build-all-linux.sh` is kept as the template and
 | :--- | :--- |
 | **Problem** | Five unrelated projects shared one working tree, one `.gitignore`, one build gate and one instruction tree; one of them needed different visibility. |
 | **Value** | Each project now has its own repository, history, `.gitignore` and instruction files; this repository keeps the cross-project picture and the original history. |
-| **Change** | Cleanup, consolidation of the root and meta layer, then the split — one project per repository, with the AI stack private. |
-| **Verify** | Builds and tests run in the project repositories; each was built and tested from a fresh tree before its first push. |
+| **Change** | Cleanup, consolidation of the root and meta layer, then the split — one project per repository, with the AI stack private. `CsvTranslations` was merged back here on 2026-10-16. |
+| **Verify** | Builds and tests run in `CsvTranslations/` here and in the four project repositories; each was verified from a fresh tree before its first push. |
 | **Top risk** | Editing a file here that belongs to a project. Check the project table first. |
 
 ## Non-negotiables
@@ -42,12 +41,12 @@ reader time and mixed technical backgrounds.
 
 ## Projects
 
-Each project lives in its own repository. This table is the index, with the state each was verified in.
+This table is the index, with the state each project was verified in. Only `CsvTranslations/` lives in this repository.
 
 | Project | Repository | Type | Verified |
 | :--- | :--- | :--- | :--- |
 | **CliUtils** | [cliutils](https://github.com/dynamic-disorder/cliutils) | Library | builds and packs standalone |
-| **CsvTranslations** | [csv-translations](https://github.com/dynamic-disorder/csv-translations) | Solution | builds clean, 231/231 tests pass |
+| **CsvTranslations** | `CsvTranslations/` — **in this repository** | Solution | builds clean, 231/231 tests pass |
 | **FilenameTools** | [filenametools](https://github.com/dynamic-disorder/filenametools) | Solution | builds clean, 78/78 tests pass |
 | **MediaRenamer** | [mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF | builds clean; the solution has no test projects |
 | **ai_offline** | [ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Docker | compose setups and guides |
@@ -56,6 +55,7 @@ Each project lives in its own repository. This table is the index, with the stat
 
 | Path | Purpose |
 | :--- | :--- |
+| `CsvTranslations/` | The one project that lives here: solution, twelve projects, the dictionary and its corpora |
 | `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, the token estimator, the VS Code cache cleaner |
 | `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
 | `local_dev/plans/` | The consolidation and split plan |
@@ -77,7 +77,7 @@ Read this index first, then open only the file you need.
 - **Tooling**: `local_dev/README.md`.
 - **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and the build-gate activation git cannot carry.
 - **Git-ignored files**: `local_dev/git-ignored-local-files.md` — what stays out of version control and why.
-- **Working on a project**: clone it and read that repository's own `CLAUDE.md`.
+- **Working on `CsvTranslations`**: read `CsvTranslations/CLAUDE.md`. For any other project, clone it and read that repository's own `CLAUDE.md`.
 
 ## Environment & style
 

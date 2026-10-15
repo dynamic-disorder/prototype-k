@@ -1,0 +1,3 @@
+{
+  "OllamaPrompt": "Translate English '{text}' to Finnish with 1 to 3 context or category hashtags in English. The translation is separated from the hashtags with a vertical bar character `|`. Use the vertical bar character `|` exactly once with spaces around it. Do NOT output quotes, commas, or any CSV-like structure. Do NOT explain anything. An example of response/output for input `a fox`: `kettu | #noun #animal #mammal`. If the input is ambiguous or misspelled, choose the most likely Finnish translation and append the English input to the end of the translation with a space and in the parentheses. An example of response/output for an ambiguous or misspelled input `deduction`: `päätelmä (deduction) | #noun #logic`."
+}

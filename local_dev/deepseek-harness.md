@@ -39,9 +39,9 @@ and it serves two entry points:
 
 ### Where the gate lives after the split
 
-Each C# project repository - `cliutils`, `csv-translations`, `filenametools`, `mediarenamer` - carries
-its own copy of the three files, with `core.hooksPath` set per clone. `ai-offline` holds no C# and so
-carries no gate.
+The C# projects each have the gate: `cliutils`, `filenametools` and `mediarenamer` carry their own copy
+of the three files, and the `CsvTranslations/` tree merged back into this repository uses the umbrella's
+copy. `core.hooksPath` is set per clone. `ai-offline` holds no C# and so carries no gate.
 
 Two changes came out of that distribution:
 

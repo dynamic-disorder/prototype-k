@@ -26,7 +26,8 @@
 **/*.tar.gz
 **/*.7z
 **/*.bak
-**/*.csv
+# No *.csv rule: CsvTranslations/translations.csv and the per-app csv_files/ corpora are
+# tracked, deliberate content - ignoring them would hide the dictionary from the assistant.
 
 # IDE metadata
 **/.idea/

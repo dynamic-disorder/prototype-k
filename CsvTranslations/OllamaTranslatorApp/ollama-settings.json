@@ -1,0 +1,19 @@
+{
+  "ApiUrl": "http://localhost:11434/api/generate",
+  "ModelName": "translategemma-12b-opt",
+  "Prompt": "Translate: `{text}` from English to Finnish. Use semantic context `{semantics}` when provided to improve accuracy. Return response as a one-liner plain text.",
+  "KeepAlive": "10m",
+  "ModelAliases": {
+    "default": "translategemma:12b",
+    "fast": "tinyllama",
+    "accurate": "llama2:13b"
+  },
+    "PromptExamples":{
+      "Basic": "Translate: `{text}`. Source language: English. Target language: Finnish. Return response as a one-liner plain text. If there isn't a direct/accurate enough translation, return `[?]{text}`.",
+      "WithSemantics_Explicit": "Translate: `{text}`. Source language: English. Target language: Finnish. Use semantic context `{semantics}` to improve translation accuracy when needed. Follow these rules: 1) If direct translation exists, provide it. 2) If ambiguous, use semantic context to choose best match. 3) If no good translation exists despite context, return `[?]{text}`. Output format: single line with translation only.",
+      "WithSemantics_ForComplex": "Translate: `{text}` from Vietnamese to Finnish. Semantic context: `{semantics}`. Use this context to disambiguate meaning and provide accurate translation. Output format: <translation> (if multiple valid translations, separate with '/'). If translation impossible even with context, return `[?]{text}`. Do not include explanations or metadata.",
+      "WithSemantics_Structured": "You are a translation assistant. Translate the following text: `{text}`. Source language: Vietnamese. Target language: Finnish. Additional semantic context provided: `{semantics}`. Instructions: Analyze the semantic context to understand nuance and context. Provide the most accurate Finnish translation. If the text has multiple possible translations, list them separated by '/'. If translation cannot be determined even with semantic context, output exactly: `[?]{text}`. Respond with only the translation, no additional text.",
+      "NarrativeLineWithContext": "Translate this line from a story: `{text}`. Previous line context: `{semantics}`. Source language: English. Target language: Finnish. Maintain narrative flow and consistency with previous context. Return only the Finnish translation.",
+      "NarrativeSimple": "Translate this line from a story: `{text}`. Source language: English. Target language: Finnish. Return only the Finnish translation while maintaining natural narrative style."
+    }
+}

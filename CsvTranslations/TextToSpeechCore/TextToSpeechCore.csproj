@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Project-specific properties only -->
+    <RootNamespace>TextToSpeechCore</RootNamespace>
+
+    <!-- Deliberately platform-neutral. Synthesizing audio via PiperSharp works anywhere
+         Piper runs; only playback is OS-specific, so it is injected as IAudioPlayback and
+         implemented by the consuming app. Do not widen this target to satisfy an audio
+         package (see CLAUDE.md). -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PiperSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TranslationTools\TranslationTools.csproj" />
+  </ItemGroup>
+</Project>

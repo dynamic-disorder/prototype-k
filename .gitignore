@@ -52,3 +52,16 @@ venv/
 # `.clinerules` is deliberately NOT ignored: it holds the shared, tracked project rules.
 .aider*
 
+# --- merged back from the CsvTranslations repository -------------------------------
+# TTS runtime assets: downloaded on first use, ~274 MB, not reproducible from git.
+**/TextToSpeechApp/models/
+**/TextToSpeechApp/piper/
+# Output of local_dev/scripts/publish-selfcontained.mjs, and of dotnet pack.
+/publish/
+artifacts/
+# Test and IDE output the C# projects produce.
+[Tt]est[Rr]esult*/
+*.trx
+*.sln.docstates
+*_wpftmp.csproj
+.vscode/
