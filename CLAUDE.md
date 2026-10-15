@@ -58,7 +58,7 @@ Each project lives in its own repository. This table is the index, with the stat
 | :--- | :--- |
 | `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, the token estimator, the VS Code cache cleaner |
 | `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
-| `local_dev/plans/` | The consolidation and split plan, and the relocated hosting/DI design note |
+| `local_dev/plans/` | The consolidation and split plan |
 | `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
 | `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |

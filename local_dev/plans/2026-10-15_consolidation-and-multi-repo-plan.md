@@ -69,7 +69,7 @@ ai_offline      ─── docs only (links to the translator app)
 | ---: | :--- | :--- |
 | 1 | `translations_csv/` stub + 24 stale references | **Done** (`3d95c00`): stub deleted, references retargeted, dead `TryEntryAssemblyPath` removed |
 | 2 | `memory/README.md` stale index | **Done**: now points at `omarchy-tool-substitutions.md` |
-| 3 | Misplaced documents inside code projects | **Done**: the raw AddEntryApp analysis left the repo (kept in `local_user_files/`); the TTS hosting/DI note moved to `local_dev/plans/tts-hosting-and-di-notes.md` |
+| 3 | Misplaced documents inside code projects | **Done**: the raw AddEntryApp analysis left the repo (kept in `local_user_files/`); the TTS hosting/DI note now sits beside its project, in the translations repository |
 | 4 | Duplicate Ollama guides | **Done**: merged into the canonical `ollama-integrations-with-claude-code.md` on the current hardware spec; the dated duplicate and the two stale specs (in the guide and in `ai_offline/CLAUDE.md`) are gone |
 | 5 | `.claude/commands/build.md` files | **Not an issue**: the `!`-prefixed lines are slash-command execution, not stale snapshots; only the test counts were stale and are now corrected |
 | 6 | Duplicated build props | **Deferred**: the files are identical, but every repo gets its own copy at split time, so deduping now is churn |

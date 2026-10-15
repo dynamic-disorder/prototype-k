@@ -18,7 +18,7 @@ launchSettings.json
 # Claude Code: ignore the *contents* of every .claude/ directory, then re-include the shared layer.
 # `**/.claude/*` rather than `.claude/` is deliberate: git cannot re-include a file whose parent
 # directory is excluded, so the directory stays un-ignored and only its contents are ignored. The
-# `**/` prefix keeps one rule working for the root, CsvTranslations/ and FilenameTools/. The shared
+# `**/` prefix keeps one rule working for the root and for any nested project directory. The shared
 # and tracked set is settings.json, hooks/, commands/ and rules/ —
 # see local_dev/git-ignored-local-files.md.
 **/.claude/*
