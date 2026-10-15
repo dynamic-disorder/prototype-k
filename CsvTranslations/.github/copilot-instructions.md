@@ -1,10 +1,10 @@
-# GitHub Copilot — Custom Instructions (translations_csv)
+# GitHub Copilot — Custom Instructions (CsvTranslations)
 
-**Note:** This section is designed for small Python utilities and CSV tooling within the `translations_csv` folder.
+**Note:** This section is designed for small Python utilities and CSV tooling within the `CsvTranslations` folder.
 - These instructions are complementary to the root `.github/copilot-instructions.md`. Apply root rules first; use these Python/CSV specifics inside this folder.
 
 ## Purpose
-- Guidance for small Python utilities and CSV tooling in `translations_csv`.
+- Guidance for small Python utilities and CSV tooling in `CsvTranslations`.
 
 ## Additional/override guidelines (in addition to root)
 - Primary language: Python. Prefer small, dependency-free scripts using the standard `csv` module unless a clear benefit from `pandas` is documented.

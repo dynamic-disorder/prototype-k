@@ -13,7 +13,6 @@ This is a personal hobby project maintained in spare time and is not production-
 | [CsvTranslations](CsvTranslations/README.md) | English-Finnish dictionary tools: translation via Ollama, TTS playback, CSV management | .NET 10, Ollama, SAPI | Active |
 | [MediaRenamer](MediaRenamer/README.md) | WPF app for renaming media files based on EXIF metadata | .NET 10, WPF | Active |
 | [ai_offline](ai_offline/README.md) | Docker configs & guides for local AI stack (Ollama + Open WebUI) | Docker, Ollama | Active |
-| [translations_csv](translations_csv/README.md) | Central English-Finnish dictionary CSV file | CSV | Active |
 
 ## Support Folders
 

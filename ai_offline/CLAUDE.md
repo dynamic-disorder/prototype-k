@@ -8,7 +8,7 @@ This directory contains experiments with locally-hosted AI models and tools. No 
 - **OpenWebUI/**: Open WebUI Dockerfile, Compose files, and persistent data
 - **DeepSeekHarness/**: DeepSeek model Compose harness
 
-**Related:** The translations_csv/OllamaTranslatorApi project integrates with Ollama for offline translation.
+**Related:** The `CsvTranslations/OllamaTranslatorApi` project integrates with Ollama for offline translation.
 
 ## Ollama Setup for Claude Code
 

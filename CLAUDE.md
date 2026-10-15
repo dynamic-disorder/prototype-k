@@ -50,7 +50,6 @@ Each major project owns its `.sln`, `CLAUDE.md`, and `README.md` with build/test
 | :----- | :------ |
 | `local_dev/` | Dev artifacts, analyses, scripts, docs |
 | `memory/` | Personal notes, reference configs |
-| `translations_csv/` | Standalone English-Finnish CSV dictionary |
 | `local_user_files/` | Ephemeral files (git-ignored) |
 
 ## Where to look next

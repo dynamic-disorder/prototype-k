@@ -5,7 +5,7 @@ paths:
   - "**/*.sln"
 ---
 
-# Windows Development Rules for translations_csv
+# Windows Development Rules for CsvTranslations
 
 ## Operating System
 - Windows is required to **run** Windows-specific components

@@ -5,7 +5,6 @@
 .vs/
 node_modules/
 *.code-workspace
-translations_csv/TextToSpeechApp/Properties/launchSettings.json
 
 # Self-contained bundle output from publish-selfcontained.mjs (~20 MB+ per app).
 # Without this a `git add -A` after publishing stages the binaries.

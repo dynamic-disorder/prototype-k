@@ -61,7 +61,7 @@ public sealed class TranslationsFinderSettingsTests
     public void GetTranslationFilePathFromSettings_RelativePath_IsResolvedToFullPath()
     {
         // Given: a settings.json with a relative translation file path
-        const string relativePath = "translations_csv/translations.csv";
+        const string relativePath = "data/translations.csv";
         var json = JsonSerializer.Serialize(new { translation_filepath = relativePath });
 
         // When: resolving the translation file path from settings

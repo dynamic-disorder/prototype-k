@@ -34,7 +34,7 @@ TextFileSplitter "C:\data\large_file.txt" 1000
 TextFileSplitter "C:\data\translations.txt" 500 --csv
 
 # Run from project directory
-cd translations_csv\TextFileSplitterApp
+cd CsvTranslations\TextFileSplitterApp
 dotnet run "..\translations.csv" 1000 --csv
 ```
 
@@ -92,7 +92,7 @@ Hello world
 
 ### Build
 ```powershell
-cd translations_csv\TextFileSplitterApp
+cd CsvTranslations\TextFileSplitterApp
 dotnet build
 ```
 

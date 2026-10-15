@@ -10,7 +10,7 @@ USAGE:
 
 ARGUMENTS:
   [path]               Optional path to a translation CSV file.
-                       Defaults to translations_csv/translations.csv
+                       Defaults to translations.csv (searched for in the working directory and parents)
   [line number]        Optional 1-based line number to start reading from.
 
 OPTIONS:

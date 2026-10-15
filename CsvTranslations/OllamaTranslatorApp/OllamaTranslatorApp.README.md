@@ -29,7 +29,7 @@ The OllamaTranslatorApp processes CSV files containing translation entries, send
 
 ### **Build the application**
 ```powershell
-cd translations_csv\OllamaTranslatorApp
+cd CsvTranslations\OllamaTranslatorApp
 dotnet build
 ```
 
@@ -358,7 +358,7 @@ For issues, questions, or contributions:
 1. Check existing documentation in this README
 2. Review other app READMEs for similar patterns
 3. Examine example files in `csv_files/` directory
-4. Check parent directory `translations_csv/README.md` for overview
+4. Check the parent `README.md` for an overview
 
 ## License
 

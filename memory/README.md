@@ -18,7 +18,7 @@ passing observation, use Claude Code auto-memory instead.
 
 - `MEMORY.md` — index with 1-line summaries (agents read this first, then the file they need)
 - `non-programmable-fallback.md` — fallback configuration notes
-- `statusline-setup.md` — terminal/editor statusline configuration
+- `omarchy-tool-substitutions.md` — tools missing on this Arch box, and the verified alternatives
 
 ## Usage for AI agents
 

@@ -1,4 +1,4 @@
-# translations_csv projects
+# CsvTranslations projects
 
 .NET C# libraries and console apps for CSV-based translation storage. Contains tools for managing, translating, and working with translation data.
 
@@ -86,7 +86,7 @@ The cache and download paths are covered with stubbed HTTP and injected asset pr
 
 ## CSV Format
 
-File: `translations.csv` (root of translations_csv directory)
+File: `translations.csv` (root of the CsvTranslations directory)
 Columns: `Source Language, Source Text, Target Language, Target Text, Hashtags`
 Example: `"English","word","Finnish","translation","#category"`
 

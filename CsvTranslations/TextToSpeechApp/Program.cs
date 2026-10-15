@@ -264,7 +264,7 @@ internal sealed class Program
             Environment.Exit(0);
         }
 
-        var csvFilePath = "translations_csv/translations.csv";
+        var csvFilePath = "translations.csv";
 
         if (args.Length == 0)
         {

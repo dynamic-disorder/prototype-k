@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 using CliUtils;
 
@@ -66,12 +65,6 @@ public class TranslationsFinder
 
         if (TryFallbackPath(out foundPath))
         {
-            return foundPath;
-        }
-
-        if (TryEntryAssemblyPath(out foundPath))
-        {
-            ConsoleLogger.WriteLine($"Using file path resolved from entry assembly, at: {foundPath}");
             return foundPath;
         }
 
@@ -179,30 +172,6 @@ public class TranslationsFinder
         path = Path.GetFullPath(Path.Combine(currentDir, "..", TranslationCsvFilename));
 
         ConsoleLogger.WriteLine($@"Current directory {currentDir}\..\{TranslationCsvFilename} ...");
-
-        if (!File.Exists(path))
-        {
-            ConsoleLogger.WriteLine($"Warning: The fallback translation file path does not exist: {path}");
-            path = string.Empty;
-            return false;
-        }
-
-        ConsoleLogger.WriteLine($"Using fallback {TranslationCsvFilename} file at: {path}");
-        return true;
-    }
-
-    private bool TryEntryAssemblyPath(out string path)
-    {
-        ConsoleLogger.WriteLine($"{nameof(TryEntryAssemblyPath)} ...");
-        var entryAssembly = Assembly.GetEntryAssembly();
-        var assemblyName = entryAssembly!.GetName();
-
-        const string solutionName = "translations_csv";
-        var index = entryAssembly.Location.IndexOf(solutionName, StringComparison.Ordinal);
-        var solutionPath = entryAssembly.Location[..(index + solutionName.Length)];
-        path = Path.GetFullPath(Path.Combine(solutionPath, TranslationCsvFilename));
-
-        ConsoleLogger.WriteLine($@"Solution path {assemblyName}\{TranslationCsvFilename} ...");
 
         if (!File.Exists(path))
         {

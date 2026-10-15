@@ -4,7 +4,7 @@
     {
       "label": "Build OllamaTranslatorApi",
       "type": "shell",
-      "command": "dotnet build translations_csv/OllamaTranslatorApi/OllamaTranslatorApi.csproj",
+      "command": "dotnet build CsvTranslations/OllamaTranslatorApi/OllamaTranslatorApi.csproj",
       "group": {
         "kind": "build",
         "isDefault": false
@@ -22,7 +22,7 @@
     {
       "label": "Build All Translations Projects",
       "type": "shell",
-      "command": "dotnet build translations_csv/translations_csv.sln",
+      "command": "dotnet build CsvTranslations/CsvTranslations.sln",
       "group": {
         "kind": "build",
         "isDefault": true
@@ -40,7 +40,7 @@
     {
       "label": "Test OllamaTranslatorApi",
       "type": "shell",
-      "command": "dotnet test translations_csv/OllamaTranslatorApi.Tests/OllamaTranslatorApi.Tests.csproj",
+      "command": "dotnet test CsvTranslations/OllamaTranslatorApi.Tests/OllamaTranslatorApi.Tests.csproj",
       "group": "test",
       "presentation": {
         "echo": true,
@@ -55,7 +55,7 @@
     {
       "label": "Clean Build",
       "type": "shell",
-      "command": "dotnet clean translations_csv/translations_csv.sln",
+      "command": "dotnet clean CsvTranslations/CsvTranslations.sln",
       "group": "clean",
       "presentation": {
         "echo": true,
@@ -69,7 +69,7 @@
     {
       "label": "Restore Packages",
       "type": "shell",
-      "command": "dotnet restore translations_csv/translations_csv.sln",
+      "command": "dotnet restore CsvTranslations/CsvTranslations.sln",
       "group": "build",
       "presentation": {
         "echo": true,

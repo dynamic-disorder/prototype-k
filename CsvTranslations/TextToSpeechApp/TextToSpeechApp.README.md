@@ -25,7 +25,7 @@ This application can use either:
 
 ### **Build the application**
 ```powershell
-cd translations_csv\TextToSpeechApp
+cd CsvTranslations\TextToSpeechApp
 dotnet build
 ```
 
@@ -61,7 +61,7 @@ dotnet publish -c Release -r win-x64 --self-contained
 TextToSpeechApp [path] [line number] [--tts:{provider}]
 ```
 
-- **path**: Optional path to a CSV file. Defaults to `translations_csv/translations.csv`
+- **path**: Optional path to a CSV file. Defaults to `translations.csv`, located by searching the working directory and its parents
 - **line number**: Optional line number to start reading from (1-based index)
 - **--tts:{provider}** or **-tts:{provider}**: Override the TTS provider (Windows or Piper). Case-insensitive (`--tts:Piper` = `--tts:piper`). Overrides the `TtsProvider` setting in `settings.json`.
 
