@@ -19,11 +19,17 @@ fi
 cd "$project_dir" || exit 0
 
 # The agent sandbox mounts $HOME read-only, so builds there need the repo-local cache redirect.
-# Sourcing it is harmless outside the sandbox — it only points the caches inside the repository.
-if [ -f local_user_files/nuget/env.sh ]; then
-  # shellcheck source=/dev/null
-  . local_user_files/nuget/env.sh
-fi
+# Sourcing it is harmless outside the sandbox - it only points the caches inside the repository.
+# The tracked script is the source of truth; the scratch file is its older incarnation, kept for
+# trees that predate it.
+for _env_script in local_dev/scripts/sandbox-env.sh local_user_files/nuget/env.sh; do
+  if [ -f "$_env_script" ]; then
+    # shellcheck source=/dev/null
+    . "$_env_script"
+    break
+  fi
+done
+unset _env_script
 
 # Two invocation modes:
 #   * harness hook (Claude Code / DSH) — the tool call's JSON arrives on stdin, so the command is inspected;
@@ -88,6 +94,11 @@ while [ -n "$search_dir" ] && [ "$search_dir" != "." ] && [ "$search_dir" != "/"
 done
 if [ -z "$sln" ]; then
   sln="$(find . -maxdepth 2 -name '*.sln' -not -path './local_user_files/*' -print -quit 2>/dev/null)"
+fi
+# A repository holding a single project has no solution. Gate that project rather than silently
+# doing nothing, which is what this script used to do there.
+if [ -z "$sln" ]; then
+  sln="$(find . -maxdepth 2 -name '*.csproj' -not -path './local_user_files/*' -print -quit 2>/dev/null)"
 fi
 [ -n "$sln" ] || exit 0
 
