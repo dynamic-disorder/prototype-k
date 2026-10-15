@@ -189,8 +189,8 @@ reports the *directory* as not ignored even though its contents are — and
 
 A second scratch directory lived in the retired mono-repo clone: sentence corpora, full-history
 bundles, a `.git` copy and a pre-cleanup configuration snapshot. The loose copy was deleted on
-2026-10-16; none of it was tracked. Most of it survives in the **2026-10-10 archives** kept beside
-the repositories, which hold the corpora under `local_user_files/CSV files/`, both history bundles
+2026-10-16; none of it was tracked. Most of it survives in the **2026-10-10 archives**, now kept in the user's backup directory on a
+separate disk. They hold the corpora under `local_user_files/CSV files/`, both history bundles
 and the `.git` backup. Only the pre-cleanup configuration snapshot — purged deliberately, see
 `prototype-k-2026-10-10-archive-purge.md` — one capture script and the one-off probe directories
 are gone. The pre-split history also survives as ancestors of this repository's own history.
