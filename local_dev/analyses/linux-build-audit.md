@@ -172,9 +172,8 @@ Total: ~192 literal `FileName` occurrences plus 78 camelCase `fileName*` identif
 
 ### Trap found while renaming: tracked files under ignore rules are dropped
 
-Three tracked files lived under the repo-wide `.claude/` ignore rule
-(`.gitignore:23`) and were therefore **not** re-added at their new path by `git add -A` —
-the commit would have silently deleted them:
+Three tracked files lived under the repo-wide `.claude/` ignore rule and were therefore **not**
+re-added at their new path by `git add -A` — the commit would have silently deleted them:
 
 ```
 FilenameTools/.claude/settings.json
@@ -182,8 +181,8 @@ FilenameTools/.claude/commands/build.md
 FilenameTools/.claude/rules/filename-sanitization.md
 ```
 
-They had to be carried over with `git add -f`. (`FilenameSanitizerCli/Properties/launchSettings.json`
-is ignored by `.gitignore:20` too, but was never tracked, so nothing was lost.)
+They had to be carried over with `git add -f`. (The `launchSettings.json` files are ignored too, but
+were never tracked, so nothing was lost.)
 
 **Rule for next time**: when renaming a directory, diff `os.walk` of the new tree against
 `git add -A --dry-run` and force-add anything that is tracked but ignored:
@@ -192,6 +191,12 @@ is ignored by `.gitignore:20` too, but was never tracked, so nothing was lost.)
 git add -A
 git add -f <tracked-but-ignored paths>
 ```
+
+> **Fixed later (2026-10-15):** `.gitignore` no longer blanket-ignores `.claude/`. It ignores the
+> *contents* (`**/.claude/*`) and re-includes the shared paths (`settings.json`, `commands/`,
+> `hooks/`, `rules/`), so `git add -A` now picks up files in those four locations. Files added
+> directly under `.claude/` are still skipped — see
+> [`git-ignored-local-files.md`](../git-ignored-local-files.md) §2.
 
 ## Follow-up: line endings normalised to LF everywhere
 

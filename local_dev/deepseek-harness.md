@@ -125,6 +125,6 @@ To disable it: `git config --unset core.hooksPath` (git route) or drop the `hook
 
 ## Related
 
-- [`git-ignored-local-files.md`](git-ignored-local-files.md) — what is ignored, what is force-added
-  despite the ignore rules, and what is deliberately disposable
+- [`git-ignored-local-files.md`](git-ignored-local-files.md) — what is ignored, what `.gitignore`
+  deliberately re-includes, and what is deliberately disposable
 - [`README.md`](README.md) — repository scripts and tools, including the path resolvers

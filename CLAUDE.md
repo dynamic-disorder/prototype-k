@@ -63,7 +63,7 @@ Read this index first, then open only the file you need.
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md` — per-solution results, root causes, open issues, cross-platform checklist.
 - **Build script**: `local_dev/scripts/build-all-linux.sh` — build/test every solution on Linux.
 - **Paths & environment**: `local_dev/scripts/repo-env.sh` (bash), `repo-env.ps1` (PowerShell), `repo_paths.py` (Python) — resolve the repository root and probe the environment. Details in `local_dev/README.md`.
-- **Build gate**: `.claude/settings.json` wires a `PreToolUse` hook (`.claude/hooks/pre-commit-build-check.sh`) that blocks a `git commit` with staged C# until the affected solution builds. Both are tracked, despite `.claude/` being ignored.
+- **Build gate**: `.claude/settings.json` wires a `PreToolUse` hook (`.claude/hooks/pre-commit-build-check.sh`) that blocks a `git commit` with staged C# until the affected solution builds. Both are tracked, and `.gitignore` re-includes them explicitly (`**/.claude/*` plus negations) while still ignoring personal `.claude/` content — see `local_dev/git-ignored-local-files.md` §2.
 
 **Conventions and guidance**
 

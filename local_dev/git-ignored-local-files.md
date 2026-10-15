@@ -1,9 +1,10 @@
 # Git-ignored files local to this clone
 
 Some working-tree paths are excluded by `.gitignore`. That is **deliberate** in two different ways,
-and the reasons matter because "it's ignored" is not the same as "it's disposable".
+and the reasons matter because "it's ignored" is not the same as "it's disposable". Section 2 covers
+the mirror image: the shared `.claude/` files the rules deliberately *re-include*.
 
-Rule of thumb: `git status` will **never** show changes to these paths. Use
+Rule of thumb: `git status` will **never** show changes to the paths in sections 1, 3 and 4. Use
 `git status --ignored` or `git check-ignore -v <path>` to confirm.
 
 ## 1. `.claude/` — excluded, now sanitised and reduced
@@ -14,7 +15,9 @@ Rule of thumb: `git status` will **never** show changes to these paths. Use
 Why it was ignored originally, and why the cleanup was needed:
 
 1. **Personal / work configuration.** It had been adapted for a work Claude Code setup and carried
-   machine paths, a work username, a ticket-tracker key and work-domain example types.
+   machine paths, a work username, a ticket-tracker key and work-domain example types. The tracked
+   files under `.agents/skills/`, `.clinerules` and `.claudeignore` were reviewed for exactly these
+   markers at the same time; the unsanitised snapshot stayed out of git.
 2. **Outdated.** Written months earlier; practice had moved on, and several rules contradicted the
    repo's own `.editorconfig` and code.
 3. **The layout had changed.** Claude Code no longer separates user-initiated *commands* from
@@ -29,7 +32,7 @@ left here now:
 | Path | Note |
 | :--- | :--- |
 | `.claude/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
-| `.claude/skills` | A **symlink** to `../.agents/skills` so Claude Code finds the tracked skills. Covered by the `.claude/` rule; it owns no content of its own |
+| `.claude/skills` | A **symlink** to `../.agents/skills` so Claude Code finds the tracked skills. Covered by the `**/.claude/*` rule; it owns no content of its own |
 
 Also present in the tree but **tracked**, so not part of the ignored set:
 `.claude/settings.json` and `.claude/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
@@ -109,31 +112,63 @@ Two related notes:
   conversation does **not** lift that: writes there are refused unless elevated sandbox access is
   approved per operation, so treat those paths as the user's to edit.
 
-## 2. Ignored *but* tracked — already public, same review applies
+## 2. Shared Claude Code config — tracked, *and* `.gitignore` now says so
 
-Force-added despite the ignore rules, so these **are in the remote history**:
+These were originally force-added *despite* the ignore rules. That worked, but it left the tracked
+state contradicting the rules and made `git add -A` silently skip every new file in those
+directories. **Fixed 2026-10-15:** `.gitignore` now ignores the *contents* of each `.claude/`
+directory and re-includes the shared paths explicitly, so the rule and the tracked state agree.
 
-- `.clinerules`
-- `.claude/settings.json` — the shareable settings layer; now carries the `PreToolUse` build gate
-- `.claude/hooks/pre-commit-build-check.sh` — the enforcement itself
-- `CsvTranslations/.claude/commands/build.md`
-- `CsvTranslations/.claude/rules/windows-development.md`
-- `CsvTranslations/.claude/settings.json`
-- `FilenameTools/.claude/commands/build.md`
-- `FilenameTools/.claude/rules/filename-sanitization.md`
-- `FilenameTools/.claude/settings.json`
+| Path | Role |
+| :--- | :--- |
+| `.claude/settings.json` | Shareable settings layer; carries the `PreToolUse` build gate |
+| `.claude/hooks/pre-commit-build-check.sh` | The enforcement itself |
+| `CsvTranslations/.claude/commands/build.md` | Project command |
+| `CsvTranslations/.claude/rules/windows-development.md` | Project rule |
+| `CsvTranslations/.claude/settings.json` | Per-project settings |
+| `FilenameTools/.claude/commands/build.md` | Project command |
+| `FilenameTools/.claude/rules/filename-sanitization.md` | Project rule |
+| `FilenameTools/.claude/settings.json` | Per-project settings |
+| `.clinerules` | Cline rules, shared on purpose |
+| `.claudeignore` | Claude Code's file-exclusion list for this repository |
+
+The rules that carry it:
+
+```gitignore
+**/.claude/*          # contents only, so re-inclusion below is possible at all
+!**/.claude/settings.json
+!**/.claude/commands/
+!**/.claude/hooks/
+!**/.claude/rules/
+**/.claude/settings.local.json
+```
+
+Two details that are easy to get wrong:
+
+- **`**/.claude/*`, not `.claude/`.** Git cannot re-include a file whose parent directory is
+  excluded, so the directory itself must stay un-ignored and only its contents ignored.
+- **`**/` prefix.** It keeps the single rule working for the root, `CsvTranslations/` and
+  `FilenameTools/` without repeating three near-identical blocks.
 
 This matters for the hook in particular: it was **untracked** when it existed before, which is exactly
-why it was unrecoverable and had to be rewritten. A new file in these directories is still skipped by
-`git add -A` and needs `git add -f`.
+why it was unrecoverable and had to be rewritten.
 
 A scan for personal markers in these found only a generic Windows path *example* in
 `CsvTranslations/.claude/rules/windows-development.md` (`C:\Users\...`) — no real leak. They are still
 worth an out-of-date check.
 
-**Trap:** a *new* file inside one of those directories is silently skipped by `git add -A` and needs
-`git add -f`. This already bit once: three tracked files under `FilenameTools/.claude/` were nearly
-dropped by a directory rename (see `analyses/linux-build-audit.md`).
+**Still skipped by `git add -A`:** everything else inside a `.claude/` directory —
+`settings.local.json`, the `.claude/skills` symlink, `agent-memory-local/`. A new *shared* file added
+directly under `.claude/` (not in `hooks/`, `commands/` or `rules/`) is skipped too: put it in one of
+those folders, or `git add -f` it. Getting this wrong already bit once — three tracked files under
+`FilenameTools/.claude/` were nearly dropped by a directory rename
+(see `analyses/linux-build-audit.md`).
+
+**Verify the two sets stay consistent** (2026-10-15: reported zero ignored-but-tracked paths):
+
+```bash
+git ls-files | git check-ignore -v --no-index --stdin || true   # expect no output
+```
 
 ## 3. Per-machine state
 
