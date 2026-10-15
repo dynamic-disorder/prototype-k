@@ -21,12 +21,6 @@
 ## Maintainer contact
 - If a suggestion touches deployment, security, or CI, request review from the repository owner before merging.
 
-## Additional/override guidelines
-- Focus on containerization best practices: small images, minimal layers, explicit versions for base images.
-- Keep `docker-compose` and Kubernetes manifests declarative and idempotent.
-- For shell scripts and Dockerfiles, prefer POSIX-compatible patterns where feasible and document platform specifics (Windows vs Linux).
-- When modifying `README.md` or deployment docs, include exact commands to reproduce local setups and any environment prerequisites.
-
 ## General repository rules
 - Be concise: give minimal, actionable suggestions.
 - Prefer small, focused edits that follow the repo style.
@@ -42,8 +36,7 @@
 - Put shareable local helpers, analyses, tooling, scripts, and documentation in `local_dev/` (not git-ignored)
 - Keep ephemeral or user-specific files in `local_user_files/` (git-ignored)
 - These folders exist at repository root; use them for appropriate content
-- Note: Some project builds require the .NET 10 SDK or .NET 10 targeting pack, especially Windows-specific `net10.0-windows10.0.19041.0` apps such as `TextToSpeechApp`.
-- Cross-platform builds are mandatory: every solution must also build on Linux (Omarchy/Arch). Windows-targeted projects (WPF, `net*-windows`) cross-compile because `EnableWindowsTargeting=true` is set in `Directory.Build.props`, and a wrong-case `ProjectReference` is silently skipped during restore on case-sensitive filesystems. Run `./local_dev/scripts/build-all-linux.sh --test` to build/test every solution; details in `local_dev/analyses/linux-build-audit.md`.
+- This repository is an index and a toolbox: the projects live in their own repositories. Read `README.md` before editing anything that looks like project code.
 
 ### GIT commit
 	- Commit message style: imperative, <=50-char subject, body wrapped at 72 chars explaining the rationale.
