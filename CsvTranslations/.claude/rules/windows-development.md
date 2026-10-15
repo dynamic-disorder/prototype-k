@@ -29,8 +29,9 @@ paths:
 - Some projects have `#if WINDOWS` preprocessor directives
 
 ## File Paths
-- Use Windows-style paths: `C:\Users\...` or relative paths with backslashes
-- Be aware of case-insensitive file system on Windows
+- Build paths with `Path.Combine` rather than literal separators, so one source builds on
+  both platforms; a hard-coded drive letter or home directory is always wrong somewhere
+- Windows file systems are case-insensitive, Linux ones are not - match the on-disk case
 - CSV files use comma separation with quoted strings
 
 ## Shell Commands
