@@ -1,3 +1,8 @@
+> **Hardware note (2026-10-15):** this document was written for a single RTX 3060 (12 GB VRAM),
+> 96 GB DDR3 and dual Xeon E5-2690 v2. The setup recorded in `ai_offline/CLAUDE.md` is now
+> 2x RTX 3060 (24 GB VRAM total), ~48 GB RAM, Xeon E5-2660 v4. The guidance below has **not** been
+> re-derived for that machine — treat it as an analysis of the earlier profile.
+
   Given your hardware—RTX 3060 (12GB VRAM), dual Xeon E5-2690 v2 (Ivy Bridge-EP, 10 cores/20 threads each, 40 total threads), and 96GB DDR3—you're in a unique position where you have **massive system RAM but relatively limited VRAM and older, slower CPU architecture**. Let me search for specific optimization guidance for this kind of setup. 
    Based on your hardware profile and the search results, here's your **optimal Ollama configuration** for RTX 3060 12GB + dual Xeon E5-2690 v2 (40 threads total) + 96GB DDR3:
 

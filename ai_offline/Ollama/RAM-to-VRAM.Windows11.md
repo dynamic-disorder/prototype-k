@@ -1,3 +1,8 @@
+> **Hardware note (2026-10-15):** this document was written for a single RTX 3060 (12 GB VRAM),
+> 96 GB DDR3 and dual Xeon E5-2690 v2. The setup recorded in `ai_offline/CLAUDE.md` is now
+> 2x RTX 3060 (24 GB VRAM total), ~48 GB RAM, Xeon E5-2660 v4. The guidance below has **not** been
+> re-derived for that machine — treat it as an analysis of the earlier profile.
+
 # RAM → VRAM Offloading Guide for Ollama on Windows 11
 
 ![Windows](https://img.shields.io/badge/Platform-Windows_11-0078D6?logo=windows)
