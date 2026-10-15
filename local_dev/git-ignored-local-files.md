@@ -185,7 +185,12 @@ reports the *directory* as not ignored even though its contents are — and
 | `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox, created by [`scripts/sandbox-env.sh`](scripts/sandbox-env.sh), which points every cache variable here because `$HOME` is read-only. | No — all reproducible |
 | `compatcheck/` | One-off: resolved every member reference PiperSharp 1.0.7 makes against NAudio 3.1.0 to prove zero missing members. | No — the finding is recorded in `analyses/linux-build-audit.md` |
 | `parsecheck/` | One-off: ran the real `translations.csv` through `TranslationTools` to validate the parser fixes (3077/3077 rows). | No — the finding is recorded in the audit |
-| `CSV files/`, `samples/`, `*.bundles`, `tmp-rewrite.git/`, `dot-git-backup/`, `*.md` | Local data, backups and notes. | Deliberately local |
+| `*.md` analyses and spike write-ups | Notes the investigation and spike skills leave here. | Deliberately local |
+
+A second scratch directory lived in the retired mono-repo clone: sentence corpora, full-history
+bundles, a `.git` copy and a pre-cleanup configuration snapshot. It was deleted on 2026-10-16 —
+none of it was tracked, and the working clones had superseded the copy. The pre-split history it
+captured survives as ancestors of this repository's own history.
 
 **Promoted out of scratch:** the .NET assembly inspector `ildump` moved to
 [`tools/ildump/`](tools/ildump/) once it was judged reusable rather than one-off — the rule being that
