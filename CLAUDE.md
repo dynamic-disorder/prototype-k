@@ -18,6 +18,7 @@
 
 - **LF line endings everywhere** — repository *and* working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`).
 - **Never hard-code a machine path** — source `local_dev/scripts/repo-env.sh` (or the PowerShell/Python sibling) instead.
+- **Commit messages are public** — never name a user folder, profile path or account, and never describe content that was removed or anonymised. Rules in `.agents/skills/git-commit/SKILL.md`.
 - **Match on-disk path case exactly** in every `ProjectReference` / `Include`.
 - **Keep git `core.ignorecase=false`** in this clone.
 

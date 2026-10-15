@@ -34,6 +34,16 @@ fix(FilenameTools): keep the extension when sanitizing a name
 docs: describe the publish script in the README
 ```
 
+### Never include
+
+A commit message is published with the repository, so treat it as public text.
+
+- **No machine or account identifiers.** Never a user folder or profile path, home directory,
+  hostname or account name — not even partially masked or abbreviated.
+- **No removed or redacted content.** Never name or describe what a cleanup removed, anonymised or
+  replaced, and not as a category either. Say that detail was tightened, not what it was.
+- **No restating the reason in sensitive terms.** Name the document or area, not the content.
+
 ## 3. Commit
 
 `git commit -m ...`, using a heredoc when there is a body. Never amend, never pass `--no-verify`.
