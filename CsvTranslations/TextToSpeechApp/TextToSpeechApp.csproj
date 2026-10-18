@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="../Directory.Build.TTS.props" />
 
   <PropertyGroup>
-    <!-- Project-specific properties only -->
+    <!-- Project-specific properties only. The target framework comes from Directory.Build.props:
+         one platform-independent net10.0 build for Windows, Linux and macOS. -->
     <OutputType>Exe</OutputType>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <None Remove="TextToSpeechApp.syntax.txt" />
     <None Remove="TextToSpeechApp.runtime_commands.txt" />
@@ -35,10 +35,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <!-- NAudio is referenced here, not in TextToSpeechCore, because NAudio.WinMM (the WinMM
-         WaveOut player used by NaudioWavPlayback) only ships a Windows target framework.
-         Keeping it in this Windows-targeted app is what lets TextToSpeechCore stay net10.0. -->
-    <PackageReference Include="NAudio" />
+    <!-- Not an audio backend: PiperSharp's own WAV conversion calls into NAudio.Wasapi, and the
+         NAudio metapackage only pulls that assembly in for Windows targets. Its lib/net9.0 build is
+         platform-neutral, so referencing it directly is what keeps Piper synthesis working on every
+         OS. Playback itself goes through an external command-line player (ProcessWavPlayback), so
+         no in-process audio API is referenced at all. -->
+    <PackageReference Include="NAudio.Wasapi" />
   </ItemGroup>
 
   <!-- Make internal types visible to the test project -->

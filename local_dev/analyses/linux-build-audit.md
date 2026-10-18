@@ -5,6 +5,12 @@
 **Trigger**: development moved from Windows 11 to Omarchy Linux; `FilenameSanitizerCli.csproj`
 had already failed once on case-sensitive project references.
 
+> **Partly superseded, 2026-10-18.** Several findings below were fixed by the Piper-on-Linux
+> work: `TextToSpeechApp` is now a single `net10.0` build that runs on Linux, macOS and Windows
+> (the Windows-only TFM, WinRT provider and NAudio playback were removed), and
+> `TextToSpeechApp.Tests` is now in `CsvTranslations.sln` and green on Linux. The rest of this
+> document stands as the record of the audit as it was made.
+
 ## Environment audited
 
 | Item | Value |

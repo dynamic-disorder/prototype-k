@@ -1,4 +1,4 @@
-TextToSpeechApp - Reads translation CSV entries aloud using Windows SAPI or Piper TTS
+TextToSpeechApp - reads translation CSV entries aloud with the Piper neural TTS engine
 
 DESCRIPTION:
   Loads translation entries from a CSV file and reads them aloud in random order,
@@ -9,46 +9,42 @@ USAGE:
   TextToSpeechApp /help  (or --help, -h)
 
 ARGUMENTS:
-  [path]               Optional path to a translation CSV file.
-                       Defaults to translations.csv (searched for in the working directory and parents)
+  [path]               Optional path to a translation CSV file. Defaults to
+                       translations.csv, searched for in the working directory and
+                       its parents.
   [line number]        Optional 1-based line number to start reading from.
 
 OPTIONS:
-  --tts:{provider}     TTS provider to use: Windows or Piper (case-insensitive).
-                       Overrides the TtsProvider setting in settings.json.
+  --tts:{provider}     TTS provider (case-insensitive). Piper is the only provider;
+                       any other value is reported and Piper is used instead.
+                       Overrides TtsProvider in settings.json.
   -tts:{provider}      Shorthand for --tts:
   /help, --help, -h    Display this help information.
 
 PROVIDERS:
-  Windows              Uses the Windows Speech API (SAPI/WinRT) voices installed on
-                       the system (Settings > Time & Language > Speech).
-  Piper                Uses the local neural Piper engine (PiperSharp); voice models
-                       are downloaded automatically on first use.
+  Piper                The only provider. A local neural engine (PiperSharp); the
+                       engine and voice models are downloaded on first use. Runs on
+                       Windows, Linux and macOS, playing through PowerShell's
+                       SoundPlayer on Windows, afplay on macOS, and pw-play, paplay,
+                       aplay or ffplay on Linux.
 
 EXAMPLES:
-  # Use the default CSV file and the provider from settings.json
+  # Default CSV file
   TextToSpeechApp
 
-  # Read a specific CSV file
+  # A specific CSV file
   TextToSpeechApp "csv_files/finnish_english_corporate_phrases.csv"
 
-  # Start reading from line 50
+  # Start from line 50
   TextToSpeechApp "csv_files/finnish_english_technical_vocabulary.csv" 50
 
-  # Force the Piper provider
+  # Name the provider explicitly (redundant: Piper is the only one)
   TextToSpeechApp --tts:piper
-
-  # Use Piper with a file whose source is Finnish and target is Vietnamese
-  TextToSpeechApp --tts:piper "csv_files/finnish_english_corporate_phrases_vietnamese.csv"
-
-  # Show this help
-  TextToSpeechApp /help
-  TextToSpeechApp --help
 
 RUNTIME CONTROLS:
   Shown before reciting and after every 10 entries; see TextToSpeechApp.runtime_commands.txt.
 
-An invalid parameter aborts before reciting starts: the syntax above is shown and the
-error is printed in red before the process exits with a non-zero code.
+An invalid argument aborts before reciting starts: this help is shown and the error is
+printed in red before the process exits with a non-zero code.
 
 For more details, see TextToSpeechApp.README.md

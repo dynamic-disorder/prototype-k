@@ -64,14 +64,14 @@ internal sealed class TtsSettings
 {
     /// <summary>
     ///     The name of the active TTS provider to use from <see cref="TtsProviders"/>.
-    ///     Valid values: <c>"Windows"</c> or <c>"Piper"</c>.
+    ///     <c>"Piper"</c> is the only provider; <c>"Windows"</c> is still recognised so the app can
+    ///     report that it was removed.
     /// </summary>
-    public string TtsProvider { get; set; } = "Windows";
+    public string TtsProvider { get; set; } = "Piper";
 
     /// <summary>
-    ///     A dictionary of named TTS provider configurations. Each provider's
-    ///     key (e.g. <c>"Windows"</c>, <c>"Piper"</c>) is the identifier used by
-    ///     <see cref="TtsProvider"/>.
+    ///     A dictionary of named TTS provider configurations. The key
+    ///     (e.g. <c>"Piper"</c>) is the identifier used by <see cref="TtsProvider"/>.
     /// </summary>
     public Dictionary<string, TtsProviderConfig> TtsProviders { get; set; } = new();
 
@@ -82,7 +82,7 @@ internal sealed class TtsSettings
     /// <param name="arg">The command-line argument to parse.</param>
     /// <param name="provider">
     ///     When this method returns <c>true</c>, contains the normalised provider name
-    ///     (<c>"Windows"</c> or <c>"Piper"</c>), title-cased.
+    ///     (<c>"Piper"</c>, or the removed <c>"Windows"</c>), title-cased.
     ///     When this method returns <c>false</c>, <c>null</c>.
     /// </param>
     /// <returns>

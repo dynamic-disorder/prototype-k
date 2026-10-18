@@ -235,9 +235,9 @@ public sealed class TtsSettingsTests
         // When: Deserializing the JSON
         var sut = JsonSerializer.Deserialize<TtsSettings>(json);
 
-        // Then: Default values are applied
+        // Then: Default values are applied, with Piper as the only provider
         sut.ShouldNotBeNull();
-        sut.TtsProvider.ShouldBe("Windows");
+        sut.TtsProvider.ShouldBe("Piper");
         sut.TtsProviders.ShouldBeEmpty();
     }
 

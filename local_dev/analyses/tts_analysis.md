@@ -35,6 +35,10 @@ This note summarizes compatibility of SAPI with .NET 10, alternative NuGet/cloud
   - Works by invoking local SAPI voices; quality depends on installed voices (generally less natural than modern neural cloud voices).
   - Use via COM interop if you need existing installed voices and no cloud dependencies.
 
+> **Superseded in part, 2026-10-18.** The Windows/WinRT option and the `net10.0-windows10.0.19041.0` next step below were tried and then dropped: they require a
+> Windows-only build. `TextToSpeechApp` is now a single `net10.0` build using Piper, with
+> playback through a command-line player on every OS. The option survey itself still stands.
+
 ## Recommendation
 
 - For highest naturalness and intelligibility: use `Microsoft.CognitiveServices.Speech` (Azure Speech SDK) or other cloud neural TTS (AWS/Google). Integrates cleanly via NuGet and supports .NET 10.

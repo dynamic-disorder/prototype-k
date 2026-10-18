@@ -128,7 +128,17 @@ internal sealed class Program
 
         TtsSettings settings = LoadTtsSettings(args);
 
-        await RunRecitingLoop(entryList, settings);
+        try
+        {
+            await RunRecitingLoop(entryList, settings);
+        }
+        catch (PlatformNotSupportedException exception)
+        {
+            // Raised when the app has nothing it can run: Piper without a configuration, or Piper
+            // with no audio player installed on this machine.
+            ConsoleColorHelper.WriteError(exception.Message);
+            Environment.Exit(1);
+        }
     }
 
     // Refactoring completed: Use factory pattern with settings injection
@@ -157,6 +167,7 @@ internal sealed class Program
         }
 
         // Apply --tts command-line override, if present
+        var requestedOnCommandLine = false;
         foreach (var arg in args)
         {
             if (!TtsSettings.TryParseTtsArg(arg, out var provider))
@@ -167,6 +178,7 @@ internal sealed class Program
             if (provider != null)
             {
                 settings.TtsProvider = provider;
+                requestedOnCommandLine = true;
 
                 // Piper adds the loading notice to the same message, so the live elapsed-time
                 // readout shown while the engine and voice models load sits right beneath it.
@@ -182,10 +194,28 @@ internal sealed class Program
             }
             else
             {
-                ConsoleColorHelper.WriteWarning($"Unknown TTS provider in argument '{arg}'. Valid values: Windows, Piper. Using settings default: {settings.TtsProvider}");
+                ConsoleColorHelper.WriteWarning($"Unknown TTS provider in argument '{arg}'. The only provider is Piper. Using settings default: {settings.TtsProvider}");
             }
 
             break; // Only process the first --tts argument
+        }
+
+        // Piper is the only provider. Resolving here means a settings file (or an argument) that
+        // names another one is reported once, before any engine work starts.
+        settings.TtsProvider = TtsProviderSelection.Resolve(settings.TtsProvider, out var providerNotice);
+
+        if (providerNotice is not null)
+        {
+            // The user's own --tts argument being unavailable deserves more attention than a
+            // settings file that still names the removed provider.
+            if (requestedOnCommandLine)
+            {
+                ConsoleColorHelper.WriteWarning(providerNotice);
+            }
+            else
+            {
+                ConsoleColorHelper.WriteInfo(providerNotice);
+            }
         }
 
         return settings;

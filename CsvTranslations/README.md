@@ -11,20 +11,20 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 - **AddEntryApp** — Interactive console app for adding English words and their Finnish translations to `translations.csv`. Uses Ollama for suggestions and Windows console for input.
 - **OllamaTranslatorApp** — Translates entries in `translations.csv` from English to Finnish using a local Ollama AI model.
 - **TextFileSplitterApp** — Splits large text files into smaller chunks. Useful for preparing text for batch translation.
-- **TextToSpeechApp** — Reads entries from `translations.csv` aloud using Windows SAPI speech synthesis. Configurable voice and speed.
+- **TextToSpeechApp** — Reads entries from `translations.csv` aloud using Piper, a local neural TTS engine, on Windows, Linux and macOS. One `net10.0` build; voices and playback are configured in `settings.json`.
 
 ### Libraries
 
 - **OllamaTranslatorApi** — Core library for interacting with Ollama API. Handles CSV file translation, free-text translation, and Ollama request/response models.
-- **TextToSpeechCore** — Core library for Windows SAPI text-to-speech functionality.
+- **TextToSpeechCore** — Platform-neutral Piper text-to-speech core: the Piper engine and voice assets, and the `IAudioPlayback` seam that keeps playback out of the library.
 - **TranslationTools** — Shared utilities for CSV parsing (using CsvHelper), file handling, and common translation tooling.
 
 ### Test Projects
 
-- **TextToSpeechCore.Tests** — Unit tests for the platform-neutral Piper TTS core (speak guards, voice listing, config) — in the solution, 25 tests pass; target `net10.0` and fake `IAudioPlayback`, so they need no audio device
+- **TextToSpeechCore.Tests** — Unit tests for the platform-neutral Piper TTS core (speak guards, voice listing, config) — in the solution, 82 tests pass; target `net10.0` and fake `IAudioPlayback`, so they need no audio device
 - **OllamaTranslatorApi.Tests** — Unit tests for the Ollama translation API (CsvFileTranslator, OllamaTranslator) — in the solution, 27 tests pass
-- **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app (real `TranslateCommand` helpers, `TextFileTranslator`, and `Program.TranslateFileAsync` routing) — in the solution, 31 tests pass
-- **TextToSpeechApp.Tests** — Unit tests for the TTS app — not in the solution; Windows-only target, builds but cannot run on Linux
+- **OllamaTranslatorApp.Tests** — Unit tests for the Ollama translator console app (real `TranslateCommand` helpers, `TextFileTranslator`, and `Program.TranslateFileAsync` routing) — in the solution, 41 tests pass
+- **TextToSpeechApp.Tests** — Unit tests for the TTS app — in the solution, 49 tests pass; covers provider resolution and the per-platform playback choices
 - **TranslationTools.Tests** — Unit tests for the shared CSV parsing/tooling library — in the solution, 81 tests pass
 
 ## Data File
@@ -35,7 +35,7 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 
 - .NET 10.0 SDK
 - .NET 10.0 runtime to run/test the projects (the .NET 10 runtime is installed, so no roll-forward is needed)
-- Windows to *run* `TextToSpeechApp` (uses SAPI/WinRT). It and the whole solution still cross-compile on Linux/macOS thanks to `EnableWindowsTargeting=true` in `Directory.Build.props`.
+- A command-line audio player on `PATH` to *hear* `TextToSpeechApp`: `pw-play`, `paplay`, `aplay` or `ffplay` on Linux, `afplay` on macOS, PowerShell on Windows. The app is a single `net10.0` build that runs on all three.
 - Ollama server running locally (for OllamaTranslatorApp and OllamaTranslatorApi)
 
 ## Build & Test
@@ -44,11 +44,8 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 # Build everything
 dotnet build CsvTranslations.sln
 
-# Run all tests (covers only the projects referenced by the solution)
+# Run all tests (every project is in the solution)
 dotnet test CsvTranslations.sln
-
-# Projects outside the solution must be built explicitly:
-dotnet build TextToSpeechApp.Tests/TextToSpeechApp.Tests.csproj
 
 # Run a specific app
 dotnet run --project OllamaTranslatorApp

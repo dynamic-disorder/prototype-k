@@ -1,10 +1,7 @@
 {
-  "translation_filepath": "..\\translations.csv",
-  "TtsProvider": "Windows",
+  "translation_filepath": "../translations.csv",
+  "TtsProvider": "Piper",
   "TtsProviders": {
-    "Windows": {
-      "Comment": "Windows provider assumes supported SAPI voices are installed on the system. Example: Microsoft George (en), Microsoft Hazel (en), Microsoft Susan (en), Microsoft Heidi (fi), Microsoft An (vi)"
-    },
     "Piper": {
       "PiperCache": {
         "Comment": "Directory: where the piper engine and voice models are cached; null or empty keeps the default (the application working directory). CacheTtlDays: reuse a cached engine or voice model for this many days before downloading and extracting it again (14 = two weeks); 0 or a negative value keeps cached assets forever.",

@@ -17,7 +17,14 @@
     <PackageVersion Include="Spectre.Console.Cli" Version="0.57.2" />
     <!-- Text-to-Speech -->
     <PackageVersion Include="PiperSharp" Version="1.0.7" />
+    <!-- No project references the NAudio metapackage any more, but the version has to stay pinned:
+         PiperSharp pulls NAudio 2.2.1 in transitively, and central transitive pinning needs a
+         declared version or NAudio.Core resolves back down to 2.2.1 and fails NU1605. -->
     <PackageVersion Include="NAudio" Version="3.1.0" />
+    <!-- The one NAudio package the app references. PiperSharp's WAV conversion calls into
+         NAudio.Wasapi, but the NAudio metapackage only pulls that assembly in for Windows targets,
+         so it is referenced directly; its lib/net9.0 build keeps the app platform-independent. -->
+    <PackageVersion Include="NAudio.Wasapi" Version="3.1.0" />
     <!-- Testing -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />

@@ -5,7 +5,7 @@ are separate repositories. Beyond that it holds the cross-project documentation,
 they were created from, and the complete history.
 
 **Verify everything:** `./local_dev/scripts/build-all-linux.sh --test` builds and tests the solution
-in `CsvTranslations/` (231 tests); the `ildump` inspector under `local_dev/tools/` is the only other C#
+in `CsvTranslations/` (280 tests); the `ildump` inspector under `local_dev/tools/` is the only other C#
 here. The four separate projects verify in their own repositories.
 
 ## Executive summary
@@ -46,7 +46,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | Project | Repository | Type | Verified |
 | :--- | :--- | :--- | :--- |
 | **CliUtils** | [cliutils](https://github.com/dynamic-disorder/cliutils) | Library | builds and packs standalone |
-| **CsvTranslations** | `CsvTranslations/` — **in this repository** | Solution | builds clean, 231/231 tests pass |
+| **CsvTranslations** | `CsvTranslations/` — **in this repository** | Solution | builds clean, 280/280 tests pass |
 | **FilenameTools** | [filenametools](https://github.com/dynamic-disorder/filenametools) | Solution | builds clean, 78/78 tests pass |
 | **MediaRenamer** | [mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF | builds clean; the solution has no test projects |
 | **ai_offline** | [ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Docker | compose setups and guides |
@@ -82,7 +82,7 @@ Read this index first, then open only the file you need.
 ## Environment & style
 
 - **Platforms**: Omarchy Linux (Arch-based, primary since Oct 2026) and Windows 11.
-- **SDK**: .NET 10.0.x. Every project targets `net10.0` (MediaRenamer: `net10.0-windows`, TextToSpeechApp: `net10.0-windows10.0.19041.0`).
+- **SDK**: .NET 10.0.x. Every project targets `net10.0` (MediaRenamer: `net10.0-windows`; TextToSpeechApp: `net10.0` on every platform — one build, no Windows target).
 - **Runtime**: only the .NET 10 runtime is installed on the Linux box, and it runs every project — no roll-forward needed.
 - **Shell**: bash on Linux; PowerShell (preferred) or Git Bash on Windows.
 - **Read-only `$HOME`**: source `local_dev/scripts/sandbox-env.sh` before restoring, or the package caches cannot be written.

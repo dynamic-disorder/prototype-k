@@ -1,37 +1,39 @@
 TextToSpeechApp
 
-A Windows console application that reads translation entries from CSV files aloud using either the **Windows Speech API (SAPI)** or **Piper** (local neural TTS engine via PiperSharp). The application randomly selects entries and reads them in their respective languages, helping with language learning through audio repetition.
+A console application that reads translation entries from CSV files aloud using **Piper**, a local neural TTS engine (PiperSharp). The application randomly selects entries and reads them in their respective languages, helping with language learning through audio repetition.
+
+There is **one build and one artifact for Windows, Linux and macOS**: the app targets `net10.0` and contains no platform-specific code. Only audio output differs, and that is handled by handing the synthesized WAV to a command-line player the machine already has.
 
 ## Prerequisites
 
 ### **Required Software**
-- **.NET 10 SDK** - The application targets `net10.0-windows10.0.19041.0`
-- **Windows 10 or newer** (build 19041+) - Required for Windows SAPI/WinRT integration
-- **64-bit Windows** - Application is compiled for `win-x64` runtime
+- **.NET 10 SDK** - The application targets `net10.0`
+- **A command-line audio player on `PATH`**:
+  - **Linux**: the first of `pw-play` (PipeWire), `paplay` (PulseAudio), `aplay` (ALSA) or `ffplay` (ffmpeg)
+  - **macOS**: `afplay`, which ships with the system
+  - **Windows**: PowerShell (`powershell.exe` or `pwsh.exe`), which plays through `System.Media.SoundPlayer`
 
 ### **System Requirements**
-- Windows 10 version 19041 (May 2020 Update) or later
-- **Windows provider**: Windows Speech Platform voices installed (check Windows Settings → Time & Language → Speech)
-- **Piper provider**: Voice models and Piper engine are downloaded automatically on first run
-- Sufficient disk space for .NET 10 runtime and Piper voice models
+- The Piper engine and voice models are downloaded automatically on first run (roughly 60 MB per language, once) and then cached
+- Sufficient disk space for the .NET 10 runtime and the Piper voice models
 
-## Why Windows 10+ and .NET 10?
+## Why Piper?
 
-This application can use either:
-- **Windows.Media.SpeechSynthesis** from the **Windows Runtime (WinRT)** API, which is only available on Windows 10 build 19041 and newer
-- **Piper** via **PiperSharp**, a fast local neural TTS engine that works entirely offline and supports many languages
+**Piper** via **PiperSharp** is a fast local neural TTS engine that works entirely offline and supports many languages, identically on every OS.
+
+The Windows Speech API provider (`Windows.Media.SpeechSynthesis`) has been removed. It requires WinRT and a Windows-only target framework, so keeping it would have meant a second, Windows-only build — the opposite of platform independence. Piper replaced it.
 
 ## Building and Running
 
 ### **Build the application**
-```powershell
-cd CsvTranslations\TextToSpeechApp
+```bash
+cd CsvTranslations/TextToSpeechApp
 dotnet build
 ```
 
 ### **Run the application**
-```powershell
-# Using default CSV file and the TTS provider from settings.json
+```bash
+# Using the default CSV file
 dotnet run
 
 # Specify a CSV file
@@ -40,18 +42,20 @@ dotnet run "csv_files/finnish_english_corporate_phrases.csv"
 # Specify CSV file and starting line number
 dotnet run "csv_files/finnish_english_technical_vocabulary.csv" 50
 
-# Use Piper TTS provider (overrides settings.json)
+# Name the provider explicitly (Piper is the only one)
 dotnet run --tts:piper
-
-# Use Windows TTS provider (overrides settings.json)
-dotnet run --tts:windows
 
 # Short form with other arguments
 dotnet run -tts:Piper "csv_files/misc_words_en_vi_fi.csv" 100
 ```
 
 ### **Publish for distribution**
-```powershell
+```bash
+# Self-contained, for the machine you are on
+dotnet publish -c Release --self-contained
+
+# Or cross-publish for a specific platform, keeping the same single build
+dotnet publish -c Release -r linux-x64 --self-contained
 dotnet publish -c Release -r win-x64 --self-contained
 ```
 
@@ -63,37 +67,34 @@ TextToSpeechApp [path] [line number] [--tts:{provider}]
 
 - **path**: Optional path to a CSV file. Defaults to `translations.csv`, located by searching the working directory and its parents
 - **line number**: Optional line number to start reading from (1-based index)
-- **--tts:{provider}** or **-tts:{provider}**: Override the TTS provider (Windows or Piper). Case-insensitive (`--tts:Piper` = `--tts:piper`). Overrides the `TtsProvider` setting in `settings.json`.
+- **--tts:{provider}** or **-tts:{provider}**: Select the TTS provider. Piper is the only one, so the option is accepted for compatibility and validated: anything else is reported and the app continues with Piper. Case-insensitive (`--tts:Piper` = `--tts:piper`). Overrides the `TtsProvider` setting in `settings.json`.
 
 ### **Examples**
-```powershell
-# Use default CSV file with Windows TTS
-dotnet run --tts:windows
+```bash
+# Use the default CSV file
+dotnet run
 
-# Use Piper with a specific CSV file
-dotnet run --tts:piper "csv_files/finnish_english_corporate_vocab.csv"
+# Use a specific CSV file
+dotnet run "csv_files/finnish_english_corporate_vocab.csv"
 
-# Start from line 100 using Piper
-dotnet run "csv_files/misc_words_en_vi_fi.csv" 100 --tts:piper
+# Start from line 100
+dotnet run "csv_files/misc_words_en_vi_fi.csv" 100
 
-# Use absolute path with Windows TTS
-dotnet run -tts:Windows "C:\path\to\your\translations.csv"
+# Use an absolute path
+dotnet run -tts:"/home/you/translations.csv"
 ```
 
 ## TTS Provider Configuration
 
-The application supports two TTS providers via a profile system in `settings.json`:
+The application configures its TTS provider through `settings.json`. Piper is the only provider, so the dictionary exists to carry its voice configuration:
 
 ### settings.json structure
 
 ```json
 {
-  "translation_filepath": "..\\translations.csv",
-  "TtsProvider": "Windows",
+  "translation_filepath": "../translations.csv",
+  "TtsProvider": "Piper",
   "TtsProviders": {
-    "Windows": {
-      "Comment": "Windows provider assumes supported SAPI voices are installed on the system. Example: Microsoft George (en), Microsoft Hazel (en), Microsoft Susan (en), Microsoft Heidi (fi), Microsoft An (vi)"
-    },
     "Piper": {
       "PiperVoices": {
         "English": {
@@ -123,7 +124,7 @@ The application supports two TTS providers via a profile system in `settings.jso
 }
 ```
 
-- **TtsProvider**: The active provider selector — set to `"Windows"` or `"Piper"`
+- **TtsProvider**: The active provider selector. Set it to `"Piper"`. A settings file that still says `"Windows"` is read as `"Piper"`, and the app says so once at startup, because that provider was removed.
 - **TtsProviders**: A dictionary of named provider configurations
   - The dictionary **key** is the provider name (no duplicate `TtsProvider` field inside)
   - **PiperVoices**: Maps a language name to a detailed Piper voice configuration (only used by Piper):
@@ -134,17 +135,21 @@ The application supports two TTS providers via a profile system in `settings.jso
     - **SpeakerId**: Optional numeric speaker id (e.g. `"54"` → `--speaker 54`); preferred over `SpeakerName` when valid
   - The Piper model key is composed as `LanguageCode-ModelCard-ModelQuality` (e.g. `"vi_VN-vivos-x_low"`)
 
-To switch providers, change `"TtsProvider"` from `"Windows"` to `"Piper"` (or use `--tts:piper` at the command line).
+Piper is the only provider, so `--tts:piper` changes nothing — it exists so scripts written for the old two-provider setup keep working. `--tts:windows` is reported and ignored.
 
-### Provider Comparison
+### Playback Per Platform
 
-| Feature | Windows | Piper |
-|---------|---------|-------|
-| Voice quality | Windows SAPI voices | Neural TTS (high quality) |
-| Offline | Yes (with installed voices) | Yes (models downloaded once) |
-| Languages | Depends on installed Windows voices | Broad language support |
-| First-run setup | Install Windows language packs | Auto-downloads Piper engine + models |
-| Performance | Uses system resources | Uses local CPU (ONNX runtime) |
+Audio output is the only part that differs between operating systems. The synthesized WAV is
+written to a temporary file and handed to the first player found on `PATH`:
+
+| OS | Players, in order of preference |
+| :--- | :--- |
+| Linux | `pw-play`, `paplay`, `aplay`, `ffplay` |
+| macOS | `afplay` |
+| Windows | `powershell.exe`, then `pwsh.exe` (through `System.Media.SoundPlayer`) |
+
+The file is deleted once playback finishes. If no player is found the app stops with a message
+naming the players it tried.
 
 ## CSV File Format
 
@@ -163,9 +168,9 @@ goodbye,näkemiin,tạm biệt
 ## Features
 
 ### **Multi-language Support**
-- Automatically detects languages from CSV headers
-- Uses configured TTS provider voices for each language
-- Falls back to system default voice if language-specific voice not available
+- Detects the languages from the CSV headers
+- Speaks each row in the languages it contains, using the Piper voice configured for each
+- Reports, rather than guesses, a language that has no `PiperVoices` entry in `settings.json`
 
 ### **Interactive Controls**
 While the application is running:
@@ -177,7 +182,7 @@ While the application is running:
 ### **Randomized Playback**
 - Selects translation entries randomly for varied practice
 - Speaks each language in a row sequentially
-- Displays progress counter (e.g., "001 / 150")
+- Displays a progress counter (e.g., `001 / 150`)
 
 ## Available CSV Files
 
@@ -192,87 +197,73 @@ The `csv_files/` directory contains several pre-populated translation files:
 
 ### **Project Configuration**
 ```xml
-<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-<UseWinRT>true</UseWinRT>
-<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+<!-- From Directory.Build.props; the project itself sets only OutputType -->
+<TargetFramework>net10.0</TargetFramework>
 ```
+
+No `RuntimeIdentifier` and no `UseWinRT`: the same assembly runs on every platform.
 
 ### **Dependencies**
 - `TranslationTools` project (shared library for CSV parsing)
 - `TextToSpeechCore` project (shared TTS interfaces and Piper implementation)
 - `CliUtils` project (console utilities)
 - `Microsoft.Extensions.DependencyInjection` (v10.0.12)
-- Windows WinRT APIs (provided by Windows)
 - PiperSharp (v1.0.7) — local neural TTS engine
-- NAudio (v3.1.0) — audio playback
+- NAudio.Wasapi (v3.1.0) — called by PiperSharp's WAV conversion, not used for playback
+- The OS's own command-line audio player — see *Playback Per Platform*
 
 ### **Voice Selection**
-The application matches CSV language headers to configured voices:
-
-**Windows provider:**
-1. Tries to find exact language match (e.g., "fi-FI" for Finnish)
-2. Falls back to generic language match (e.g., any "fi-*" voice)
-3. Uses system default voice if no match found
-
-**Piper provider:**
-1. Uses the configured Piper voice model key from settings.json (e.g., "en_GB-northern_english_male-medium")
-2. Downloads the model on first use if not cached locally
+Each language in the CSV is matched to its configured Piper voice:
+1. The `PiperVoices` entry for the language supplies the model key (e.g. `en_GB-northern_english_male-medium`)
+2. The model is downloaded on first use, then reused from the cache
+3. A language with no entry is reported and not spoken
 
 ## Troubleshooting
 
 ### **"No translation entries found"**
-- Ensure CSV file exists and is accessible
-- Check CSV format (headers in first row)
-- Verify file path is correct
+- Check that the CSV exists, that its first row holds the language headers, and that the path resolves
 
-### **"Using default voice" messages**
-- **Windows provider**: Windows may not have voices installed for certain languages — install additional voices via Windows Settings → Time & Language → Speech
-- **Piper provider**: The language may not have a configured voice in settings.json — add a PiperVoices entry
+### **Text appears but nothing is heard**
+- No audio player was found. Install one: `pw-play`, `paplay`, `aplay` or `ffplay` on Linux, `afplay` on macOS, PowerShell on Windows. The app names the players it tried.
 
-### **Build errors about WinRT**
-- Ensure you have .NET 10 SDK installed
-- Verify Windows 10 version 19041 or newer
-- Check that `UseWinRT` property is enabled in csproj
+### **A language is not spoken**
+- Add a `PiperVoices` entry for it in `settings.json`; the startup output lists what was configured
 
-### **Application crashes on startup**
-- Run as Administrator if experiencing permission issues
-- Check Windows Speech services are running
-- Verify .NET 10 runtime is installed
-
-### **Piper provider not working**
-- Check that `TtsProvider` is set to `"Piper"` in settings.json
-- Verify the PiperVoices entry exists for your language
-- Check internet connection on first run (Piper engine and models are downloaded automatically)
-- Ensure the `models/` and `piper/` directories are not blocked by antivirus
+### **Piper fails to initialise**
+- The first run needs network access for the engine and voice models. Later runs reuse `piper/` and `models/`, so no download is needed.
 
 ## Example Session
 
 ```
-Loading CSV entries from 'csv_files/finnish_english_corporate_phrases.csv' ...
-Available voices:
-- Microsoft David Desktop (en)
-- Microsoft Zira Desktop (en)
-- Microsoft Heera Desktop (en)
-Using voice: Microsoft David Desktop for language: en
-Loaded entries: 150
+Loading CSV entries from 'translations.csv' ...
+Loaded 3077 lines from translations CSV file - one is expected to be a header line.
+
+LANGUAGES CONTAINED IN THE .CSV FILE
+  • Detected source language: English
+  • Detected target language: Finnish
+
+  • Piper TTS engine is cached (69.2 MB).
+  • Voice model 'en_GB-northern_english_male-medium' is cached (60.3 MB).
+  • Using Piper voice: en_GB-northern_english_male-medium for language: English (speaker id: 1)
+  • Voice model 'fi_FI-harri-medium' is cached (60.3 MB).
+  • Using Piper voice: fi_FI-harri-medium for language: Finnish (speaker id: 1)
 
 Ctrl+C / ESC: stop   ·   Enter: pause 10 seconds   ·   Space: pause / resume
-────────────────────────────────────────────────────────────────────────────────
 
-Reciting 150 entries, randomly.
-001 / 150 :: "Good morning","Hyvää huomenta"
-002 / 150 :: "Thank you for your email","Kiitos sähköpostistasi"
+Reciting 3077 entries, randomly.
+0001 / 3077 ::
+  en: penance
+  fi: rangaistus
 [ESC pressed]
 Esc pressed — stopping speech. Exiting.
 ```
 
 ## Development Notes
 
-- The application uses asynchronous speech synthesis to prevent blocking
-- Each language has its own synthesizer and player instance
-- Memory is properly disposed via `IDisposable` pattern
-- Console input is non-blocking (uses `Console.KeyAvailable`)
-- The TTS provider can be switched at runtime via `--tts:piper` or `-tts:windows` without editing settings.json
+- Speech synthesis is asynchronous, so display and key handling keep running while audio plays
+- Only audio output is platform-specific: each utterance is played by a child process (see *Playback Per Platform*)
+- Console input is non-blocking (`Console.KeyAvailable`)
+- `--tts:piper` is accepted for compatibility; `--tts:windows` reports that the provider was removed
 
 ## Related Projects
 
