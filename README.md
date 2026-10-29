@@ -22,6 +22,7 @@ built.
 | `CsvTranslations/` | The project that lives here: solution, apps, tests, scripts and the dictionary |
 | `local_dev/` | Shared tooling and documentation: environment resolvers, the cross-platform build script, the sandbox cache redirection, analyses, and the consolidation/split plan |
 | `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
+| `global-style/` | The executive-first documentation style installed into every harness's user-global config, with its two installers and `-Check` drift detection |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | The canonical formatting, line-ending and build-property templates the project repositories were created from |
 | `.github/`, `.clinerules`, `.claudeignore`, `.claude/`, `.githooks/` | Instruction and gate configuration, kept as the template for new repositories |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
