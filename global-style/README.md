@@ -16,7 +16,7 @@ then re-run the installer on each machine.
 | **Value** | One source of truth, one command per machine, and a `--check` mode that detects drift. Re-running after an edit updates the block in place without touching your own global instructions. |
 | **Change** | Added `install.sh` (Arch/Ubuntu/macOS) and `install.ps1` (Windows) with an identical managed-block scheme. Both are idempotent and non-destructive. |
 | **Verify** | Bash installer tested in WSL across 6 scenarios — fresh install, idempotent re-run, content preserved, in-place update, drift detected (exit 1), drift cleared (exit 0). Windows `-Check` returns 0. |
-| **Top risk** | The Omarchy disk is a separate LUKS volume this machine cannot reach, so the copy is manual. Nothing here can verify the Linux side until you run `--check` there. |
+| **Top risk** | Sharing the folder installs nothing: each machine has its own `$HOME`, so the Omarchy side stays unverified until `install.sh --check` runs there. |
 
 ---
 
@@ -45,43 +45,46 @@ created. If a path is wrong for your Cline build, fix the candidate list at the 
 
 ---
 
-## Getting it onto the Omarchy machine
+## Running it on the Omarchy machine
 
-The Omarchy install is on a separate LUKS-encrypted SSD that is not reachable from this Windows
-machine, so there is no direct copy. Any of these work; pick whichever the two machines share.
+**The files are already there.** The repositories sit on one disk that both machines mount — the `E:`
+drive on Windows, a Linux mount point on Omarchy — so `global-style/` is a single copy, not two.
+Nothing is transferred, copied or cloned between the machines, and there is no second version of the
+rules to drift.
 
-**A. USB stick** (works even with no network between them)
+**What is not shared is the install target.** Each machine has its own `$HOME`, so the Omarchy side
+carries its own `~/.dsh/AGENTS.md`, `~/.claude/CLAUDE.md` and Cline rules. Sharing the folder
+installs nothing there; the installer still runs once per machine.
 
-```bash
-# 1. on Windows — copy the folder to the stick (run from the repository root)
-#    robocopy "global-style" "X:\global-style" /E
-
-# 2. on Omarchy, after unlocking the LUKS volume and mounting it
-cp -r /run/media/$USER/<stick>/global-style ~/global-style
-cd ~/global-style && ./install.sh
-```
-
-**B. over the network** (if both are on the same LAN)
+Run in Bash on the Omarchy machine, from the mounted copy — find the mount point first rather than
+assuming one (`findmnt -o TARGET,SOURCE,FSTYPE` lists them):
 
 ```bash
-# on Windows (PowerShell, in the repository root)
-tar -czf global-style.tgz global-style
-# serve it however you prefer, then on Omarchy:
-scp you@windows-box:/path/global-style.tgz . && tar -xzf global-style.tgz
-cd global-style && chmod +x install.sh && ./install.sh
+cd <mount-point>/code/GitHub/My/prototype-k/global-style
+./install.sh --check      # exit 1 = that machine is uninstalled or stale
+./install.sh              # install or update in place
+./install.sh --check      # expect exit 0
 ```
 
-**C. via git** (the default: this folder is tracked in the umbrella repository `prototype-k`)
+Then restart each harness: they read these files at session start.
 
-`global-style/` lives in [`prototype-k`](https://github.com/dynamic-disorder/prototype-k), so on Omarchy:
+Because the working tree is shared, a rule edited here is already visible there — no pull, no push,
+no archive. Only the install step repeats, once per machine. That is what
+`git log -- global-style` on either side answers: which version of the rules each machine is running.
 
-```bash
-git clone https://github.com/dynamic-disorder/prototype-k.git ~/prototype-k
-cd ~/prototype-k/global-style && ./install.sh
+### Two machines, one working tree — one caveat
+
+`git` is safe from both sides, since a single working tree cannot diverge from itself. The mismatch is
+in file ownership: a repository written by the Linux user appears on Windows owned by another account,
+and Windows `git` then refuses to run in it, with `fatal: detected dubious ownership`. On 2026-10-29
+that state covered `cliutils`, `filenametools`, `mediarenamer` and `ai-offline`. The fix is per clone,
+on the machine that complains:
+
+Run in PowerShell, in the repository root:
+
+```powershell
+git config --global --add safe.directory (Get-Location).Path
 ```
-
-That turns "which version of the rules is this machine running?" into `git log -- global-style`, and
-`install.sh --check` into a drift alarm you can run from a shell profile.
 
 ---
 
