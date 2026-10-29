@@ -56,11 +56,12 @@ rules to drift.
 carries its own `~/.dsh/AGENTS.md`, `~/.claude/CLAUDE.md` and Cline rules. Sharing the folder
 installs nothing there; the installer still runs once per machine.
 
-Run in Bash on the Omarchy machine, from the mounted copy — find the mount point first rather than
-assuming one (`findmnt -o TARGET,SOURCE,FSTYPE` lists them):
+On the Omarchy machine the disk is mounted at `/e`, so that same folder is
+`$REPO_ROOT/global-style`. Run in Bash there, from that folder — if a mount point
+ever changes, `findmnt -o TARGET,SOURCE,FSTYPE` prints the current one:
 
 ```bash
-cd <mount-point>/code/GitHub/My/prototype-k/global-style
+cd $REPO_ROOT/global-style
 ./install.sh --check      # exit 1 = that machine is uninstalled or stale
 ./install.sh              # install or update in place
 ./install.sh --check      # expect exit 0
