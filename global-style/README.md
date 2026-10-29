@@ -16,7 +16,7 @@ then re-run the installer on each machine.
 | **Value** | One source of truth, one command per machine, and a `--check` mode that detects drift. Re-running after an edit updates the block in place without touching your own global instructions. |
 | **Change** | Added `install.sh` (Arch/Ubuntu/macOS) and `install.ps1` (Windows) with an identical managed-block scheme. Both are idempotent and non-destructive. |
 | **Verify** | Bash installer tested in WSL across 6 scenarios — fresh install, idempotent re-run, content preserved, in-place update, drift detected (exit 1), drift cleared (exit 0). Windows `-Check` returns 0. |
-| **Top risk** | Sharing the folder installs nothing: each machine has its own `$HOME`, so the Omarchy side stays unverified until `install.sh --check` runs there. |
+| **Top risk** | Only the Windows profile is verified. WSL and Omarchy each have their own `$HOME`, so their copy of the block stays unverified until `install.sh --check` runs there. |
 
 ---
 
@@ -45,41 +45,57 @@ created. If a path is wrong for your Cline build, fix the candidate list at the 
 
 ---
 
-## Running it on the Omarchy machine
+## Running it from another shell on this machine
 
-**The files are already there.** The repositories sit on one disk that both machines mount — the `E:`
-drive on Windows, a Linux mount point on Omarchy — so `global-style/` is a single copy, not two.
-Nothing is transferred, copied or cloned between the machines, and there is no second version of the
-rules to drift.
+The folder is one set of files seen through three different path styles — nothing is copied:
 
-**What is not shared is the install target.** Each machine has its own `$HOME`, so the Omarchy side
-carries its own `~/.dsh/AGENTS.md`, `~/.claude/CLAUDE.md` and Cline rules. Sharing the folder
-installs nothing there; the installer still runs once per machine.
+| Shell | Path to this folder | `$HOME` |
+| :--- | :--- | :--- |
+| PowerShell (Windows) | the repository folder itself | `%USERPROFILE%` → `C:\Users\…` |
+| Git Bash (Windows, MSYS) | `$REPO_ROOT/global-style` | `/c/Users/…`, the same Windows profile |
+| WSL (Ubuntu) | `/mnt$REPO_ROOT/global-style` | the WSL user's own home |
 
-On the Omarchy machine the disk is mounted at `/e`, so that same folder is
-`$REPO_ROOT/global-style`. Run in Bash there, from that folder — if a mount point
-ever changes, `findmnt -o TARGET,SOURCE,FSTYPE` prints the current one:
+Git Bash maps drive letters (`E:\…` is `/e/…`); WSL mounts the same disk under `/mnt`. Because Git
+Bash shares the Windows profile, `./install.sh` there writes the **same three targets** `install.ps1`
+writes — the way to exercise the bash installer against real files without a Linux box. WSL's home is
+a different profile, so a run there installs for that user only.
+
+Run in Git Bash, from the folder above:
 
 ```bash
 cd $REPO_ROOT/global-style
-./install.sh --check      # exit 1 = that machine is uninstalled or stale
+./install.sh --check      # exit 1 = that profile is uninstalled or stale
 ./install.sh              # install or update in place
 ./install.sh --check      # expect exit 0
 ```
 
 Then restart each harness: they read these files at session start.
 
-Because the working tree is shared, a rule edited here is already visible there — no pull, no push,
-no archive. Only the install step repeats, once per machine. That is what
-`git log -- global-style` on either side answers: which version of the rules each machine is running.
+### On the Omarchy machine
 
-### Two machines, one working tree — one caveat
+The Omarchy install is a **separate disk** (LUKS), and whether it can see this folder is not
+established here — do not assume either way. Since harness globals live in each machine's `$HOME`,
+the installer runs once per machine from wherever that copy is:
 
-`git` is safe from both sides, since a single working tree cannot diverge from itself. The mismatch is
-in file ownership: a repository written by the Linux user appears on Windows owned by another account,
-and Windows `git` then refuses to run in it, with `fatal: detected dubious ownership`. On 2026-10-29
-that state covered `cliutils`, `filenametools`, `mediarenamer` and `ai-offline`. The fix is per clone,
-on the machine that complains:
+Run in Bash on that machine, from its copy of this folder:
+
+```bash
+./install.sh --check      # exit 1 = uninstalled or stale; then ./install.sh and re-check
+```
+
+If the folder is not there, the repository carries it:
+
+```bash
+git clone https://github.com/dynamic-disorder/prototype-k.git ~/prototype-k
+cd ~/prototype-k/global-style && ./install.sh --check
+```
+
+### The ownership mismatch this folder already carries
+
+Four repositories here are owned by `BUILTIN\Administrators` rather than the Windows user, which makes
+`git` refuse to run in them with `fatal: detected dubious ownership` — on 2026-10-29 that covered
+`cliutils`, `filenametools`, `mediarenamer` and `ai-offline`. The fix is per clone, on the machine
+that complains:
 
 Run in PowerShell, in the repository root:
 
