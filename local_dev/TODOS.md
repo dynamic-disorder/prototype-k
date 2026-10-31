@@ -5,9 +5,9 @@ repository; each is a claim that is assumed rather than checked, or a known cosm
 
 | | |
 | :--- | :--- |
-| **Problem** | Two items are open: one still-leaky published package, one noisy workflow step. |
+| **Problem** | Two items are open: one published version that still leaks a CI path (0.1.0), one noisy workflow step. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
-| **Change** | Item 1 closed 2026-10-31; items 2 and 3 re-verified the same day (evidence inline), both still open — item 2's release side is done, only the accepted 0.1.0 listing remains. |
+| **Change** | Item 1 closed 2026-10-31; items 2 and 3 re-verified the same day (evidence inline), both still open — item 2's release side is done, only the choice to unlist 0.1.0 remains. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Re-reading item 1 as open because the Windows run (253/280) is what comes to mind first. |
 
@@ -40,7 +40,7 @@ on Linux. The 27 Windows-host failures above (26 headless-console
 `System.ConsolePal.get_WindowWidth()` IOExceptions, 1 Linux-only `aplay` candidate) do not reproduce
 here. **Closed 2026-10-31.**
 
-## 2. `0.1.0` is still listed, with a runner path inside — open, accepted
+## 2. `0.1.0` is still listed, with a runner path inside — open, deferred
 
 The published 0.1.0 carries one absolute path inside `lib/net10.0/CliUtils.dll`, pointing at the GitHub
 Actions runner's own build directory. It reveals nothing about any person or machine beyond CI, but it
@@ -49,9 +49,10 @@ is the same class of defect that 0.1.1 fixes. 0.1.1 was scanned after download a
 A nuget.org version cannot be replaced once pushed. Unlisting removes it from search and from version
 resolution but leaves it downloadable by exact version, so it is not a deletion.
 
-Decision taken: ship 0.1.1 rather than unlist 0.1.0. Revisit only if that embedded path turns out to
-matter. Closing it means unlisting through the nuget.org package page (**Manage package** → **Unlist**)
-and recording the date here.
+Current choice: ship 0.1.1 and leave 0.1.0 listed for now — 0.1.1 removes the reason to rush an
+unlist. That is a preference, **not** a decision against unlisting: 0.1.0 can still be unlisted at any
+time, and unlisting is the only way to close this entry. Closing it means unlisting through the
+nuget.org package page (**Manage package** → **Unlist**) and recording the date here.
 
 ### Verified 2026-10-31 — measured, not assumed
 
@@ -68,26 +69,28 @@ Listing state, from `v3/registration5-gz-semver2/dynamicdisorder.cliutils/index.
 0.1.1  listed=True   published 2026-10-31
 ```
 
-The search endpoint still returns both versions, so the decision above stands unchanged.
+The search endpoint still returns both versions, so the choice above stands unchanged.
 
-### Re-confirmed 2026-10-31 — ship 0.1.1, leave 0.1.0 listed
+### Re-checked 2026-10-31 — 0.1.1 is the shipped version, 0.1.0 still listed
 
-Both packages were downloaded from nuget.org again and byte-scanned after the decision was re-confirmed
-by the owner. Nothing needed publishing: 0.1.1 went live 2026-10-31 08:50 UTC, the tag `v0.1.1` exists,
-and `CsvTranslations/Directory.Packages.props` pins `0.1.1`.
+Both packages were downloaded from nuget.org again and byte-scanned; 0.1.1 was already live, so the
+ship half of the choice needed no action. 0.1.1 went live 2026-10-31 08:50 UTC, the tag `v0.1.1`
+exists, and `CsvTranslations/Directory.Packages.props` pins `0.1.1`.
 
 - `0.1.1`, sha256 `c10ecfbf1368…` — its only surviving path token is the deterministic-path mapping
   `/_/obj/Release/net10.0/CliUtils.pdb`. No `/home/`, `/mnt/`, runner or work-directory string.
 - `0.1.0`, sha256 `1ad6913260…` — still carries the absolute CI path, unchanged from the audit above.
 
-So the release side of this entry is finished; what remains is the accepted risk that an old version
-stays downloadable by exact version.
+So the release side of this entry is finished. What remains is one open choice — unlist 0.1.0, or keep
+it listed. While it stays listed it is downloadable by exact version, and nothing more.
 
 Operational notes for whoever closes this:
 
-- **Account → Unlisted Packages showing `0 packages` is a report, not a control.** It only fills after a
-  version is actually unlisted, so it cannot be used to check one version's state. Use the registration
-  index above, or the 0.1.0 package page itself.
+- **The account page counts package IDs, not versions.** `Published Packages 1 package / 112 downloads`
+  with `Latest Version 0.1.1` describes the single `DynamicDisorder.CliUtils` ID; it does not say how
+  many versions are listed. `Unlisted Packages 0 packages` is consistent with both versions listed,
+  and it only fills once a version is actually unlisted — so it cannot confirm one version's state.
+  Use the registration index above, or the 0.1.0 package page itself.
 - To unlist 0.1.0, on its page as the owner: **Manage package → Listing → unlist**. Or, with an API key
   scoped to *Unlist* for this package:
   `dotnet nuget delete DynamicDisorder.CliUtils 0.1.0 --source https://api.nuget.org/v3/index.json --api-key <KEY> --non-interactive`
@@ -95,7 +98,7 @@ Operational notes for whoever closes this:
 - No nuget.org API key is stored on the Omarchy machine: the environment, the user `NuGet.Config`
   (absent) and `local_user_files/nuget/env.sh` (cache paths only) were all checked.
 
-**Owner: you.** No action planned.
+**Owner: you.** Unlisting is a two-click action on the 0.1.0 page; nothing else depends on it.
 
 ## 3. `publish.yml` pushes the symbols package twice — open, cosmetic
 
