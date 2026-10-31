@@ -213,3 +213,6 @@ internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-aud
 - [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
   `.gitignore` (root `.claude/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
   changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.
+- [`TODOS.md`](TODOS.md) — open verification and release follow-ups: the Linux test figure that the
+  `CliUtils` 0.1.1 bump left unconfirmed, the leaky package still listed on nuget.org, and the duplicate
+  symbols push in the publish workflow. Each entry names what closes it and who acts.
