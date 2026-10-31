@@ -7,7 +7,7 @@ repository; each is a claim that is assumed rather than checked, or a known cosm
 | :--- | :--- |
 | **Problem** | Two items are open: one still-leaky published package, one noisy workflow step. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
-| **Change** | Item 1 closed 2026-10-31; items 2 and 3 re-verified the same day (evidence inline), both still open. |
+| **Change** | Item 1 closed 2026-10-31; items 2 and 3 re-verified the same day (evidence inline), both still open — item 2's release side is done, only the accepted 0.1.0 listing remains. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Re-reading item 1 as open because the Windows run (253/280) is what comes to mind first. |
 
@@ -58,8 +58,8 @@ and recording the date here.
 Both published packages were downloaded from nuget.org and scanned with the same fixed strings the
 publication gate uses. The leaking string in 0.1.0's `lib/net10.0/CliUtils.dll` is the GitHub Actions
 runner's work directory, ending `…/work/cliutils/cliutils/obj/Release/net10.0/CliUtils.pdb`; 0.1.1 has
-no match. The full prefix is deliberately not reproduced here — the publication gate blocks `/home/…`
-and `/mnt/…` strings, which is the same class of defect this entry is about.
+no absolute-path match. The full prefix is deliberately not reproduced here — the publication gate
+blocks `/home/…` and `/mnt/…` strings, which is the same class of defect this entry is about.
 
 Listing state, from `v3/registration5-gz-semver2/dynamicdisorder.cliutils/index.json`:
 
@@ -69,6 +69,19 @@ Listing state, from `v3/registration5-gz-semver2/dynamicdisorder.cliutils/index.
 ```
 
 The search endpoint still returns both versions, so the decision above stands unchanged.
+
+### Re-confirmed 2026-10-31 — ship 0.1.1, leave 0.1.0 listed
+
+Both packages were downloaded from nuget.org again and byte-scanned after the decision was re-confirmed
+by the owner. Nothing needed publishing: 0.1.1 went live 2026-10-31 08:50 UTC, the tag `v0.1.1` exists,
+and `CsvTranslations/Directory.Packages.props` pins `0.1.1`.
+
+- `0.1.1`, sha256 `c10ecfbf1368…` — its only surviving path token is the deterministic-path mapping
+  `/_/obj/Release/net10.0/CliUtils.pdb`. No `/home/`, `/mnt/`, runner or work-directory string.
+- `0.1.0`, sha256 `1ad6913260…` — still carries the absolute CI path, unchanged from the audit above.
+
+So the release side of this entry is finished; what remains is the accepted risk that an old version
+stays downloadable by exact version.
 
 Operational notes for whoever closes this:
 
