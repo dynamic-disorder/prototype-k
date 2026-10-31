@@ -45,9 +45,10 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
 
 ### What the sanitisation removed
 
-- The author's own Windows profile path (`C:\Users\…` — a personal machine account, not an employer
+- The author's own Windows profile path (`%USERPROFILE%` — a personal machine account, not an employer
   identity) in `settings.local.json`, plus `D:` drive-letter paths and a dead `outputStyle`.
-- The owner **surname**, `whoami` and a personal `C:\_myFiles` path from `personal-cc-exporter`.
+- The owner **surname**, `whoami` and a personal folder path on the `C:` drive from
+  `personal-cc-exporter`. The folder name is deliberately not repeated here.
 - A **work ticket key** and branch convention, and work-domain example types: ticket-tracker IDs and
   domain model names taken from an employer codebase. The literals are deliberately not repeated here.
 - References to files that no longer exist (`scripts/statusline.js`, the CRLF fixers) and to a

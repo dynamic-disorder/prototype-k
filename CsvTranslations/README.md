@@ -8,7 +8,7 @@ The solution (`CsvTranslations.sln`) contains the following projects:
 
 ### Apps (Console/Executable)
 
-- **AddEntryApp** — Interactive console app for adding English words and their Finnish translations to `translations.csv`. Uses Ollama for suggestions and Windows console for input.
+- **AddEntryApp** — Interactive console app for adding English words and their Finnish translations to `translations.csv`. Uses Ollama for suggestions; input is plain console input, so it runs on any platform.
 - **OllamaTranslatorApp** — Translates entries in `translations.csv` from English to Finnish using a local Ollama AI model.
 - **TextFileSplitterApp** — Splits large text files into smaller chunks. Useful for preparing text for batch translation.
 - **TextToSpeechApp** — Reads entries from `translations.csv` aloud using Piper, a local neural TTS engine, on Windows, Linux and macOS. One `net10.0` build; voices and playback are configured in `settings.json`.
@@ -59,4 +59,11 @@ From the umbrella repository root - one level above this folder -
 
 ## Distribution
 
-Published as self-contained Windows executables. See `.github/` for deployment configuration.
+Published as self-contained Windows executables by
+`local_dev/scripts/publish-selfcontained.mjs`, which writes to `publish/<App>/<runtime>/<configuration>/`
+(git-ignored). Run it from the repository root:
+
+```bash
+node local_dev/scripts/publish-selfcontained.mjs                # every supported app
+node local_dev/scripts/publish-selfcontained.mjs AddEntryApp    # one app
+```

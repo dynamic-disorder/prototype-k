@@ -80,8 +80,8 @@ dotnet run "csv_files/finnish_english_corporate_vocab.csv"
 # Start from line 100
 dotnet run "csv_files/misc_words_en_vi_fi.csv" 100
 
-# Use an absolute path
-dotnet run -tts:"/home/you/translations.csv"
+# Use a path outside the working directory (~ is the home directory on Linux and macOS)
+dotnet run -tts:"~/translations.csv"
 ```
 
 ## TTS Provider Configuration

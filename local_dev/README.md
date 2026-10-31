@@ -69,9 +69,9 @@ Builds every `.sln` in the repository on Linux/macOS and prints a per-solution s
   is set in `Directory.Build.props`. They remain unrunnable on Linux.
 - Every project targets `net10.0` and the .NET 10 runtime is installed, so the test
   hosts start directly — no `DOTNET_ROLL_FORWARD` fallback is needed.
-- In this umbrella there is nothing to build: it discovers `.sln` files by glob, finds none, and
-  says so. It is kept as the template every project repository copies, where it builds and tests
-  that repository's solutions.
+- It discovers `.sln` files by glob; in this umbrella that finds `CsvTranslations/CsvTranslations.sln`
+  and nothing else. It is also the template every project repository copies, where it builds and
+  tests that repository's solutions.
 
 ### Sandbox builds (read-only `$HOME`)
 
@@ -104,6 +104,49 @@ node local_dev/scripts/ai-context-token-estimate.mjs --json   # machine-readable
 - Dependency-free Node (built-ins only); no `npm install`.
 - Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box at the time because `pwsh` was not installed (it can be added as a local .NET tool — see the note above).
 - The git-ignored root `.claude/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
+
+### Self-contained publish & runtime install (`publish-selfcontained.mjs`, `install-net10-runtime.ps1`)
+
+Two wrappers with different audiences: the publisher is a developer tool, the installer runs on
+end-user machines.
+
+```bash
+node local_dev/scripts/publish-selfcontained.mjs                          # every supported app, win-x64 Release
+node local_dev/scripts/publish-selfcontained.mjs AddEntryApp              # one app
+node local_dev/scripts/publish-selfcontained.mjs --runtime linux-x64      # another target
+```
+
+```powershell
+.\local_dev\scripts\install-net10-runtime.ps1
+```
+
+**Notes**:
+- Output is `publish/<App>/<runtime>/<configuration>/` — git-ignored. The script only drives
+  `dotnet publish`, so cross-publishing `win-x64` from Linux works.
+- Node for the developer tool (no install step on either platform), PowerShell for the end-user
+  installer (5.1 is guaranteed there, Node is not).
+
+### Publication gate (`scan-publication-leaks.sh`)
+
+Every commit is public text, so no machine-specific identifier may reach one. This scans for the
+classes that actually leak: a profile or home path, an account or host name, a mounted drive tree.
+
+```bash
+bash local_dev/scripts/scan-publication-leaks.sh            # staged changes — the pre-commit gate
+bash local_dev/scripts/scan-publication-leaks.sh --diff     # unstaged working tree
+bash local_dev/scripts/scan-publication-leaks.sh --all      # every tracked file
+```
+
+**Notes**:
+- Exit 0 = no identity or mount leak; exit 1 = the listed lines must be rewritten before committing.
+- `FAIL` lines are leaks and always block. `warn` lines are drive-letter paths — a documented
+  `C:\data\input.csv` example is fine, a path that exists on one machine only is not.
+- Write `%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or `$REPO_ROOT` (bash) /
+  `$RepoRoot` (PowerShell), both exported by `repo-env.sh` and its siblings.
+- The pattern list lives only in that script. It skips itself for that reason, and no document keeps
+  an inline copy: a hand-copied `grep` in the rules matched its own prose.
+- `.githooks/pre-commit` runs it before the build gate, once the hook is activated with
+  `git config core.hooksPath .githooks`.
 
 ### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)
 
