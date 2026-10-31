@@ -53,9 +53,28 @@ Ask only when the grouping is genuinely ambiguous.
 
 ## 3. Verify
 
-If a commit's change set contains `.cs` or `.csproj` files, run the `csharp-build-verify` skill
-first. A failed build means no commit — show the errors and stop. A docs-only commit needs no
-build.
+Two gates, both before any commit is created.
+
+**Build gate** — if a commit's change set contains `.cs` or `.csproj` files, run the
+`csharp-build-verify` skill first. A failed build means no commit — show the errors and stop. A
+docs-only commit needs no build.
+
+**Publication gate** — the commit is public text, so the staged content must contain no
+machine-specific identifier. Run the repository's gate from the repository root:
+
+Run in Bash:
+```bash
+bash local_dev/scripts/scan-publication-leaks.sh            # staged changes
+```
+
+Exit 0 is a pass. Exit 1 lists the offending lines: rewrite them before committing. `FAIL` lines are
+identity or mount leaks — a profile path, a home directory, a mounted drive tree — and always mean
+no commit. `warn` lines are drive-letter paths: keep a deliberate illustration such as a documented
+example file name, rewrite anything that only exists on one machine. The replacement is
+`%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or the repository root variable
+(`$REPO_ROOT`, exported by `local_dev/scripts/repo-env.sh`). A leak that was already in the file is
+removed in the commit that touches it, never carried forward. When the fix changes the content of a
+file the commit's message describes, re-check the message against §4.
 
 ## 4. Message
 

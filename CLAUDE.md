@@ -22,22 +22,26 @@ here. The four separate projects verify in their own repositories.
 
 - **LF line endings everywhere** — repository *and* working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`).
 - **Never hard-code a machine path** — source `local_dev/scripts/repo-env.sh` (or the PowerShell/Python sibling) instead. The project repositories carry the same rule.
-- **Commit messages are public** — never name a user folder, profile path or account, and never describe content that was removed or anonymised. Rules in `.agents/skills/git-commit/SKILL.md`.
+- **Everything committed is public** — files and commit messages alike. Never a drive letter, home or profile path, account/user/host name, or employer/ticket identifier, masked or not: write `%USERPROFILE%\…` on Windows and `~/…` on Linux/macOS. Never describe content that was removed or anonymised. Scan the staged diff before committing; rules and the command in `.agents/skills/git-commit/SKILL.md`.
 - **No cross-repository relative paths** — reference another project by repository name or by its package, never by `../`.
 - **Match on-disk path case exactly** in every `ProjectReference` / `Include` — wrong-case paths are silently skipped during restore on Linux.
 - **Keep git `core.ignorecase=false`** in this clone.
 
 ## Writing & response style
 
-Applies to responses and to any document written here. Write for fast comprehension; assume limited
-reader time and mixed technical backgrounds.
+Applies to responses, messages and any document written here. Write for fast comprehension; assume limited
+reader time and mixed technical backgrounds. One voice, three modes — pick from the artifact:
 
-- **Lead with**: Problem → Impact/value → Change → Verification.
-- **Executive summary first**, then details in their own sections.
-- **Descending order of importance** throughout.
-- **Short sections, concise sentences, bullets.**
-- **Outcomes, rationale, risks, and decisions** before implementation detail.
-- **Verify claims with a command** and report the result.
+- **Direct answer** (default): outcome first, minimalist, budgeted, bullets only for lists; after doing
+  work, recap what changed → status → open issues → next step → verification numbers.
+- **Document** (any file, including a commit body): executive summary table, then
+  Problem → Value → Change → Verify in descending importance.
+- **Message** (text that leaves the session): simplest register, one blank line between paragraphs, the ask
+  in the first paragraph, no preamble.
+
+In every mode: outcomes and rationale over implementation detail, plain words, short sections, the number
+behind every claim, secrets never echoed, and nothing re-shown that did not change. Full rules:
+`global-style/documentation-style.md`.
 
 ## Projects
 
@@ -56,7 +60,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | Path | Purpose |
 | :--- | :--- |
 | `CsvTranslations/` | The one project that lives here: solution, twelve projects, the dictionary and its corpora |
-| `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, the token estimator, the VS Code cache cleaner |
+| `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, `publish-selfcontained.mjs`, `install-net10-runtime.ps1`, the token estimator, the VS Code cache cleaner |
 | `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
 | `local_dev/plans/` | The consolidation and split plan |
 | `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
