@@ -62,6 +62,10 @@ Mode 1 is the default. Everything in §2 binds all three modes; §3, §4 and §5
 - Plain language. "Fails" beats "experiences a failure condition". "The scanner" beats "the aforementioned
   component".
 - No filler: drop "it is important to note", "as mentioned above", "in order to".
+- **No invitations; state the intention.** Close with the next action, who performs it and what it touches —
+  "Next: I rewrite the comparison note in the same shape; one file, no code." Never "say the word", "let me
+  know", "happy to", "just ask", "shout if you want". An invitation defers a decision the writer can already
+  state; an intention states it and leaves the reader free to stop it.
 - No emoji in source, scripts or SQL. Emoji are acceptable in static `.md`/`.html` only.
 - Order by descending importance within every section.
 
@@ -96,6 +100,9 @@ Mode 1 is the default. Everything in §2 binds all three modes; §3, §4 and §5
   a hard-coded absolute path that is right on one machine and wrong on the next.
 - Say once per machine where that variable is created (the project's developer-setup page), and keep it out
   of the product: it is a documentation and scripting convenience, not configuration the software reads.
+- **Shell order, on these machines:** `bash` on Linux and Omarchy; `cmd` or Node.js on Windows; PowerShell only
+  where a script genuinely needs it. Its execution policy blocks running scripts, so a PowerShell example costs
+  the reader an extra flag every time — write `Run in cmd:` or `Run in Node:` instead.
 
 **Portability — nothing machine-specific is ever committed.**
 - A commit is public text. The rule that bans a hard-coded path in a *command* bans one in a *file*:
@@ -142,8 +149,9 @@ the tour. Essential context only — drilling down is one question away.
 1. **What changed** — the artifact, in one line per item.
 2. **Status** — done, or in progress, stated as fact.
 3. **Open issues** — what is not verified, not run, or blocked, with its cause.
-4. **Next step** — who acts (me, you, both) and what it needs.
-5. **Verification** — the numbers behind any pass claim.
+4. **Documentation** — what was written or updated and in which tier, or that none was needed and why.
+5. **Next step** — who acts (me, you, both) and what it needs.
+6. **Verification** — the numbers behind any pass claim.
 
 **Before — correct but buried, and it repeats the question back:**
 
@@ -164,25 +172,55 @@ the tour. Essential context only — drilling down is one question away.
 Written for a reader with limited time and a mixed technical background, who may stop reading after the
 first screen.
 
+### The first screen answers the need, not the history
+
+Two questions in the first breaths: **what the reader is missing or must solve**, and **why solving it is worth
+their attention**. Brief background follows — only what is needed to judge the need. Never open with what was
+tried, and never with the schedule that produced the work.
+
 ### Executive summary — required when the document is complex or multi-part
 
-One table, four rows plus risk. It is the whole document for most readers; everything below it is evidence.
-Use exactly these labels, so the table is scannable by position alone.
+One table, five rows. It is the whole document for most readers; everything below it is evidence.
 
 ```markdown
 ## Executive summary
 
 | | |
 | :--- | :--- |
-| **Problem** | What is the issue? One sentence. |
-| **Value** | Why does it matter? Consequence or benefit, not mechanism. |
-| **Change** | What is being modified or decided? Concrete, bounded scope. |
-| **Verify** | How is success confirmed? A command, a count, a test result. |
+| **Need** | What the reader lacks, or the problem they must solve. One sentence. |
+| **Why** | The added value of solving it — consequence or benefit, not mechanism. Why now. |
+| **What** | The bounded scope: the core that justifies the work, and what is deliberately left out. |
+| **DoD** | How completion is proved, each check traced to a line of the Why. |
 | **Top risk** | The one thing most likely to go wrong. Omit only if genuinely none. |
 ```
 
-The flow is **Problem → Value → Change → Verify**. A reader who stops after Problem and Value must still be
-able to decide.
+**The row names follow the context — the position never changes.** A reader scans by position, so keep the five
+slots; only the label tells them what kind of document they are holding.
+
+| Slot | Default | Use instead, when |
+| :--- | :--- | :--- |
+| 1 | **Need** | **Issue** (a defect) · **Background** (context for a decision) · **Details** (an investigation) · **Feature** (a proposal) |
+| 2 | **Why** | fixed — the value and why now |
+| 3 | **What** | **Scope**, when the boundary is the point |
+| 4 | **DoD** | **Acceptance criteria** (product behaviour a reader can check) · **Verification** (a technical change) · **Proof** (an empirical result) |
+| 5 | **Top risk** | omit only when there is genuinely none |
+
+The flow is **Need → Why → What → DoD**. A reader who stops after the first two rows must be able to decide, and
+must know what the work does **not** do. A **status update** carries the same table plus two closing facts: what
+happens next, and who acts.
+
+### What — scope before mechanism, and baby steps
+
+- **Name the core.** The smallest functionality that realises the Why; that is the What.
+- **Name the exclusion.** Everything not in this change, so a reader can decide it later instead of assuming it.
+- **Break it up when it is large.** The What becomes baby steps — each shipped with its own DoD before the next
+  is scoped. A step is a deliverable a reader can accept, not a stage of a plan.
+
+### DoD — every check traces to the Why
+
+- Each DoD line answers a line of the Why. A check no Why claims is scope creep; a Why with no check is a wish.
+- The DoD is the What verified: tests to add, commands to run, numbers to read — and what "not run" looks like.
+- When the Why is complex, the DoD is the baby-step list with one check per step.
 
 ### TL;DR — for a single-topic document
 
@@ -196,6 +234,35 @@ then Y" — that belongs in an appendix or a decision log. Each section opens wi
 
 A commit message body is a document in one paragraph: what changed and why, then how it was verified. Never
 a file-by-file diary. The project's publication gate still applies.
+
+### Documentation — say what was written, or what is still owed
+
+Every change statement ends by naming the documentation side: what was created or updated, and in which tier.
+Silence reads as "nothing was documented", which is usually not what happened.
+
+| Kind | Where it lives | Read by |
+| :--- | :--- | :--- |
+| **Architecture documentation** | `docs/architecture-*.md` | anyone judging the design |
+| **Development documentation** | `docs/` — plans, decisions, walkthroughs | the developer, publicly |
+| **Manuals / user guides** | `docs/` when they exist; none yet in these repositories | a user following steps |
+| **Wiki / developer notes** | `local_dev/` | the developer |
+| **Private notes** | `local_user_files/`, git-ignored | the owner only |
+| **Injected rules and installers** | `global-style/` | every session on every machine |
+
+Write it as one line: "Documentation: `docs/x.md` updated; manual still owed." If nothing was needed, say
+"documentation: none needed" and why — a deliberate omission is a decision, an unstated one is a gap.
+
+### Where the document lives decides who may read it
+
+| Tier | Paths | Readers | May contain |
+| :--- | :--- | :--- | :--- |
+| **Public** | `docs/`, `README.md`, `CLAUDE.md`, commit bodies | anyone, crawlers and bots included | no machine path, no identity string (§2 Portability) |
+| **Developer wiki** | `local_dev/` | the developer, tracked in git | working plans, walkthroughs, per-phase notes |
+| **Private scratch** | `local_user_files/` — git-ignored except its README | the owner only, by convention | anything not for the internet; still on disk and in every backup, so never a secret |
+| **Manuals** | none yet in these repositories | — | when they arrive they are public-tier: steps a user follows |
+
+An uncertain note starts in private scratch and is promoted deliberately — to `local_dev/` when it is worth
+keeping, to `docs/` when it is a decision or a guide.
 
 ---
 
@@ -243,10 +310,10 @@ One finding, written for each mode. Same information; the artifact decides the s
 >
 > | | |
 > | :--- | :--- |
-> | **Problem** | Nothing checked committed text for machine paths or identity strings. |
-> | **Value** | A leak in a public commit cannot be withdrawn, only rewritten. |
-> | **Change** | `local_dev/scripts/scan-publication-leaks.sh` scans the staged diff and the tracked tree. |
-> | **Verify** | 11 456 files scanned, 0 findings, exit 0. |
+> | **Need** | Nothing checked committed text for machine paths or identity strings. |
+> | **Why** | A leak in a public commit cannot be withdrawn, only rewritten, so one escape costs the history. |
+> | **What** | `local_dev/scripts/scan-publication-leaks.sh` scans the staged diff and the tracked tree; nothing else changes. |
+> | **DoD** | 11 456 files scanned, 0 findings, exit 0 — the count answers the Why. |
 > | **Top risk** | A pattern list that misses a form of the same leak reads as a clean run. |
 
 **Mode 3 (message):**
