@@ -7,7 +7,7 @@ repository; each is a claim that is assumed rather than checked, or a known cosm
 | :--- | :--- |
 | **Problem** | Two items are open: one still-leaky published package, one noisy workflow step. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
-| **Change** | Item 1 recorded and closed on 2026-10-31; items 2 and 3 are untouched. |
+| **Change** | Item 1 closed 2026-10-31; items 2 and 3 re-verified the same day (evidence inline), both still open. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Re-reading item 1 as open because the Windows run (253/280) is what comes to mind first. |
 
@@ -53,6 +53,35 @@ Decision taken: ship 0.1.1 rather than unlist 0.1.0. Revisit only if that embedd
 matter. Closing it means unlisting through the nuget.org package page (**Manage package** → **Unlist**)
 and recording the date here.
 
+### Verified 2026-10-31 — measured, not assumed
+
+Both published packages were downloaded from nuget.org and scanned with the same fixed strings the
+publication gate uses. The leaking string in 0.1.0's `lib/net10.0/CliUtils.dll` is the GitHub Actions
+runner's work directory, ending `…/work/cliutils/cliutils/obj/Release/net10.0/CliUtils.pdb`; 0.1.1 has
+no match. The full prefix is deliberately not reproduced here — the publication gate blocks `/home/…`
+and `/mnt/…` strings, which is the same class of defect this entry is about.
+
+Listing state, from `v3/registration5-gz-semver2/dynamicdisorder.cliutils/index.json`:
+
+```
+0.1.0  listed=True   published 2026-10-15
+0.1.1  listed=True   published 2026-10-31
+```
+
+The search endpoint still returns both versions, so the decision above stands unchanged.
+
+Operational notes for whoever closes this:
+
+- **Account → Unlisted Packages showing `0 packages` is a report, not a control.** It only fills after a
+  version is actually unlisted, so it cannot be used to check one version's state. Use the registration
+  index above, or the 0.1.0 package page itself.
+- To unlist 0.1.0, on its page as the owner: **Manage package → Listing → unlist**. Or, with an API key
+  scoped to *Unlist* for this package:
+  `dotnet nuget delete DynamicDisorder.CliUtils 0.1.0 --source https://api.nuget.org/v3/index.json --api-key <KEY> --non-interactive`
+  (nuget.org treats `delete` as unlist — nothing is removed).
+- No nuget.org API key is stored on the Omarchy machine: the environment, the user `NuGet.Config`
+  (absent) and `local_user_files/nuget/env.sh` (cache paths only) were all checked.
+
 **Owner: you.** No action planned.
 
 ## 3. `publish.yml` pushes the symbols package twice — open, cosmetic
@@ -63,6 +92,18 @@ green, so the release succeeds, but a genuine conflict on a future re-run would 
 
 Closing it means adding `--no-symbols` to the nupkg push in `publish.yml`, in the **cliutils**
 repository, and confirming the next release logs two pushes instead of three.
+
+### Verified 2026-10-31 — the redundant push is still there
+
+`cliutils/.github/workflows/publish.yml`, step "Push the package and its symbols":
+
+- pushes `artifacts/$PACKAGE.nupkg` — which already publishes the `.snupkg` sitting beside it;
+- then pushes `artifacts/$PACKAGE.snupkg` again, which answers `Conflict`, silenced by `--skip-duplicate`.
+
+The comment above that step already records the history ("the first release pushed the symbols twice
+and logged a spurious conflict"), so the analysis is right but the second push remains. Closing it: add
+`--no-symbols` to the nupkg push, keep the explicit snupkg push as the only symbols upload, and confirm
+the next release logs two pushes instead of three.
 
 **Owner: me, on request.** The release that prompted it is already complete.
 
