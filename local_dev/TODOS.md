@@ -5,13 +5,13 @@ repository; each is a claim that is assumed rather than checked, or a known cosm
 
 | | |
 | :--- | :--- |
-| **Problem** | Three items are open: one unverified test figure, one still-leaky published package, one noisy workflow step. |
-| **Value** | Item 1 is the only one that leaves a documented fact unconfirmed — `CLAUDE.md` states 280 of 280 tests pass. |
-| **Change** | Nothing has changed yet. This file records what is open and what closes it. |
+| **Problem** | Two items are open: one still-leaky published package, one noisy workflow step. |
+| **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
+| **Change** | Item 1 recorded and closed on 2026-10-31; items 2 and 3 are untouched. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
-| **Top risk** | Treating item 1 as a formality because the Windows run looked finished. |
+| **Top risk** | Re-reading item 1 as open because the Windows run (253/280) is what comes to mind first. |
 
-## 1. Run the Linux gate — open
+## 1. Run the Linux gate — closed 2026-10-31
 
 `CLAUDE.md` states that `CsvTranslations` builds clean and passes **280 of 280** tests. That figure was
 measured before `DynamicDisorder.CliUtils` moved from 0.1.0 to 0.1.1.
@@ -26,14 +26,19 @@ the Windows host, not of the change:
 - **1** is `ProcessWavPlaybackTests.FindPlayer_WhenOnlyALaterCandidateExists_ShouldUseThatOne`, which
   hard-codes the Linux candidate `aplay` and therefore cannot pass on Windows.
 
-None of that is the claim in `CLAUDE.md`, which is a Linux figure. Close this by running the gate on a
-Linux machine and recording the totals here. Run in Bash, from the repository root:
+None of that is the claim in `CLAUDE.md`, which is a Linux figure. The gate was run on Omarchy
+(2026-10-31, .NET SDK 10.0.113), in Bash, from the repository root:
 
 ```bash
 ./local_dev/scripts/build-all-linux.sh --test
+# Test summary: total: 280, failed: 0, succeeded: 280, skipped: 0, duration: 4.5s
+# Build succeeded in 5.1s
 ```
 
-**Owner: you**, on Omarchy. Not runnable in WSL on this machine: no .NET SDK is installed there.
+`CLAUDE.md`'s claim holds after the 0.1.0 → 0.1.1 bump: the solution builds and all **280** tests pass
+on Linux. The 27 Windows-host failures above (26 headless-console
+`System.ConsolePal.get_WindowWidth()` IOExceptions, 1 Linux-only `aplay` candidate) do not reproduce
+here. **Closed 2026-10-31.**
 
 ## 2. `0.1.0` is still listed, with a runner path inside — open, accepted
 
