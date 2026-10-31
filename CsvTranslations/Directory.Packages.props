@@ -11,7 +11,7 @@
     <PackageVersion Include="CsvHelper" Version="33.1.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Shared console library, consumed as a package (see the cliutils repository) -->
-    <PackageVersion Include="DynamicDisorder.CliUtils" Version="0.1.0" />
+    <PackageVersion Include="DynamicDisorder.CliUtils" Version="0.1.1" />
     <!-- CLI Enhancements -->
     <PackageVersion Include="Spectre.Console" Version="0.57.2" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.57.2" />
