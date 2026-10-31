@@ -1,7 +1,8 @@
 # global-style — one writing style across every harness and every machine
 
-Installs the executive-first documentation rules into each AI harness's **user-global** config, so
-they apply to every project without anyone remembering to ask.
+Installs the writing rules into each AI harness's **user-global** config, so they apply to every project
+without anyone remembering to ask. One voice, three modes: a direct answer stays signal-only and budgeted,
+a document opens with an executive summary, a message uses the simplest register and puts the ask first.
 
 Canonical rules: `documentation-style.md`. Injected text: `managed-block.md`. Edit one of those two,
 then re-run the installer on each machine.
@@ -45,25 +46,25 @@ created. If a path is wrong for your Cline build, fix the candidate list at the 
 
 ---
 
-## Running it from another shell on this machine
+## Running it from another shell
 
-The folder is one set of files seen through three different path styles — nothing is copied:
+The folder is one set of files seen through three shells — nothing is copied:
 
-| Shell | Path to this folder | `$HOME` |
+| Shell | `$HOME` for this run | Notes |
 | :--- | :--- | :--- |
-| PowerShell (Windows) | the repository folder itself | `%USERPROFILE%` → `C:\Users\…` |
-| Git Bash (Windows, MSYS) | `$REPO_ROOT/global-style` | `/c/Users/…`, the same Windows profile |
-| WSL (Ubuntu) | `/mnt$REPO_ROOT/global-style` | the WSL user's own home |
+| PowerShell (Windows) | `%USERPROFILE%` | run `.\install.ps1` from this folder |
+| Git Bash (Windows, MSYS) | `~` — the same Windows profile, reached through an MSYS mount | run `./install.sh` from this folder |
+| WSL (Ubuntu) | `~` — the WSL user's own home | run `./install.sh` from this folder |
 
-Git Bash maps drive letters (`E:\…` is `/e/…`); WSL mounts the same disk under `/mnt`. Because Git
-Bash shares the Windows profile, `./install.sh` there writes the **same three targets** `install.ps1`
-writes — the way to exercise the bash installer against real files without a Linux box. WSL's home is
-a different profile, so a run there installs for that user only.
+Each shell reaches these files through a different mount of the same disk, and no path is written
+down here: that is exactly the class of detail a public repository must not carry. Because Git Bash
+shares the Windows profile, `./install.sh` there writes the **same three targets** `install.ps1`
+writes — the way to exercise the bash installer against real files without a Linux box. WSL's home
+is a different profile, so a run there installs for that user only.
 
-Run in Git Bash, from the folder above:
+Run in Git Bash, from this folder:
 
 ```bash
-cd $REPO_ROOT/global-style
 ./install.sh --check      # exit 1 = that profile is uninstalled or stale
 ./install.sh              # install or update in place
 ./install.sh --check      # expect exit 0
