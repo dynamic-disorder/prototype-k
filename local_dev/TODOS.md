@@ -52,7 +52,7 @@ resolution but leaves it downloadable by exact version, so it is not a deletion.
 Current choice: ship 0.1.1 and leave 0.1.0 listed for now — 0.1.1 removes the reason to rush an
 unlist. That is a preference, **not** a decision against unlisting: 0.1.0 can still be unlisted at any
 time, and unlisting is the only way to close this entry. Closing it means unlisting through the
-nuget.org package page (**Manage package** → **Unlist**) and recording the date here.
+package's own **Manage package** page (steps below) and recording the date here.
 
 ### Verified 2026-10-31 — measured, not assumed
 
@@ -91,14 +91,22 @@ Operational notes for whoever closes this:
   many versions are listed. `Unlisted Packages 0 packages` is consistent with both versions listed,
   and it only fills once a version is actually unlisted — so it cannot confirm one version's state.
   Use the registration index above, or the 0.1.0 package page itself.
-- To unlist 0.1.0, on its page as the owner: **Manage package → Listing → unlist**. Or, with an API key
-  scoped to *Unlist* for this package:
+- **Unlisting lives on the per-package manage page, not on the account page.** That is why the account
+  page (`https://www.nuget.org/account/Packages`) shows no `Listing` section. nuget.org's own steps
+  ([Deleting packages](https://learn.microsoft.com/en-us/nuget/nuget-org/policies/deleting-packages#unlisting-a-package)):
+  **your account name** (top right) → **Manage packages** → **Published packages** → the
+  **Manage package** icon on the `DynamicDisorder.CliUtils` row → expand **Listing** → select `0.1.0` →
+  clear **List in search results** → **Save**. The page is also reachable directly at
+  `https://www.nuget.org/packages/DynamicDisorder.CliUtils/0.1.0/Manage` (it redirects to sign-in when
+  signed out). Verify after: signed out, `/packages/DynamicDisorder.CliUtils/` must no longer list
+  0.1.0; an owner sees every version and its listing state.
+- The same unlist is available headlessly, with an API key scoped to *Unlist* for this package:
   `dotnet nuget delete DynamicDisorder.CliUtils 0.1.0 --source https://api.nuget.org/v3/index.json --api-key <KEY> --non-interactive`
   (nuget.org treats `delete` as unlist — nothing is removed).
 - No nuget.org API key is stored on the Omarchy machine: the environment, the user `NuGet.Config`
   (absent) and `local_user_files/nuget/env.sh` (cache paths only) were all checked.
 
-**Owner: you.** Unlisting is a two-click action on the 0.1.0 page; nothing else depends on it.
+**Owner: you.** Unlisting is a few clicks on the 0.1.0 manage page; nothing else depends on it.
 
 ## 3. `publish.yml` pushes the symbols package twice — open, cosmetic
 
