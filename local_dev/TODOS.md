@@ -1,13 +1,13 @@
-# TODOS — open verification and release follow-ups
+# TODOS — release follow-ups
 
-Open items left by the `DynamicDisorder.CliUtils` 0.1.1 release. None blocks the current state of the
-repository; each is a claim that is assumed rather than checked, or a known cosmetic defect.
+Follow-ups from the `DynamicDisorder.CliUtils` 0.1.1 release. Two are closed; the last is fixed and only
+waits on the next release to confirm it, so nothing here blocks the repository.
 
 | | |
 | :--- | :--- |
-| **Problem** | One item is open: a cosmetic double push in `publish.yml`. The leaking 0.1.0 is unlisted. |
+| **Problem** | Nothing is broken. One fix — the symbols double push — is waiting on the next release to be confirmed. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
-| **Change** | Items 1 and 2 closed 2026-10-31 (evidence inline); item 3 re-verified the same day and still open. |
+| **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed the same day in **cliutils** (`653ecfe`), two-push log still to confirm. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Trusting the registration index minutes after a listing change — it caches, the package page does not. |
 
@@ -111,26 +111,28 @@ Operational notes — how it was unlisted, and how to reverse it:
 
 **Owner: you.** Done 2026-10-31. The same manage page re-lists it if that is ever wanted.
 
-## 3. `publish.yml` pushes the symbols package twice — open, cosmetic
+## 3. `publish.yml` pushed the symbols twice — fixed 2026-10-31, awaiting the next release
 
-`dotnet nuget push` already pushes the `.snupkg` sitting beside the `.nupkg`. The workflow then pushes
-that same `.snupkg` explicitly, which always answers `Conflict`. `--skip-duplicate` keeps the step
-green, so the release succeeds, but a genuine conflict on a future re-run would look identical.
+`dotnet nuget push` already pushes the `.snupkg` sitting beside the `.nupkg`. The workflow then pushed
+that same `.snupkg` explicitly, which always answered `Conflict`. `--skip-duplicate` kept the step
+green, so the release succeeded, but a genuine conflict on a future re-run would look identical.
 
-Closing it means adding `--no-symbols` to the nupkg push in `publish.yml`, in the **cliutils**
-repository, and confirming the next release logs two pushes instead of three.
+**Fixed 2026-10-31** in **cliutils** commit `653ecfe`: `--no-symbols` added to the nupkg push, so the
+explicit snupkg push is the only symbol upload. The next release must log two pushes instead of three;
+that is the last check, and the entry closes with it.
 
-### Verified 2026-10-31 — the redundant push is still there
+### Verified 2026-10-31 — fixed, the release-level check still pending
 
-`cliutils/.github/workflows/publish.yml`, step "Push the package and its symbols":
+What changed, in `cliutils/.github/workflows/publish.yml`, step "Push the package and its symbols":
 
-- pushes `artifacts/$PACKAGE.nupkg` — which already publishes the `.snupkg` sitting beside it;
-- then pushes `artifacts/$PACKAGE.snupkg` again, which answers `Conflict`, silenced by `--skip-duplicate`.
+- `dotnet nuget push "artifacts/$PACKAGE.nupkg" ... --no-symbols --skip-duplicate` — the flag stops the
+  adjacent `.snupkg` from going up with its package;
+- the explicit `.snupkg` push stays and is now the single symbol upload.
 
-The comment above that step already records the history ("the first release pushed the symbols twice
-and logged a spurious conflict"), so the analysis is right but the second push remains. Closing it: add
-`--no-symbols` to the nupkg push, keep the explicit snupkg push as the only symbols upload, and confirm
-the next release logs two pushes instead of three.
+Checked here: the workflow parses as YAML, `dotnet nuget push --help` lists `-n|--no-symbols`, and a
+push of the released 0.1.1 nupkg to a local folder source with the flag succeeds, moving only the
+`.nupkg`. Not checkable before a release: nuget.org logging two pushes. A folder source has no symbol
+endpoint, so the local run shows the flag is accepted and the push works, not the suppression itself.
 
 **Owner: me, on request.** The release that prompted it is already complete.
 
