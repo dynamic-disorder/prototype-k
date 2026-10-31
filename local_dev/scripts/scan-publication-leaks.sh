@@ -22,8 +22,9 @@
 # Exit codes: 0 = no FAIL hits, 1 = FAIL hits found, 2 = usage or environment error.
 # WARN hits do not change the exit code; they are printed for review either way.
 #
-# This file is the one exemption: it necessarily contains the patterns it searches for, so --all
-# skips it. Keep the pattern list here and nowhere else — a hand-copied duplicate drifts, and an
+# This file is the one exemption: it necessarily contains the patterns it searches for, so every mode
+# excludes it — `--all` skips it by name, and the staged/diff modes use a pathspec to leave it out of
+# the stream. Keep the pattern list here and nowhere else — a hand-copied duplicate drifts, and an
 # inline copy in a document matches its own prose.
 
 set -u
@@ -33,13 +34,18 @@ readonly SELF='local_dev/scripts/scan-publication-leaks.sh'
 # FAIL — identity and mount leaks. No legitimate illustration uses these forms.
 #   [A-Za-z]:[\/]Users[\/]   a Windows profile directory
 #   /<letter>/Users/         the same profile through an MSYS mount
-#   /mnt/<letter>/<name>     a WSL drive mount, e.g. a project root under /mnt
+#   /mnt/ + a drive or label  a mounted volume, e.g. a project root under /mnt:
+#                             a single lowercase letter (the WSL drive form), or a
+#                             component carrying a digit or hyphen, or one that is
+#                             all uppercase (the volume-label forms)
 #   /home/<name>             a POSIX home directory
 #   (^|space|quote)/<letter>/<name>   a mounted drive tree, e.g. the Git Bash form of a project root
 #   drive + a checkout directory name    a drive-rooted source tree, e.g. a Windows project root
 # The anchored alternative keeps a URL from matching, since a URL has ":" before "//".
+# A plain word component (lowercase, no digit, no hyphen) is deliberately NOT matched: it is the
+# shape of an illustration, and flagging it would train the reader to ignore the gate.
 read -r -d '' FAIL_PATTERN <<'PATTERN' || true
-([A-Za-z]:[\\/]Users[\\/]|/[a-z]/Users/|/mnt/[a-z]/[A-Za-z]|/home/[a-z]|(^|[[:space:](["'])/[a-z]/[A-Za-z]|[A-Za-z]:[\\/](code|src|dev|repos|projects|GitHub)[\\/])
+([A-Za-z]:[\\/]Users[\\/]|/[a-z]/Users/|/mnt/([a-z]/[A-Za-z]|[^/[:space:]]*([0-9]|-)|[A-Z]{2,})|/home/[a-z]|(^|[[:space:](["'])/[a-z]/[A-Za-z]|[A-Za-z]:[\\/](code|src|dev|repos|projects|GitHub)[\\/])
 PATTERN
 FAIL_PATTERN="${FAIL_PATTERN%$'\n'}"
 
@@ -112,12 +118,12 @@ case "$mode" in
             echo 'nothing staged — pass --diff or --all to scan something else'
             exit 0
         fi
-        scanned=$(git diff --cached --name-only | grep -c . || true)
-        scan_diff 'staged changes:' < <(git diff --cached -U0)
+        scanned=$(git diff --cached --name-only -- . ":(exclude)$SELF" | grep -c . || true)
+        scan_diff 'staged changes:' < <(git diff --cached -U0 -- . ":(exclude)$SELF")
         ;;
     diff)
-        scanned=$(git diff --name-only | grep -c . || true)
-        scan_diff 'working tree (unstaged):' < <(git diff -U0)
+        scanned=$(git diff --name-only -- . ":(exclude)$SELF" | grep -c . || true)
+        scan_diff 'working tree (unstaged):' < <(git diff -U0 -- . ":(exclude)$SELF")
         ;;
     all)
         while IFS= read -r file; do
