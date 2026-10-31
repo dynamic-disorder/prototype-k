@@ -37,8 +37,27 @@ $Block = Join-Path $Here 'managed-block.md'
 $BeginMark = '<!-- BEGIN managed: documentation-style -->'
 $EndMark   = '<!-- END managed: documentation-style -->'
 
+# ---- encoding ------------------------------------------------------------------------------
+# Read and write UTF-8 explicitly. Windows PowerShell 5.1 defaults Get-Content and Set-Content to
+# the ANSI code page, so a BOM-less UTF-8 source double-encodes every em dash, arrow and ≤ sign
+# into mojibake in the targets — it did exactly that on 2026-10-31. The bash sibling is byte-safe
+# (cat in, printf out), so doing this explicitly keeps the two behaviourally identical: UTF-8 in,
+# UTF-8 out, and no BOM added that bash would not have written.
+$Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+function Read-Utf8 {
+    param([string]$Path)
+    [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+}
+
+function Write-Utf8NoBom {
+    param([string]$Path, [string]$Text)
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Path) | Out-Null
+    [System.IO.File]::WriteAllText($Path, $Text, $Utf8NoBom)
+}
+
 if (-not (Test-Path -LiteralPath $Block)) { throw "missing $Block" }
-$blockText = (Get-Content -LiteralPath $Block -Raw).TrimEnd()
+$blockText = (Read-Utf8 -Path $Block).TrimEnd()
 
 # ---- target resolution -----------------------------------------------------
 $targets = New-Object System.Collections.Generic.List[object]
@@ -74,16 +93,15 @@ function Set-ManagedBlock {
     param([string]$TargetPath, [string]$Mode)
 
     if ($Mode -eq 'whole-file') {
-        $current = if (Test-Path -LiteralPath $TargetPath) { (Get-Content -LiteralPath $TargetPath -Raw) } else { $null }
+        $current = if (Test-Path -LiteralPath $TargetPath) { (Read-Utf8 -Path $TargetPath) } else { $null }
         if ($current -and $current.TrimEnd() -eq $blockText) { return @{ State='up-to-date' } }
         if ($Check)   { return @{ State='out-of-date' } }
         if ($DryRun)  { return @{ State='would-write' } }
-        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $TargetPath) | Out-Null
-        Set-Content -LiteralPath $TargetPath -Value ($blockText + "`n") -Encoding UTF8 -NoNewline
+        Write-Utf8NoBom -Path $TargetPath -Text ($blockText + "`n")
         return @{ State='wrote' }
     }
 
-    $current = if (Test-Path -LiteralPath $TargetPath) { (Get-Content -LiteralPath $TargetPath -Raw) } else { '' }
+    $current = if (Test-Path -LiteralPath $TargetPath) { (Read-Utf8 -Path $TargetPath) } else { '' }
     $hasMarkers = $current.Contains($BeginMark)
 
     if ($hasMarkers) {
@@ -95,7 +113,7 @@ function Set-ManagedBlock {
         if ($updated -eq $current) { return @{ State='up-to-date' } }
         if ($Check)  { return @{ State='out-of-date' } }
         if ($DryRun) { return @{ State='would-update' } }
-        Set-Content -LiteralPath $TargetPath -Value $updated -Encoding UTF8 -NoNewline
+        Write-Utf8NoBom -Path $TargetPath -Text $updated
         return @{ State='updated' }
     }
 
@@ -107,8 +125,7 @@ function Set-ManagedBlock {
     }
     if ($Check)  { return @{ State='out-of-date' } }
     if ($DryRun) { return @{ State='would-append' } }
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $TargetPath) | Out-Null
-    Set-Content -LiteralPath $TargetPath -Value $updated -Encoding UTF8 -NoNewline
+    Write-Utf8NoBom -Path $TargetPath -Text $updated
     return @{ State='appended' }
 }
 

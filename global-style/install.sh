@@ -92,12 +92,21 @@ upsert_file() {
   [[ -f "$target" ]] && existing="$(cat -- "$target")"
 
   if printf '%s' "$existing" | grep -qF -- "$BEGIN_MARK"; then
-    # Replace between markers, keeping everything before and after.
-    updated="$(printf '%s' "$existing" | awk -v b="$BEGIN_MARK" -v e="$END_MARK" -v block="$BLOCK_TEXT" '
-      index($0, b) == 1 { inside=1; print block; next }
-      inside && index($0, e) == 1 { inside=0; next }
-      !inside { print }
-    ')"
+    # Replace between markers, keeping everything before and after. Done with head/cat/tail, not
+    # awk: passing the block through `awk -v` makes gawk read its backslashes as escapes, so the
+    # guidance line `%USERPROFILE%\…` was written as `%USERPROFILE%…`. That also made a file
+    # written by install.ps1 read as stale here forever, and vice versa.
+    local start end tmp
+    start="$(grep -nF -- "$BEGIN_MARK" "$target" | head -1 | cut -d: -f1)"
+    end="$(grep -nF -- "$END_MARK" "$target" | head -1 | cut -d: -f1)"
+    tmp="$(mktemp)"
+    {
+      if [[ -n "$start" && "$start" -gt 1 ]]; then head -n "$((start - 1))" -- "$target"; fi
+      cat -- "$BLOCK"
+      if [[ -n "$end" ]]; then tail -n "+$((end + 1))" -- "$target" || true; fi
+    } > "$tmp"
+    updated="$(cat -- "$tmp")"
+    rm -f -- "$tmp"
   else
     updated="$existing"
     added=1
