@@ -129,6 +129,38 @@ function Set-ManagedBlock {
     return @{ State='appended' }
 }
 
+# ---- The guardrail that ships with every install -------------------------------------------
+# The credential file is deliberately not a target: it is never read, never merged, never copied.
+# The rule travels with the installer so a new machine cannot learn it late. The injected text is
+# not a managed block, because it is appended before the run below; keep a re-run from duplicating
+# it by checking for the section title first.
+$guardrail = @'
+### Credentials: never read the credential file
+
+Binding, learned on 2026-11-01 the hard way: a session that checked "can two machines share `$DSH_HOME`?"
+opened the credentials document to judge the risk, and printed live API keys into the transcript.
+
+- **Never read, cat, print, grep for values in, hash, or copy the credential file** — on Windows
+  `%USERPROFILE%\.dsh\.credentials.yaml`, on Linux and macOS `~/.dsh/.credentials.yaml`. The rule covers any
+  file holding a secret; these two are the ones that exist. `Test-Path` (existence only) is fine.
+- **Why it matters more than it looks:** shell and file tools run as the same user, so nothing blocks the
+  read; the harness only keeps the path out of the model's hands, and a model that goes looking finds it.
+  A read costs a rotation at the provider, not just an apology.
+- **Do the job another way.** To learn which providers exist, read the non-secret `settings.yaml`
+  (`apiKeyEnv`, provider ids, model ids). To change a credential, tell the owner which one and let them run
+  the harness's own credential command. Never echo a secret, not even a fragment, and never re-print a
+  match while scanning for one — report match counts and file lists only.
+- If it is already exposed: say so flat, name the file and every place the text landed (tool output,
+  session log), and ask the owner to revoke and reissue the key. Do not leave it to be discovered.
+
+### Your own notes are not the credential store
+
+- This file may name where a credential lives and how to change it, and nothing else. Never paste a key, a
+  token or a password into these notes, a doc, a commit or a chat message — not even one the owner pasted
+  first.
+'@
+$guardrailTitle = '### Credentials: never read the credential file'
+
 # ---- run -------------------------------------------------------------------
 Write-Host 'documentation-style installer'
 Write-Host ("  source : {0}" -f $Block)
@@ -141,6 +173,14 @@ foreach ($t in $targets) {
     $r = Set-ManagedBlock -TargetPath $t.Path -Mode $t.Mode
     if ($r.State -eq 'out-of-date') { $failed = $true }
     Write-Host ("  {0,-13} {1}" -f $r.State, $t.Path)
+    # The credential guardrail rides in the AGENTS.md target, appended once and only when missing.
+    if ($t.Harness -eq 'dsh' -and -not $Check -and -not $DryRun) {
+        $current = if (Test-Path -LiteralPath $t.Path) { Read-Utf8 -Path $t.Path } else { '' }
+        if (-not $current.Contains($guardrailTitle)) {
+            Write-Utf8NoBom -Path $t.Path -Text ($current.TrimEnd() + "`n`n" + ($guardrail.TrimEnd()) + "`n")
+            Write-Host ("  {0,-13} {1}" -f 'guardrail', $t.Path)
+        }
+    }
 }
 
 Write-Host ''

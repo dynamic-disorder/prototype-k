@@ -66,9 +66,9 @@ Run in Bash, from this folder (Omarchy / Linux — and Git Bash on Windows, whic
 ```
 
 **After any edit to `managed-block.md`, re-run on every machine.** `--check` exits 1 there until it does: that is
-the drift detector working, not a fault. If the Omarchy box cannot see this checkout, copy these four files —
-`documentation-style.md`, `managed-block.md`, `install.sh`, `README.md` — into a folder there and run
-`./install.sh`, or clone the repository as the section below describes.
+the drift detector working, not a fault. The checkout sits on a data disk both machines mount, so Omarchy runs
+the installer from the same working tree through its own mount of it — nothing is copied to that machine. What
+stays per machine is the user-global instruction file the installer writes, because `$HOME` is per machine.
 
 ---
 
@@ -125,22 +125,17 @@ Then restart each harness: they read these files at session start.
 
 ### On the Omarchy machine
 
-The Omarchy install is a **separate disk** (LUKS), and whether it can see this folder is not
-established here — do not assume either way. Since harness globals live in each machine's `$HOME`,
-the installer runs once per machine from wherever that copy is:
-
-Run in Bash on that machine, from its copy of this folder:
-
-```bash
-./install.sh --check      # exit 1 = uninstalled or stale; then ./install.sh and re-check
-```
-
-If the folder is not there, the repository carries it:
+The two machines boot from separate system disks: this repository is on a data disk that both mount, so
+it is the same files, but each machine keeps its own home directory — and the Windows side cannot read the
+LUKS-encrypted one. That is why the installer, not a copy of the repository, is the step that repeats. Run
+it once per machine, from the checkout as that machine reaches it:
 
 ```bash
-git clone https://github.com/dynamic-disorder/prototype-k.git ~/prototype-k
-cd ~/prototype-k/global-style && ./install.sh --check
+./install.sh --check      # exit 1 = uninstalled or stale on this machine; then ./install.sh and re-check
 ```
+
+The mount root differs per machine and is deliberately not written down here. It is in the private machine
+notes (`local_user_files/omarchy-mount-notes.md`), which are git-ignored for exactly this reason.
 
 ### The ownership mismatch this folder already carries
 

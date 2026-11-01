@@ -136,6 +136,37 @@ upsert_file() {
   return 0
 }
 
+# --- The guardrail that ships with every install -------------------------------------------
+# The credential file is deliberately not a target: it is never read, never merged, never copied.
+# The rule travels with the installer so a new machine cannot learn it late.
+guardrail_section() {
+  cat <<'GUARDRAIL'
+### Credentials: never read the credential file
+
+Binding, learned on 2026-11-01 the hard way: a session that checked "can two machines share `$DSH_HOME`?"
+opened the credentials document to judge the risk, and printed live API keys into the transcript.
+
+- **Never read, cat, print, grep for values in, hash, or copy the credential file** — on Windows
+  `%USERPROFILE%\.dsh\.credentials.yaml`, on Linux and macOS `~/.dsh/.credentials.yaml`. The rule covers any
+  file holding a secret; these two are the ones that exist. `Test-Path` (existence only) is fine.
+- **Why it matters more than it looks:** shell and file tools run as the same user, so nothing blocks the
+  read; the harness only keeps the path out of the model's hands, and a model that goes looking finds it.
+  A read costs a rotation at the provider, not just an apology.
+- **Do the job another way.** To learn which providers exist, read the non-secret `settings.yaml`
+  (`apiKeyEnv`, provider ids, model ids). To change a credential, tell the owner which one and let them run
+  the harness's own credential command. Never echo a secret, not even a fragment, and never re-print a
+  match while scanning for one — report match counts and file lists only.
+- If it is already exposed: say so flat, name the file and every place the text landed (tool output,
+  session log), and ask the owner to revoke and reissue the key. Do not leave it to be discovered.
+
+### Your own notes are not the credential store
+
+- This file may name where a credential lives and how to change it, and nothing else. Never paste a key, a
+  token or a password into these notes, a doc, a commit or a chat message — not even one the owner pasted
+  first.
+GUARDRAIL
+}
+
 # --- run ---------------------------------------------------------------------------------
 printf 'documentation-style installer\n'
 printf '  source : %s\n' "$BLOCK"
@@ -154,6 +185,13 @@ for entry in "${TARGETS[@]}"; do
     upsert_file "$target" append-only || status=1
   else
     upsert_file "$target" inline || status=1
+  fi
+  # The credential guardrail rides in the AGENTS.md target, appended once and only when missing.
+  if [[ "$harness" == "dsh" && "$CHECK_ONLY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
+    if ! grep -qF -- '### Credentials: never read the credential file' "$target"; then
+      { printf '\n'; guardrail_section; } >> "$target"
+      printf '  guardrail    %s\n' "$target"
+    fi
   fi
 done
 
