@@ -138,7 +138,7 @@ endpoint, so the local run shows the flag is accepted and the push works, not th
 
 ---
 
-Machine-level pending work — the `UMBRELLA_ROOT` variable on Omarchy and the build gate's execute bit
+Machine-level pending work — the `DYNAMIC_DISORDER_ROOT` variable on Omarchy and the build gate's execute bit
 on an NTFS mount — deliberately lives outside the tracked tree, in
 `local_user_files/omarchy-mount-notes.md`. The per-machine next actions are the boot checklists beside
 it, in `local_user_files/`, one file per machine.

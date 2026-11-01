@@ -34,7 +34,7 @@ or by its package.
 
 ## Umbrella environment variable
 
-`UMBRELLA_ROOT` names the directory that contains **every** clone — this repository and the four
+`DYNAMIC_DISORDER_ROOT` names the directory that contains **every** clone — this repository and the four
 projects beside it. It exists so tooling and humans can address a sibling repository without a
 cross-repository relative path, which this project forbids.
 
@@ -43,12 +43,15 @@ It is not the same variable as `REPO_ROOT`, and the two do not replace each othe
 | Variable | Scope | Where the value comes from |
 | :--- | :--- | :--- |
 | `REPO_ROOT` / `$RepoRoot` | one repository | Derived, per clone: `local_dev/scripts/repo-env.sh` / `repo-env.ps1` walk up from their own location |
-| `UMBRELLA_ROOT` | one machine | Set by hand, once per machine, in user-global shell or environment config |
+| `DYNAMIC_DISORDER_ROOT` | one machine | Set by hand, once per machine, in user-global shell or environment config |
 
-`UMBRELLA_ROOT` is never derived, on purpose: a standalone clone of any project has no umbrella parent
+`DYNAMIC_DISORDER_ROOT` is never derived, on purpose: a standalone clone of any project has no umbrella parent
 to walk up to, and deriving one would be exactly the `../` path the project bans. Nothing breaks when
 it is unset — it is a convenience for tooling that wants to reach a sibling repository, and each
 script that uses it should say what it does when the variable is missing.
+
+The name is spelled with underscores, not hyphens: bash rejects a hyphenated variable name, and this one
+has to work in Git Bash on Windows and in bash on Omarchy alike.
 
 The value is machine-specific, so it is deliberately **not** written in this file. Which directory it
 names on a given machine belongs in that machine's own notes, not in a public repository.
@@ -58,7 +61,7 @@ names on a given machine belongs in that machine's own notes, not in a public re
 Run in PowerShell, from any directory:
 
 ```powershell
-[Environment]::SetEnvironmentVariable('UMBRELLA_ROOT', '<umbrella-root>', 'User')
+[Environment]::SetEnvironmentVariable('DYNAMIC_DISORDER_ROOT', '<umbrella-root>', 'User')
 ```
 
 `'User'` writes the user environment block, so the value survives a reboot and reaches every new
@@ -67,28 +70,28 @@ process. Terminals already open keep their old environment — open a new one.
 Verify in a new terminal. Run in PowerShell:
 
 ```powershell
-$env:UMBRELLA_ROOT
+$env:DYNAMIC_DISORDER_ROOT
 ```
 
 Run in cmd:
 
 ```cmd
-echo %UMBRELLA_ROOT%
+echo %DYNAMIC_DISORDER_ROOT%
 ```
 
 Run in Git Bash:
 
 ```bash
-echo "$UMBRELLA_ROOT"
+echo "$DYNAMIC_DISORDER_ROOT"
 ```
 
 Git Bash inherits the value verbatim, so it reads back in Windows form. Use it as it is, or convert it
-with `cygpath -u "$UMBRELLA_ROOT"` where a POSIX path is required.
+with `cygpath -u "$DYNAMIC_DISORDER_ROOT"` where a POSIX path is required.
 
 To remove it, run in PowerShell:
 
 ```powershell
-[Environment]::SetEnvironmentVariable('UMBRELLA_ROOT', $null, 'User')
+[Environment]::SetEnvironmentVariable('DYNAMIC_DISORDER_ROOT', $null, 'User')
 ```
 
 ### Omarchy Linux
@@ -97,13 +100,13 @@ Run in Bash, from your home directory — appends one line to the shell startup 
 shells:
 
 ```bash
-printf "export UMBRELLA_ROOT='%s'\n" '<umbrella-root>' >> ~/.bashrc
+printf "export DYNAMIC_DISORDER_ROOT='%s'\n" '<umbrella-root>' >> ~/.bashrc
 ```
 
 Open a new terminal, or run `source ~/.bashrc` in the current one. Verify, run in Bash:
 
 ```bash
-printenv UMBRELLA_ROOT
+printenv DYNAMIC_DISORDER_ROOT
 ```
 
 A GUI-launched process does not read `~/.bashrc`. If one needs the variable, put it in the systemd
@@ -111,7 +114,7 @@ user environment file instead, which is read at login. Run in Bash:
 
 ```bash
 mkdir -p ~/.config/environment.d
-printf 'UMBRELLA_ROOT=%s\n' '<umbrella-root>' > ~/.config/environment.d/umbrella.conf
+printf 'DYNAMIC_DISORDER_ROOT=%s\n' '<umbrella-root>' > ~/.config/environment.d/umbrella.conf
 ```
 
 That path needs a re-login to take effect and does nothing for terminals started before it. Set both
