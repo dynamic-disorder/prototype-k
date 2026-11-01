@@ -247,7 +247,7 @@ Silence reads as "nothing was documented", which is usually not what happened.
 | **Manuals / user guides** | `docs/` when they exist; none yet in these repositories | a user following steps |
 | **Wiki / developer notes** | `local_dev/` | the developer |
 | **Private notes** | `local_user_files/`, git-ignored | the owner only |
-| **Injected rules and installers** | `global-style/` | every session on every machine |
+| **Injected rules and installers** | `output-style/` | every session on every machine |
 
 Write it as one line: "Documentation: `docs/x.md` updated; manual still owed." If nothing was needed, say
 "documentation: none needed" and why — a deliberate omission is a decision, an unstated one is a gap.

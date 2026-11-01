@@ -4,8 +4,8 @@
 # Every commit is public text. A home or profile path, an account, user, owner or host name, an
 # employer or ticket identifier — none of it may land in a file, a doc, a config, a path example or
 # a commit message. This script is the mechanical check behind that rule; the rule itself is stated
-# in global-style/documentation-style.md and injected into every harness by
-# global-style/managed-block.md.
+# in output-style/documentation-style.md and injected into every harness by
+# output-style/managed-block.md.
 #
 # Usage, from the repository root:
 #   bash local_dev/scripts/scan-publication-leaks.sh            # staged changes (the pre-commit gate)

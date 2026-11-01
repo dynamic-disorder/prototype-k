@@ -41,7 +41,7 @@ reader time and mixed technical backgrounds. One voice, three modes — pick fro
 
 In every mode: outcomes and rationale over implementation detail, plain words, short sections, the number
 behind every claim, secrets never echoed, and nothing re-shown that did not change. Full rules:
-`global-style/documentation-style.md`.
+`output-style/documentation-style.md`.
 
 ## Projects
 
@@ -65,7 +65,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | `local_dev/plans/` | The consolidation and split plan |
 | `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
 | `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
-| `global-style/` | The executive-first writing style installed into every harness's user-global config: `documentation-style.md` (rules), `managed-block.md` (injected text), `install.sh` (`--check` reports drift) |
+| `output-style/` | The executive-first writing style installed into every harness's user-global config: `documentation-style.md` (rules), `managed-block.md` (injected text), `install.sh` (`--check` reports drift) |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
 | `.github/`, `.clinerules`, `.claudeignore`, `.claude/`, `.githooks/` | Instruction and gate configuration, kept as templates |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |

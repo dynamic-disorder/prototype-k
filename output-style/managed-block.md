@@ -1,11 +1,11 @@
 <!-- BEGIN managed: documentation-style -->
-<!-- Installed by global-style/install.sh. Do not edit here:
-     edit global-style/documentation-style.md and re-run the installer. -->
+<!-- Installed by output-style/install.sh. Do not edit here:
+     edit output-style/documentation-style.md and re-run the installer. -->
 
 ## Output Style — Three Modes, One Voice
 
 Binding for every chat answer, document, report, README, CLAUDE.md, docs page and commit-message body.
-Full rules and examples: `global-style/documentation-style.md`.
+Full rules and examples: `output-style/documentation-style.md`.
 
 Goal: fast comprehension for busy readers with mixed technical backgrounds. Pick the mode from the
 artifact, not from habit — **1** for an answer in this session (the default), **2** for a file you write,

@@ -1,4 +1,4 @@
-# global-style — one writing style across every harness and every machine
+# output-style — one writing style across every harness and every machine
 
 Installs the writing rules into each AI harness's **user-global** config, so they apply to every project
 without anyone remembering to ask. One voice, three modes: a direct answer stays signal-only and budgeted,
