@@ -15,8 +15,8 @@ then re-run the installer on each machine.
 | :--- | :--- |
 | **Need** | The style rule was installed into Windows harness configs only. Omarchy (Arch) is the primary machine, so the rule had to exist there too — and two hand-copied files drift apart within weeks. |
 | **Why** | One source of truth, one command per machine, and a `--check` mode that detects drift. Re-running after an edit updates the block in place without touching your own global instructions. |
-| **What** | Added `install.sh` (Arch/Ubuntu/macOS) and `install.ps1` (Windows) with an identical managed-block scheme. Both are idempotent and non-destructive. |
-| **DoD** | Bash installer tested in WSL across 6 scenarios — fresh install, idempotent re-run, content preserved, in-place update, drift detected (exit 1), drift cleared (exit 0). Windows `-Check` returns 0. |
+| **What** | Added `install.sh` — bash everywhere, Git Bash on Windows — with a managed-block scheme that is idempotent and non-destructive. |
+| **DoD** | Bash installer tested in WSL across 6 scenarios — fresh install, idempotent re-run, content preserved, in-place update, drift detected (exit 1), drift cleared (exit 0). Git Bash on Windows clears the same `--check`. |
 | **Top risk** | Only the Windows profile is verified. WSL and Omarchy each have their own `$HOME`, so their copy of the block stays unverified until `install.sh --check` runs there. |
 
 ---
@@ -51,12 +51,12 @@ machine**, and the installer is itself the copy step: it writes only inside the 
 (`%USERPROFILE%\.dsh\AGENTS.md`, `%USERPROFILE%\.claude\CLAUDE.md`, and the Cline/Continue rule files) and never
 into a system path. No sudo, no machine-wide state, nothing to undo outside your own home directory.
 
-Run in PowerShell, from this folder (Windows):
+Run in Git Bash, from this folder (Windows):
 
-```powershell
-.\install.ps1 -Check     # exit 1 = this profile is uninstalled or stale
-.\install.ps1            # install or update in place
-.\install.ps1 -Check     # expect exit 0
+```bash
+./install.sh --check     # exit 1 = this profile is uninstalled or stale
+./install.sh             # install or update in place
+./install.sh --check     # expect exit 0
 ```
 
 Run in Bash, from this folder (Omarchy / Linux — and Git Bash on Windows, which shares the Windows profile):
@@ -103,15 +103,14 @@ The folder is one set of files seen through three shells — nothing is copied:
 
 | Shell | `$HOME` for this run | Notes |
 | :--- | :--- | :--- |
-| PowerShell (Windows) | `%USERPROFILE%` | run `.\install.ps1` from this folder |
 | Git Bash (Windows, MSYS) | `~` — the same Windows profile, reached through an MSYS mount | run `./install.sh` from this folder |
 | WSL (Ubuntu) | `~` — the WSL user's own home | run `./install.sh` from this folder |
 
 Each shell reaches these files through a different mount of the same disk, and no path is written
 down here: that is exactly the class of detail a public repository must not carry. Because Git Bash
-shares the Windows profile, `./install.sh` there writes the **same three targets** `install.ps1`
-writes — the way to exercise the bash installer against real files without a Linux box. WSL's home
-is a different profile, so a run there installs for that user only.
+shares the Windows profile, `./install.sh` there writes the **same three Windows targets** directly:
+the one installer serves both machines. WSL's home is a different profile, so a run there installs
+for that user only.
 
 Run in Git Bash, from this folder:
 
@@ -161,15 +160,10 @@ git config --global --add safe.directory (Get-Location).Path
 ./install.sh --help
 ```
 
-Windows:
+On Windows, the same three commands run in Git Bash; its `$HOME` is the Windows profile, so they write
+the Windows targets.
 
-```powershell
-.\install.ps1
-.\install.ps1 -DryRun
-.\install.ps1 -Check
-```
-
-`--check` / `-Check` is the drift detector. A sensible habit is to run it in your shell profile or a
+`--check` is the drift detector. A sensible habit is to run it in your shell profile or a
 weekly timer, so a harness config that gets reset by an update shows up as a failure rather than
 being silently lost.
 
@@ -181,22 +175,20 @@ being silently lost.
 3. Restart each harness. Claude Code and DSH read these files at session start, so a running session
    will not pick up the change.
 
-`install.sh` and `install.ps1` must stay behaviourally identical — same markers, same whole-file rule
-for Cline/Continue, same idempotency. If you change one, change the other and re-run both test paths.
+`install.sh` keeps the marker scheme and the whole-file rule for Cline/Continue on purpose — they are
+what make a re-run idempotent and non-destructive. Change them only together with the README table, and
+re-test on Git Bash as well as on Linux.
 
 ## Notes
 
-- **Encoding is part of the contract.** `managed-block.md` is UTF-8 without a BOM, and both installers now
-  read and write UTF-8 explicitly, adding no BOM that the other would not write. Two bugs made that necessary
-  on 2026-10-31: Windows PowerShell 5.1 defaulted `Get-Content`/`Set-Content` to the ANSI code page and
-  double-encoded every em dash into mojibake, and gawk's `-v` ate the backslash in `%USERPROFILE%\…`. Both are
-  fixed. If a target ever renders `â€”` or loses a backslash, it is this class of bug rather than a style
-  change — and `--check` disagreeing between PowerShell and bash is the symptom to look for.
-- **Shell preference:** `bash` on Linux and Omarchy; `cmd` or Node.js on Windows; PowerShell only where a script
-  genuinely needs it, because its execution policy blocks scripts and every example then costs a
-  `-ExecutionPolicy Bypass`. The installer here still uses PowerShell, since it must write Windows harness
-  configs — run it as `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
-- Both scripts are LF-only, which matters because this file family mandates LF everywhere.
+- **Encoding is part of the contract.** `managed-block.md` is UTF-8 without a BOM, and the installer is
+  byte-safe in bash — `cat` in, `printf` out. One bug made that explicit on 2026-10-31: gawk's `-v` ate the
+  backslash in `%USERPROFILE%\…`. If a target ever renders `â€”` or loses a backslash, it is this class of
+  bug rather than a style change.
+- **Shell preference:** `bash` on Linux and Omarchy; Git Bash on Windows for this folder, because
+  PowerShell's execution policy blocks scripts and every example then costs an `-ExecutionPolicy Bypass`.
+  There is one installer, and it is bash.
+- The script is LF-only, which matters because this file family mandates LF everywhere.
 - Nothing is installed outside `$HOME` / `%USERPROFILE%`; no sudo, no system paths.
 - The block is intentionally short. It is injected into every session's context, so length is a
   recurring cost, not a one-off. Detail belongs in `documentation-style.md`, which is read on demand.

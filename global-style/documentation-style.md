@@ -16,7 +16,7 @@ every chat answer an AI assistant gives, not only the documents it writes.
 | each repository's `CLAUDE.md` — by hand | both harnesses | that repository, so a clone elsewhere still gets it |
 
 Two sources, no duplicates: this page holds the reasoning, and `managed-block.md` holds the exact wording
-that gets injected. Edit both, then re-run `install.ps1` (Windows) or `install.sh` (Linux/macOS). The
+that gets injected. Edit both, then re-run `install.sh` (Git Bash on Windows, bash on Linux/macOS). The
 installer rewrites the block in place and leaves everything outside the markers untouched.
 
 ---

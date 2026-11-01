@@ -94,8 +94,8 @@ upsert_file() {
   if printf '%s' "$existing" | grep -qF -- "$BEGIN_MARK"; then
     # Replace between markers, keeping everything before and after. Done with head/cat/tail, not
     # awk: passing the block through `awk -v` makes gawk read its backslashes as escapes, so the
-    # guidance line `%USERPROFILE%\…` was written as `%USERPROFILE%…`. That also made a file
-    # written by install.ps1 read as stale here forever, and vice versa.
+    # guidance line `%USERPROFILE%\…` was written as `%USERPROFILE%…`. That also made a correctly
+    # written block read as stale here forever.
     local start end tmp
     start="$(grep -nF -- "$BEGIN_MARK" "$target" | head -1 | cut -d: -f1)"
     end="$(grep -nF -- "$END_MARK" "$target" | head -1 | cut -d: -f1)"

@@ -1,5 +1,5 @@
 <!-- BEGIN managed: documentation-style -->
-<!-- Installed by global-style/install.ps1 or global-style/install.sh. Do not edit here:
+<!-- Installed by global-style/install.sh. Do not edit here:
      edit global-style/documentation-style.md and re-run the installer. -->
 
 ## Output Style — Three Modes, One Voice
