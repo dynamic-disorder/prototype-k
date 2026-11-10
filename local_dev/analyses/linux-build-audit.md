@@ -365,3 +365,8 @@ Found while writing the `TranslationTools.Tests` coverage, then fixed:
 Validated against the repository's real dictionary: all 3077 data rows parse, languages resolve
 to English/Finnish, and each row yields Source, Target and Hashtags entries.
 
+## Layout note, 2026-11-10
+
+This record predates the consolidation on 2026-11-10: `.claude/` moved to `.agents/` and the
+`CLAUDE.md` files became `AGENTS.md`. The paths above are history, accurate for the day they were
+written; for the current layout read `AGENTS.md` and `local_dev/git-ignored-local-files.md`.

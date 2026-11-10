@@ -225,3 +225,9 @@ management resolves `DynamicDisorder.CliUtils` from nuget.org.
 | Cross-repo links break in ~6 docs and several `CLAUDE.md` files | Sweep for `local_dev/`, `CliUtils/`, `translations_csv/` strings after each move |
 | AI-context cost multiplies across repos | Per-repo instructions trimmed to the project |
 | Windows-only projects cannot run here | Per-repo verification is build/test on Linux only; document the Windows runtime step |
+
+## Layout note, 2026-11-10
+
+This record predates the consolidation on 2026-11-10: `.claude/` moved to `.agents/` and the
+`CLAUDE.md` files became `AGENTS.md`. The paths above are history, accurate for the day they were
+written; for the current layout read `AGENTS.md` and `local_dev/git-ignored-local-files.md`.
