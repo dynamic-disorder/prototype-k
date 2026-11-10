@@ -1,0 +1,17 @@
+{
+  "baseUrl": "http://127.0.0.1:3000",
+  "outDir": "video",
+  "viewport": { "width": 1600, "height": 900 },
+  "fps": 30,
+  "targetSeconds": 120,
+  "settleMs": 600,
+  "voice": "en-GB-RyanNeural",
+  "rate": "-4%",
+  "pitch": "-2Hz",
+  "crf": 20,
+  "preset": "slow",
+  "audioBitrate": "160k",
+  "ffmpeg": "ffmpeg",
+  "ffprobe": "ffprobe",
+  "captions": { "font": "Segoe UI", "size": 34, "maxChars": 76 }
+}

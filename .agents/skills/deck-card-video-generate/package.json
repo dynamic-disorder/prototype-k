@@ -1,0 +1,17 @@
+{
+  "name": "deck-card-video-generate",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Record a narrated, captioned demo video of a web app.",
+  "scripts": {
+    "test": "node scripts/run-unit-tests.mjs",
+    "e2e": "node scripts/run-e2e.mjs"
+  },
+  "dependencies": {
+    "msedge-tts": "2.1.1"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
+}
