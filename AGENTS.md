@@ -64,6 +64,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
 | `local_dev/plans/` | The consolidation and split plan |
 | `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
+| `docs/` | The public documentation tier; `docs/agents/` holds the three specs for authoring a skill |
 | `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
 | `output-style/` | The executive-first writing style installed into every harness's user-global config: `documentation-style.md` (rules), `managed-block.md` (injected text), `install.sh` (`--check` reports drift) |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
@@ -82,6 +83,7 @@ Read this index first, then open only the file you need.
 - **Tooling**: `local_dev/README.md`.
 - **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and the build-gate activation git cannot carry.
 - **Git-ignored files**: `local_dev/git-ignored-local-files.md` — what stays out of version control and why.
+- **Agent skill authoring**: `docs/agents/README.md` — the three source specs for writing or revising anything under `.agents/skills/`, rather than paraphrasing them from memory.
 - **Working on `CsvTranslations`**: read `CsvTranslations/AGENTS.md`. For any other project, clone it and read that repository's own `AGENTS.md`.
 
 ## Agent configuration
