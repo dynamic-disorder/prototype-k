@@ -4,7 +4,7 @@
 
 ## Output Style — Three Modes, One Voice
 
-Binding for every chat answer, document, report, README, CLAUDE.md, docs page and commit-message body.
+Binding for every chat answer, document, report, README, AGENTS.md, docs page and commit-message body.
 Full rules and examples: `output-style/documentation-style.md`.
 
 Goal: fast comprehension for busy readers with mixed technical backgrounds. Pick the mode from the
@@ -59,7 +59,7 @@ three. The ask sits in the first paragraph, one ask per message, no preamble and
   committing (here: `local_dev/scripts/scan-publication-leaks.sh`); exit 1 means no commit until the listed
   lines are rewritten.
 
-- **Where a file lives decides who reads it.** Public (`docs/`, `README.md`, `CLAUDE.md`, commit bodies) carries
+- **Where a file lives decides who reads it.** Public (`docs/`, `README.md`, `AGENTS.md`, commit bodies) carries
   no machine path and no identity string. The developer wiki is `local_dev/`. Private scratch is a git-ignored
   `local_user_files/` — outside git, but still on disk and in every backup, so never a secret there either.
 

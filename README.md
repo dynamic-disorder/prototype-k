@@ -139,7 +139,7 @@ rm -f ~/.config/environment.d/umbrella.conf
 | `.agents/skills/` | The ten agent skills used across the projects; each project repository carries the subset it needs |
 | `output-style/` | The executive-first documentation style installed into every harness's user-global config — `documentation-style.md`, `managed-block.md`, and the `install.sh` installer (`--check` reports drift) |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | The canonical formatting, line-ending and build-property templates the project repositories were created from |
-| `.github/`, `.clinerules`, `.claudeignore`, `.claude/`, `.githooks/` | Instruction and build-gate configuration, kept as the template for new repositories |
+| `.github/`, `.clinerules`, `.claudeignore`, `.agents/`, `.githooks/` | Instruction and build-gate configuration, kept as the template for new repositories |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
 Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
@@ -165,9 +165,9 @@ separate projects verify in their own repositories.
 
 ## Instructions for agents
 
-`CLAUDE.md` is the entry point for this repository: non-negotiables, the project table and the
-cross-project pointers. `CsvTranslations/CLAUDE.md` covers the solution that lives here. Every other
-project carries its own `CLAUDE.md` — clone it and read that one.
+`AGENTS.md` is the entry point for this repository: non-negotiables, the project table and the
+cross-project pointers. `CsvTranslations/AGENTS.md` covers the solution that lives here. Every other
+project carries its own `AGENTS.md` — clone it and read that one.
 
 ## History
 

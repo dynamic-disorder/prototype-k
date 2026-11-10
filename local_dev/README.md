@@ -93,7 +93,7 @@ source local_dev/scripts/sandbox-env.sh
 
 ### AI Context Token Estimate (`ai-context-token-estimate.mjs`)
 
-Estimates how much AI-context the committed instruction files cost (CLAUDE.md files, `.clinerules`, per-project `.claude/rules/`, Copilot instructions), at a rough ~4 characters per token.
+Estimates how much AI-context the committed instruction files cost (AGENTS.md files, `.clinerules`, per-project `.agents/rules/`, Copilot instructions), at a rough ~4 characters per token.
 
 ```bash
 node local_dev/scripts/ai-context-token-estimate.mjs
@@ -103,7 +103,7 @@ node local_dev/scripts/ai-context-token-estimate.mjs --json   # machine-readable
 **Notes**:
 - Dependency-free Node (built-ins only); no `npm install`.
 - Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box at the time because `pwsh` was not installed (it can be added as a local .NET tool — see the note above).
-- The git-ignored root `.claude/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
+- The git-ignored root `.agents/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
 
 ### Self-contained publish & runtime install (`publish-selfcontained.mjs`, `install-net10-runtime.ps1`)
 
@@ -211,7 +211,7 @@ internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-aud
   instruction and skill discovery, and the build-gate activation that git cannot carry (a per-machine
   profile mount plus a DSH restart).
 - [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
-  `.gitignore` (root `.claude/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
+  `.gitignore` (root `.agents/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
   changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.
 - [`TODOS.md`](TODOS.md) — open verification and release follow-ups: the Linux test figure that the
   `CliUtils` 0.1.1 bump left unconfirmed, the leaky package still listed on nuget.org, and the duplicate

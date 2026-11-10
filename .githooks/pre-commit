@@ -19,6 +19,6 @@ if [ -f "$scan" ]; then
     }
 fi
 
-gate="$root/.claude/hooks/pre-commit-build-check.sh"
+gate="$root/.agents/hooks/pre-commit-build-check.sh"
 [ -x "$gate" ] || exit 0
 exec "$gate"

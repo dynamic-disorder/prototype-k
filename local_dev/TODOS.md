@@ -6,14 +6,14 @@ waits on the next release to confirm it, so nothing here blocks the repository.
 | | |
 | :--- | :--- |
 | **Problem** | Nothing is broken. One fix — the symbols double push — is waiting on the next release to be confirmed. |
-| **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `CLAUDE.md`'s figure is now measured rather than assumed. |
+| **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `AGENTS.md`'s figure is now measured rather than assumed. |
 | **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed the same day in **cliutils** (`653ecfe`), two-push log still to confirm. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Trusting the registration index minutes after a listing change — it caches, the package page does not. |
 
 ## 1. Run the Linux gate — closed 2026-10-31
 
-`CLAUDE.md` states that `CsvTranslations` builds clean and passes **280 of 280** tests. That figure was
+`AGENTS.md` states that `CsvTranslations` builds clean and passes **280 of 280** tests. That figure was
 measured before `DynamicDisorder.CliUtils` moved from 0.1.0 to 0.1.1.
 
 The bump was verified on Windows only: restore resolved `0.1.1` in every assets file, the solution
@@ -22,11 +22,11 @@ the Windows host, not of the change:
 
 - **26** are `System.IO.IOException : The handle is invalid` at
   `System.ConsolePal.get_WindowWidth()` in `TranslationTools.Tests` — the headless-console caveat
-  already recorded in `CsvTranslations/CLAUDE.md`. That test project carries no CliUtils dependency.
+  already recorded in `CsvTranslations/AGENTS.md`. That test project carries no CliUtils dependency.
 - **1** is `ProcessWavPlaybackTests.FindPlayer_WhenOnlyALaterCandidateExists_ShouldUseThatOne`, which
   hard-codes the Linux candidate `aplay` and therefore cannot pass on Windows.
 
-None of that is the claim in `CLAUDE.md`, which is a Linux figure. The gate was run on Omarchy
+None of that is the claim in `AGENTS.md`, which is a Linux figure. The gate was run on Omarchy
 (2026-10-31, .NET SDK 10.0.113), in Bash, from the repository root:
 
 ```bash
@@ -35,7 +35,7 @@ None of that is the claim in `CLAUDE.md`, which is a Linux figure. The gate was 
 # Build succeeded in 5.1s
 ```
 
-`CLAUDE.md`'s claim holds after the 0.1.0 → 0.1.1 bump: the solution builds and all **280** tests pass
+`AGENTS.md`'s claim holds after the 0.1.0 → 0.1.1 bump: the solution builds and all **280** tests pass
 on Linux. The 27 Windows-host failures above (26 headless-console
 `System.ConsolePal.get_WindowWidth()` IOExceptions, 1 Linux-only `aplay` candidate) do not reproduce
 here. **Closed 2026-10-31.**

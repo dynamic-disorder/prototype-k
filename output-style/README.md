@@ -38,7 +38,7 @@ Where a document lives decides who may read it:
 
 | Tier | Paths | May contain |
 | :--- | :--- | :--- |
-| Public | `docs/` — architecture documentation, development docs, and manuals when they exist — plus `README.md`, `CLAUDE.md` and commit bodies | nothing machine-specific, no identity string |
+| Public | `docs/` — architecture documentation, development docs, and manuals when they exist — plus `README.md`, `AGENTS.md` and commit bodies | nothing machine-specific, no identity string |
 | Developer wiki | `local_dev/` | working plans, walkthroughs, per-phase notes |
 | Private scratch | `local_user_files/` — git-ignored except its README | whatever is not for the internet, but no secrets: it is on disk and in every backup |
 

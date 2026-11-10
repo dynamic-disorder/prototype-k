@@ -15,26 +15,26 @@ local_user_files/*
 temp_task_progress.txt
 launchSettings.json
 
-# Claude Code: ignore the *contents* of every .claude/ directory, then re-include the shared layer.
-# `**/.claude/*` rather than `.claude/` is deliberate: git cannot re-include a file whose parent
+# Agent configuration: ignore the *contents* of every .agents/ directory, then re-include the shared
+# layer. `**/.agents/*` rather than `.agents/` is deliberate: git cannot re-include a file whose parent
 # directory is excluded, so the directory stays un-ignored and only its contents are ignored. The
 # `**/` prefix keeps one rule working for the root and for any nested project directory. The shared
-# and tracked set is settings.json, hooks/, commands/ and rules/ —
+# and tracked set is settings.json, hooks/, commands/, rules/ and skills/ —
 # see local_dev/git-ignored-local-files.md.
-**/.claude/*
-!**/.claude/settings.json
-!**/.claude/commands/
-!**/.claude/hooks/
-!**/.claude/rules/
+**/.agents/*
+!**/.agents/settings.json
+!**/.agents/commands/
+!**/.agents/hooks/
+!**/.agents/rules/
+!**/.agents/skills/
+AGENTS.local.md
 CLAUDE.local.md
 # settings.local.json is the *personal* overlay on the shareable settings.json, which is tracked in
-# the sub-projects. Keep this rule even though `**/.claude/*` above already covers it: it is what
+# the sub-projects. Keep this rule even though `**/.agents/*` above already covers it: it is what
 # keeps the personal file ignored if that broader rule is ever narrowed.
-**/.claude/settings.local.json
-**/.claude/agent-memory-local/
-# `.agents/skills/` is deliberately NOT ignored: it holds the tracked, tool-neutral skills.
-# Claude Code reaches the same files through the local `.claude/skills` symlink, which
-# `**/.claude/*` above already covers.
+**/.agents/settings.local.json
+**/.agents/agent-memory-local/
+# `.agents/skills/` holds the tracked, tool-neutral skills and is re-included above.
 # `.claudeignore` and `.clinerules` are NOT ignored either: both hold shared, tracked repo
 # conventions rather than personal state.
 __pycache__/

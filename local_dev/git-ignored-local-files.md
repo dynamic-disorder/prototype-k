@@ -2,12 +2,12 @@
 
 Some working-tree paths are excluded by `.gitignore`. That is **deliberate** in two different ways,
 and the reasons matter because "it's ignored" is not the same as "it's disposable". Section 2 covers
-the mirror image: the shared `.claude/` files the rules deliberately *re-include*.
+the mirror image: the shared `.agents/` files the rules deliberately *re-include*.
 
 Rule of thumb: `git status` will **never** show changes to the paths in sections 1, 3 and 4. Use
 `git status --ignored` or `git check-ignore -v <path>` to confirm.
 
-## 1. `.claude/` — excluded, now sanitised and reduced
+## 1. `.agents/` — excluded, now sanitised and reduced
 
 **State (2026-10-10): reviewed, sanitised and cut from 29 files / 67,271 chars to 11 files /
 14,038 chars (−79%).** It is still untracked by choice, not because it is unsafe.
@@ -24,7 +24,7 @@ Why it was ignored originally, and why the cleanup was needed:
 3. **The layout had changed.** Claude Code no longer separates user-initiated *commands* from
    model-invoked behaviour — everything is a skill, triggerable by the user or the AI. Directory-scoped
    skills can also be referenced from another directory or from root instructions (e.g. "read
-   `folderX/CLAUDE.md`, then run the skills in it").
+   `folderX/AGENTS.md`, then run the skills in it").
 
 The ten skills that survived that cleanup were later **promoted out of this ignored tree** to
 `.agents/skills/`, where they are tracked — see "How other harnesses reach this tree" below. What is
@@ -32,11 +32,13 @@ left here now:
 
 | Path | Note |
 | :--- | :--- |
-| `.claude/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
-| `.claude/skills` | A **symlink** to `../.agents/skills` so Claude Code finds the tracked skills. Covered by the `**/.claude/*` rule; it owns no content of its own |
+| `.agents/settings.local.json` | Personal overlay on the shareable `settings.json` — permission allow-list only. Must stay ignored (see below) |
+
+`.agents/skills/` is *tracked*, so the scheme re-includes it rather than leaving it to the blanket
+ignore rule — that extra negation is what keeps the skills in git.
 
 Also present in the tree but **tracked**, so not part of the ignored set:
-`.claude/settings.json` and `.claude/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
+`.agents/settings.json` and `.agents/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
 
 Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
 `skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
@@ -60,9 +62,9 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
 - **Micromanagement** — the step-by-step build-discovery recipes, prescribed output strings, long
   report templates, and rules restating what `.editorconfig` or the analyzer already enforce.
 
-> **Correction:** an earlier revision of this file recommended `git add -f .claude/rules`. That was
+> **Correction:** an earlier revision of this file recommended `git add -f .agents/rules`. That was
 > wrong and was reverted — the files were briefly staged and then unstaged, and the unpushed commit
-> was rewritten so no `.claude` content ever reached the remote. Now that the tree is sanitised,
+> was rewritten so no `.agents` content ever reached the remote. Now that the tree is sanitised,
 > versioning it is a legitimate choice; force-add if wanted.
 
 A temporary snapshot of the pre-cleanup tree sits in the git-ignored scratch directory
@@ -74,23 +76,19 @@ keeping somewhere durable before clearing `local_user_files/`.
 
 ### How the two harnesses share this repository
 
-`.claude/` is Claude Code's layout; DeepSeek Harness (DSH) uses the tool-neutral `AGENTS.md` +
-`.agents/skills/` convention. Both are served from a single copy:
+`.agents/` is the single configuration directory; it replaced `.claude/` on 2026-11-10, so Claude
+Code's native `.claude/settings.json` path is no longer present in this repository. DSH reads the
+tool-neutral `AGENTS.md` + `.agents/skills/` convention, and the tracked skills serve both harnesses
+directly:
 
 | | Claude Code | DeepSeek Harness | Shared how |
 | :--- | :--- | :--- | :--- |
-| Instructions | `CLAUDE.md` | `AGENTS.md` **and** `CLAUDE.md` (plus the `.local.md` overlays), chained from the project root (`.git` marker) down to the working directory | The existing `CLAUDE.md` files load in both — no second file to maintain |
-| Skills | `.claude/skills/` | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/`, where this machine's `diagnose-crash` and `omarchy` live | Canonical **tracked** copy at `.agents/skills/`; Claude Code reaches it through a local symlink |
+| Instructions | `AGENTS.md` (a `CLAUDE.md` is still read where a tree has one) | `AGENTS.md`, plus the `.local.md` overlays, chained from the project root (`.git` marker) down to the working directory | The same `AGENTS.md` files load in both — no second file to maintain |
+| Skills | `.agents/skills/` | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/`, where this machine's `diagnose-crash` and `omarchy` live | Canonical **tracked** copy at `.agents/skills/`, scanned directly by both — no symlink needed |
 
-```bash
-# canonical and tracked:  .agents/skills/<name>/SKILL.md
-ln -sfn ../.agents/skills .claude/skills   # local glue, ignored via the .claude/ rule
-```
-
-`.agents/skills/` is DSH's native project root *and* tool-neutral, so it is the better home for the
-canonical copy; `.claude/` stays ignored, holding only personal settings and that symlink. DSH
+`.agents/skills/` is DSH's native project root *and* tool-neutral, so it holds the canonical copy. DSH
 discovers a skill as `<name>/SKILL.md` at the *top level* of a scanned root — nested `**/SKILL.md` is
-deliberately not discovered — and it follows symlinked directories, which is why the shim works.
+deliberately not discovered.
 
 Verified end to end: DSH's catalog picked up `csharp-conventions`, `csharp-build-verify`,
 `unit-test-writer`, `issue-investigate` and `spike`, and correctly **withheld** `git-commit`,
@@ -104,8 +102,8 @@ distro's own machine-level skills, which is the right scope for them.
 
 Two related notes:
 
-- **The build gate's configuration is shared; its activation is not.** `.claude/settings.json` and
-  `.claude/hooks/pre-commit-build-check.sh` are tracked, so every clone has them — but DSH only runs
+- **The build gate's configuration is shared; its activation is not.** `.agents/settings.json` and
+  `.agents/hooks/pre-commit-build-check.sh` are tracked, so every clone has them — but DSH only runs
   them once `dsh-hooks-claude-code` is mounted in the machine's profile *and* DSH has been restarted.
   The mechanism, the `bash|Bash` matcher subtlety and the verification steps are documented in
   [`deepseek-harness.md`](deepseek-harness.md).
@@ -114,17 +112,17 @@ Two related notes:
   conversation does **not** lift that: writes there are refused unless elevated sandbox access is
   approved per operation, so treat those paths as the user's to edit.
 
-## 2. Shared Claude Code config — tracked, *and* `.gitignore` now says so
+## 2. Shared agent config — tracked, *and* `.gitignore` now says so
 
 These were originally force-added *despite* the ignore rules. That worked, but it left the tracked
 state contradicting the rules and made `git add -A` silently skip every new file in those
-directories. **Fixed 2026-10-15:** `.gitignore` now ignores the *contents* of each `.claude/`
+directories. **Fixed 2026-10-15:** `.gitignore` now ignores the *contents* of each `.agents/`
 directory and re-includes the shared paths explicitly, so the rule and the tracked state agree.
 
 | Path | Role |
 | :--- | :--- |
-| `.claude/settings.json` | Shareable settings layer; carries the `PreToolUse` build gate |
-| `.claude/hooks/pre-commit-build-check.sh` | The enforcement itself |
+| `.agents/settings.json` | Shareable settings layer; carries the `PreToolUse` build gate |
+| `.agents/hooks/pre-commit-build-check.sh` | The enforcement itself |
 | the per-project `CsvTranslations/…`, `FilenameTools/…` entries | Commands, rules and settings for a project. **Moved with their projects on 2026-10-15** — they live in those repositories now, which carry the same ignore and re-include rules |
 | `.clinerules` | Cline rules, shared on purpose |
 | `.claudeignore` | Claude Code's file-exclusion list for this repository |
@@ -132,17 +130,18 @@ directory and re-includes the shared paths explicitly, so the rule and the track
 The rules that carry it:
 
 ```gitignore
-**/.claude/*          # contents only, so re-inclusion below is possible at all
-!**/.claude/settings.json
-!**/.claude/commands/
-!**/.claude/hooks/
-!**/.claude/rules/
-**/.claude/settings.local.json
+**/.agents/*          # contents only, so re-inclusion below is possible at all
+!**/.agents/settings.json
+!**/.agents/commands/
+!**/.agents/hooks/
+!**/.agents/rules/
+!**/.agents/skills/
+**/.agents/settings.local.json
 ```
 
 Two details that are easy to get wrong:
 
-- **`**/.claude/*`, not `.claude/`.** Git cannot re-include a file whose parent directory is
+- **`**/.agents/*`, not `.agents/`.** Git cannot re-include a file whose parent directory is
   excluded, so the directory itself must stay un-ignored and only its contents ignored.
 - **`**/` prefix.** One rule covered the root and every nested project directory while the projects
   lived here, without repeating near-identical blocks. The projects have moved out; the prefix stays
@@ -154,12 +153,11 @@ why it was unrecoverable and had to be rewritten.
 A scan for personal markers in these found only a generic path *example* in one project rule file —
 no real leak. That file has since moved to its project repository, where the example was reworded.
 
-**Still skipped by `git add -A`:** everything else inside a `.claude/` directory —
-`settings.local.json`, the `.claude/skills` symlink, `agent-memory-local/`. A new *shared* file added
-directly under `.claude/` (not in `hooks/`, `commands/` or `rules/`) is skipped too: put it in one of
-those folders, or `git add -f` it. Getting this wrong already bit once — three tracked files under
-`FilenameTools/.claude/` were nearly dropped by a directory rename
-(see `analyses/linux-build-audit.md`).
+**Still skipped by `git add -A`:** everything else inside a `.agents/` directory —
+`settings.local.json`, `agent-memory-local/`. A new *shared* file added directly under `.agents/` (not
+in `hooks/`, `commands/`, `rules/` or `skills/`) is skipped too: put it in one of those folders, or
+`git add -f` it. Getting this wrong already bit once — three tracked files under
+`FilenameTools/.agents/` were nearly dropped by a directory rename (see `analyses/linux-build-audit.md`).
 
 **Verify the two sets stay consistent** (2026-10-15: reported zero ignored-but-tracked paths):
 
@@ -219,8 +217,8 @@ The **skills** are no longer part of this question — they were promoted to the
 What stays untracked, and should:
 
 - `settings.local.json` — the personal overlay on the shareable `settings.json` (Claude Code's own
-  layering), so it belongs in `.gitignore` permanently.
-- The `.claude/skills` symlink — local glue pointing at the tracked skills.
+  layering), so it belongs in `.gitignore` permanently. Claude Code still reads it from `.claude/`
+  when a tree has one; this repository no longer does.
 - Per-machine IDE state (`launchSettings.json`) and everything in `local_user_files/`.
 
 If something else here genuinely needs versioning, `git add -f <path>` is the escape hatch — but
@@ -235,5 +233,5 @@ skills (to `.agents/skills/`).
 | `settings.local.json` | Personal overlay, applied on top of `settings.json`. Per-machine by definition | **Never.** Ignored here and in every project repository |
 
 Their permissions are local only; sharing the file would push one machine's allow-list onto everyone.
-`.gitignore` lists `settings.local.json` explicitly *in addition to* the blanket `.claude/` rule, so
+`.gitignore` lists `settings.local.json` explicitly *in addition to* the blanket `.agents/` rule, so
 that narrowing the blanket rule later (for example to version skills) cannot accidentally expose it.

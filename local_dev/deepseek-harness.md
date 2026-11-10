@@ -10,8 +10,8 @@ Checked against `@deepseek-ai/dsh` 0.2.0-rc.2 (`dsh-agent-instructions`, `dsh-sk
 
 | Input | Where it comes from | Shared with Claude Code? |
 | :---- | :------------------ | :----------------------- |
-| Instructions | `AGENTS.md` **and** `CLAUDE.md`, plus the `AGENTS.local.md` / `CLAUDE.local.md` overlays, chained from the project root down to the session working directory | Yes — the committed `CLAUDE.md` files serve both, so there is no duplicate `AGENTS.md` to maintain |
-| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` | Yes — canonical copy is the tracked [`.agents/skills/`](../.agents/skills/); Claude Code reaches it through the local `.claude/skills` symlink |
+| Instructions | `AGENTS.md`, plus the `AGENTS.local.md` / `CLAUDE.local.md` overlays, chained from the project root down to the session working directory. DSH also reads `CLAUDE.md` where a tree still carries one | Yes — the same files serve both harnesses, so there is no duplicate to maintain |
+| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` | Yes — canonical copy is the tracked [`.agents/skills/`](../.agents/skills/), which both harnesses scan directly |
 | Hooks | **Not natively** — an extra package has to be mounted per machine (below) | No — the configuration is shared, the *activation* is not |
 
 Details worth knowing:
@@ -20,7 +20,7 @@ Details worth knowing:
   which subdirectory a session runs in.
 - A skill is either `<name>/SKILL.md` or a flat `<name>.md`, and only at the **top level** of a scanned
   root — nested `**/SKILL.md` is deliberately not discovered. Symlinked directories *are* followed,
-  which is what makes `.claude/skills` work.
+  which is what makes `.agents/skills` work.
 - Frontmatter: `name` and `description` are required; `whenToUse`, `metadata`,
   `disable-model-invocation` and `user-invocable` are optional and **mean the same thing they do in
   Claude Code**, so the same files gate identically in both harnesses.
@@ -29,13 +29,13 @@ Details worth knowing:
 
 ## The build gate
 
-One script is the whole gate — [`.claude/hooks/pre-commit-build-check.sh`](../.claude/hooks/pre-commit-build-check.sh) —
+One script is the whole gate — [`.agents/hooks/pre-commit-build-check.sh`](../.agents/hooks/pre-commit-build-check.sh) —
 and it serves two entry points:
 
 | Entry point | Activated by | Status |
 | :---------- | :----------- | :----- |
 | **Git hook** — [`.githooks/pre-commit`](../.githooks/pre-commit), a thin wrapper that `exec`s the gate | `git config core.hooksPath .githooks` (repo-local, one line per clone) | **Working, and the path to rely on.** Verified: a passing build commits, a failing build aborts the commit with the compiler output. Gates your commits *and* an agent's. |
-| **Harness hook** — a `PreToolUse` entry in [`.claude/settings.json`](../.claude/settings.json) | Claude Code reads that file natively | Works in Claude Code. In DSH it has **never been observed to run** (see below), so it is a bonus rather than the mechanism. |
+| **Harness hook** — a `PreToolUse` entry in [`.agents/settings.json`](../.agents/settings.json) | A harness explicitly pointed at that file | **Inert by default.** Claude Code reads `.claude/settings.json`, which this repository no longer has, and DSH was never observed running it. Treat it as documentation of the gate; the git hook is the mechanism. |
 
 ### Where the gate lives after the split
 
@@ -89,7 +89,7 @@ mounted involves three traps, all of which cost real time to find:
    - insert:
        - name: "@deepseek-ai/dsh-hooks-claude-code"
          config:
-           configPath: /absolute/path/to/repo/.claude/settings.json
+           configPath: /absolute/path/to/repo/.agents/settings.json
            projectDir: /absolute/path/to/repo
    ```
 
@@ -146,7 +146,7 @@ To watch it block without creating anything, put a failing `dotnet` stub first o
 `build FAILED … the commit is blocked`.
 
 To disable it: `git config --unset core.hooksPath` (git route) or drop the `hooks` key from
-`.claude/settings.json` (Claude Code). `git commit --no-verify` skips the git hook.
+`.agents/settings.json` (Claude Code). `git commit --no-verify` skips the git hook.
 
 ## Related
 

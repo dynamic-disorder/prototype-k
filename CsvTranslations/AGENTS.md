@@ -109,7 +109,7 @@ The OllamaTranslatorApi/App requires a running Ollama instance. See the separate
 - **Translate batch**: `dotnet run --project OllamaTranslatorApp`
 - **TTS practice**: `dotnet run --project TextToSpeechApp` — identical on every OS; `--tts:piper` is accepted but redundant, and `--tts:windows` is reported as removed
 
-See `.claude/commands/build.md` for automated build/test command.
+See `.agents/commands/build.md` for automated build/test command.
 
 ## Distribution
 

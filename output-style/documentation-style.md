@@ -1,7 +1,7 @@
 # Output style — three modes, one voice
 
 Binding for every document produced in this repository and in every repository cloned beside it:
-`README.md`, `CLAUDE.md`, `docs/`, analysis notes, ADRs, assessment logs, commit-message bodies — and for
+`README.md`, `AGENTS.md`, `docs/`, analysis notes, ADRs, assessment logs, commit-message bodies — and for
 every chat answer an AI assistant gives, not only the documents it writes.
 
 **Goal:** fast comprehension for a busy reader with a mixed technical background.
@@ -13,7 +13,7 @@ every chat answer an AI assistant gives, not only the documents it writes.
 | `~/.dsh/AGENTS.md` — managed block | DeepSeek Harness (`$DSH_HOME/AGENTS.md`) | every project on this machine |
 | `~/.claude/CLAUDE.md` — managed block | Claude Code | every project on this machine |
 | Cline and Continue global rules — whole file | Cline, Continue | every project on this machine |
-| each repository's `CLAUDE.md` — by hand | both harnesses | that repository, so a clone elsewhere still gets it |
+| each repository's `AGENTS.md` — by hand | both harnesses | that repository, so a clone elsewhere still gets it |
 
 Two sources, no duplicates: this page holds the reasoning, and `managed-block.md` holds the exact wording
 that gets injected. Edit both, then re-run `install.sh` (Git Bash on Windows, bash on Linux/macOS). The
@@ -106,7 +106,7 @@ Mode 1 is the default. Everything in §2 binds all three modes; §3, §4 and §5
 
 **Portability — nothing machine-specific is ever committed.**
 - A commit is public text. The rule that bans a hard-coded path in a *command* bans one in a *file*:
-  configs, READMEs, installers, `CLAUDE.md`, analysis notes and commit messages alike.
+  configs, READMEs, installers, `AGENTS.md`, analysis notes and commit messages alike.
 - Never a drive-letter prefix, a mount root, a home or profile path, or an account, user, owner or host
   name — and no partial masking. Write `%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or the root
   variable above.
@@ -225,7 +225,7 @@ happens next, and who acts.
 ### TL;DR — for a single-topic document
 
 If the piece answers one question and the table would be ceremony, open with one bold `**TL;DR** — `
-sentence stating the outcome. `prototype-k/CLAUDE.md` and `snaerf/CLAUDE.md` are the reference examples.
+sentence stating the outcome. `prototype-k/AGENTS.md` and `snaerf/AGENTS.md` are the reference examples.
 
 ### Body
 
@@ -256,7 +256,7 @@ Write it as one line: "Documentation: `docs/x.md` updated; manual still owed." I
 
 | Tier | Paths | Readers | May contain |
 | :--- | :--- | :--- | :--- |
-| **Public** | `docs/`, `README.md`, `CLAUDE.md`, commit bodies | anyone, crawlers and bots included | no machine path, no identity string (§2 Portability) |
+| **Public** | `docs/`, `README.md`, `AGENTS.md`, commit bodies | anyone, crawlers and bots included | no machine path, no identity string (§2 Portability) |
 | **Developer wiki** | `local_dev/` | the developer, tracked in git | working plans, walkthroughs, per-phase notes |
 | **Private scratch** | `local_user_files/` — git-ignored except its README | the owner only, by convention | anything not for the internet; still on disk and in every backup, so never a secret |
 | **Manuals** | none yet in these repositories | — | when they arrive they are public-tier: steps a user follows |
