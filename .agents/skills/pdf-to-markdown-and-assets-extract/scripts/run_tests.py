@@ -45,7 +45,11 @@ def main() -> int:
         "unit.txt",
     )
     extraction_status, _ = run(
-        [sys.executable, "tests/write_fixture_extraction.py", str(run_dir / "extracted")],
+        [
+            sys.executable,
+            "tests/write_fixture_extraction.py",
+            str(run_dir / "extracted" / "embedded-images-tables"),
+        ],
         run_dir,
         "extraction.txt",
     )

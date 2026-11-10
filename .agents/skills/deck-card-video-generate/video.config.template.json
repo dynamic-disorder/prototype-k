@@ -3,7 +3,6 @@
   "outDir": "video",
   "viewport": { "width": 1600, "height": 900 },
   "fps": 30,
-  "targetSeconds": 120,
   "settleMs": 600,
   "voice": "en-GB-RyanNeural",
   "rate": "-4%",

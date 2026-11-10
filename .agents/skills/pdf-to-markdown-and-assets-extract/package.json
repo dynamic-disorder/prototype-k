@@ -1,0 +1,17 @@
+{
+  "name": "pdf-to-markdown-and-assets-extract",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Guard a PDF input path, extract project PDFs to page-marked Markdown and assets, and prove the run repeatable.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/check_input.test.mjs tests/extraction.test.mjs tests/math.test.mjs tests/raster.test.mjs tests/ocr.test.mjs tests/figures.test.mjs tests/run-steps.test.mjs tests/png.test.mjs tests/layout.test.mjs",
+    "e2e": "node scripts/run_tests.mjs",
+    "raster": "node scripts/rasterise.mjs",
+    "ocr": "node scripts/ocr.mjs",
+    "test:python": "python scripts/run_tests.py"
+  }
+}

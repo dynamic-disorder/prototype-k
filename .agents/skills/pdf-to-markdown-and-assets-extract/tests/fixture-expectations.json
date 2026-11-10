@@ -1,0 +1,19 @@
+{
+  "note": "Expected values for the bundled fixture PDFs in tests/resources/. Update this file when a fixture is replaced: the tests read these numbers instead of hard-coding them. `pages` is asserted against each writer's sidecar, manifest and marker count, `figures` against the cropped figure assets, `equations` and `tables` against the cropped assets and the sidecar, and `markdownLines` pins the laid-out Markdown including the page-image, figure and equation references, so a layout or writer change must be accompanied by an update here.",
+  "fixtures": {
+    "embedded-images-tables": {
+      "pages": 1,
+      "figures": 0,
+      "equations": 0,
+      "tables": 0,
+      "markdownLines": 81
+    },
+    "multi-column": {
+      "pages": 13,
+      "figures": 1,
+      "equations": 5,
+      "tables": 7,
+      "markdownLines": 1393
+    }
+  }
+}

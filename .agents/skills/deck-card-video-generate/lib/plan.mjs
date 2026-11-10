@@ -2,6 +2,7 @@
 
 export const MIN_TARGET = 15;
 export const MAX_TARGET = 300;
+export const DEFAULT_TARGET = 120;
 export const SLOT_TOLERANCE = 0.05;
 
 export function isNumber(value) {
@@ -9,16 +10,54 @@ export function isNumber(value) {
 }
 
 /**
- * Validate the keys the scripts read.
- * Returns the parsed baseUrl and target when they are usable, plus every error.
+ * Error message when a length is unusable; null when it is in range.
+ * `label` names the source in the message, e.g. `--seconds`.
  */
-export function validateConfig(config) {
+export function checkTarget(value, label) {
+  if (!isNumber(value)) return `${label} must be a number`;
+  if (value < MIN_TARGET || value > MAX_TARGET) {
+    return `${label} ${value} is outside ${MIN_TARGET}-${MAX_TARGET} s`;
+  }
+  return null;
+}
+
+/**
+ * Effective length for a script that has already read the config: `--seconds`
+ * beats `config.targetSeconds`, which beats the 120 s default. Throws when the
+ * chosen value is out of range.
+ */
+export function resolveTarget(config, override) {
+  if (override !== undefined && override !== null) {
+    const message = checkTarget(override, '--seconds');
+    if (message) throw new Error(message);
+    return { target: override, source: 'flag' };
+  }
+  if (config?.targetSeconds === undefined) {
+    return { target: DEFAULT_TARGET, source: 'default' };
+  }
+  return { target: targetFromConfig(config.targetSeconds), source: 'config' };
+}
+
+/** Validate a `targetSeconds` value from the config, throwing on a bad one. */
+function targetFromConfig(value) {
+  const message = checkTarget(value, 'video.config.json: targetSeconds');
+  if (message) throw new Error(message);
+  return value;
+}
+
+/**
+ * Validate the keys the scripts read.
+ * `override` is the `--seconds` value when the command was given one.
+ * Returns the usable baseUrl and the effective target + its source, plus every error.
+ */
+export function validateConfig(config, override) {
   const errors = [];
   let baseUrl = null;
   let target = null;
+  let source = 'default';
 
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
-    return { errors: ['video.config.json must be a JSON object'], baseUrl, target };
+    return { errors: ['video.config.json must be a JSON object'], baseUrl, target, source };
   }
 
   if (typeof config.baseUrl !== 'string' || !config.baseUrl.trim()) {
@@ -33,14 +72,24 @@ export function validateConfig(config) {
     }
   }
 
-  if (!isNumber(config.targetSeconds)) {
-    errors.push('video.config.json: targetSeconds is missing or not a number');
-  } else if (config.targetSeconds < MIN_TARGET || config.targetSeconds > MAX_TARGET) {
-    errors.push(
-      `video.config.json: targetSeconds ${config.targetSeconds} is outside ${MIN_TARGET}-${MAX_TARGET} s`,
-    );
+  if (override !== undefined) {
+    const message = checkTarget(override, '--seconds');
+    if (message) {
+      errors.push(message);
+    } else {
+      target = override;
+      source = 'flag';
+    }
+  } else if (config.targetSeconds === undefined) {
+    target = DEFAULT_TARGET;
   } else {
-    target = config.targetSeconds;
+    const message = checkTarget(config.targetSeconds, 'video.config.json: targetSeconds');
+    if (message) {
+      errors.push(message);
+    } else {
+      target = config.targetSeconds;
+      source = 'config';
+    }
   }
 
   if (typeof config.outDir !== 'string' || !config.outDir.trim()) {
@@ -72,12 +121,12 @@ export function validateConfig(config) {
     errors.push('video.config.json: crf must be a number');
   }
 
-  return { errors, baseUrl, target };
+  return { errors, baseUrl, target, source };
 }
 
 /**
  * Validate segments.json: names, starts, slots, text, and that the slots add up
- * to targetSeconds. `target` may be null when the config target is invalid.
+ * to the length. `target` may be null when the config length is invalid.
  */
 export function validateSegments(segments, target) {
   const errors = [];
@@ -130,7 +179,7 @@ export function validateSegments(segments, target) {
   });
 
   if (isNumber(target) && Math.abs(expected - target) > SLOT_TOLERANCE) {
-    errors.push(`segments.json: slots end at ${expected} s, targetSeconds is ${target} s`);
+    errors.push(`segments.json: slots end at ${expected} s, target is ${target} s`);
   }
 
   return { errors };
