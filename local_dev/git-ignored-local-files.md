@@ -57,7 +57,8 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
   non-existent `temp_user_files/` (the real directory is `local_user_files/`).
 - **Rules that contradicted the repo** — corrected with evidence rather than kept: the `int`/`Int32`
   rule (backwards vs `.editorconfig`), a blanket "no `Async` suffix" rule (the codebase uses it
-  everywhere), "XML docs on every `[Fact]`" (the code documents the test class only), and a claimed
+  everywhere), "XML docs on every `[Fact]`" (the code then documented the test class only;
+  superseded 2026-11-11 by the every-method rule), and a claimed
   pre-commit build hook that was never wired.
 - **Micromanagement** — the step-by-step build-discovery recipes, prescribed output strings, long
   report templates, and rules restating what `.editorconfig` or the analyzer already enforce.
