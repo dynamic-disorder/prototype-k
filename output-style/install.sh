@@ -187,8 +187,17 @@ for entry in "${TARGETS[@]}"; do
     upsert_file "$target" inline || status=1
   fi
   # The credential guardrail rides in the AGENTS.md target, appended once and only when missing.
+  # dsh also loads the shared agents root ($DSH_AGENTS_HOME/AGENTS.md, default ~/.agents/AGENTS.md),
+  # so a guardrail already present there covers every harness. Appending it to the target as well
+  # would render the rule twice.
   if [[ "$harness" == "dsh" && "$CHECK_ONLY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
-    if ! grep -qF -- '### Credentials: never read the credential file' "$target"; then
+    guardrail_heading='### Credentials: never read the credential file'
+    shared_agents_file="${DSH_AGENTS_HOME:-$HOME/.agents}/AGENTS.md"
+    shared_has_guardrail=0
+    if [[ -f "$shared_agents_file" ]] && grep -qF -- "$guardrail_heading" "$shared_agents_file"; then
+      shared_has_guardrail=1
+    fi
+    if [[ "$shared_has_guardrail" -eq 0 ]] && ! grep -qF -- "$guardrail_heading" "$target"; then
       { printf '\n'; guardrail_section; } >> "$target"
       printf '  guardrail    %s\n' "$target"
     fi
