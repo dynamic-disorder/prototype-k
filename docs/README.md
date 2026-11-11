@@ -8,6 +8,7 @@ document applies to them, and a session that needs to know what is already writt
 | Folder | Holds | Read when |
 | :--- | :--- | :--- |
 | [`agents/`](agents/README.md) | The three source specs for authoring an agent skill: `SKILL.md` structure, the skill `README.md` style, and why skill logic is `.mjs` | Writing or revising a skill under `.agents/skills/` |
+| [`plans/`](plans/README.md) | Dated plans for changing this repository's structure, with their decisions and verification | Before moving files or changing what this checkout is for |
 
 A folder joins this table when it carries a `README.md` of its own; the row says who reads it rather than
 restating its contents.
