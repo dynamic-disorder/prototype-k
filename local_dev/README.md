@@ -93,7 +93,8 @@ source local_dev/scripts/sandbox-env.sh
 
 ### AI Context Token Estimate (`ai-context-token-estimate.mjs`)
 
-Estimates how much AI-context the committed instruction files cost (AGENTS.md files, `.clinerules`, per-project `.agents/rules/`, Copilot instructions), at a rough ~4 characters per token.
+Estimates how much AI-context the committed instruction files cost (AGENTS.md files and per-project
+`.agents/rules/`), at a rough ~4 characters per token.
 
 ```bash
 node local_dev/scripts/ai-context-token-estimate.mjs
@@ -208,8 +209,7 @@ internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-aud
 ## Documentation
 
 - [`deepseek-harness.md`](deepseek-harness.md) — how DeepSeek Harness consumes this repository:
-  instruction and skill discovery, and the build-gate activation that git cannot carry (a per-machine
-  profile mount plus a DSH restart).
+  instruction and skill discovery, and the git hook that is the build gate.
 - [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
   `.gitignore` (root `.agents/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
   changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.

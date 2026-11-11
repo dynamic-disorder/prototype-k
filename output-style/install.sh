@@ -52,17 +52,7 @@ TARGETS+=("$DSH_HOME_DIR/AGENTS.md|dsh")
 mkdir -p -- "$HOME/.claude" 2>/dev/null || true
 TARGETS+=("$HOME/.claude/CLAUDE.md|claude-code")
 
-# 3. Cline — global rules directory. Historically ~/Documents/Cline/Rules; some builds use
-#    ~/Cline/Rules or ~/.cline/rules. Prefer whatever already exists, else the documented path.
-if CLINE_DIR="$(first_existing_dir "$HOME/Documents/Cline/Rules" "$HOME/Cline/Rules" "$HOME/.cline/rules")"; then
-  TARGETS+=("$CLINE_DIR/documentation-style.md|cline")
-elif [[ "$CHECK_ONLY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
-  mkdir -p -- "$HOME/Documents/Cline/Rules" 2>/dev/null \
-    && TARGETS+=("$HOME/Documents/Cline/Rules/documentation-style.md|cline") \
-    || printf 'NOTE: Cline rules directory not creatable; skipped.\n' >&2
-fi
-
-# 4. Continue — global rules.
+# 3. Continue — global rules.
 if CONT_DIR="$(first_existing_dir "$HOME/.continue/rules" "$HOME/.continue")"; then
   TARGETS+=("$CONT_DIR/rules/documentation-style.md|continue")
 fi
@@ -181,13 +171,12 @@ for entry in "${TARGETS[@]}"; do
   seen="$seen|$target|"
   printf '[%s]\n' "$harness"
   # Rules-directory harnesses take the file verbatim; instruction-file harnesses use markers.
-  if [[ "$harness" == "cline" || "$harness" == "continue" ]]; then
+  if [[ "$harness" == "continue" ]]; then
     upsert_file "$target" append-only || status=1
   else
     upsert_file "$target" inline || status=1
   fi
-  # The credential guardrail rides in the AGENTS.md target, appended once and only when missing.
-  # dsh also loads the shared agents root ($DSH_AGENTS_HOME/AGENTS.md, default ~/.agents/AGENTS.md),
+  # The credential guardrail rides in the AGENTS.md target, appended once and only when missing.  # dsh also loads the shared agents root ($DSH_AGENTS_HOME/AGENTS.md, default ~/.agents/AGENTS.md),
   # so a guardrail already present there covers every harness. Appending it to the target as well
   # would render the rule twice.
   if [[ "$harness" == "dsh" && "$CHECK_ONLY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then

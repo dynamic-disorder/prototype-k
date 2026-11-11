@@ -19,24 +19,20 @@ launchSettings.json
 # layer. `**/.agents/*` rather than `.agents/` is deliberate: git cannot re-include a file whose parent
 # directory is excluded, so the directory stays un-ignored and only its contents are ignored. The
 # `**/` prefix keeps one rule working for the root and for any nested project directory. The shared
-# and tracked set is settings.json, hooks/, commands/, rules/ and skills/ —
+# and tracked set is hooks/, commands/, rules/ and skills/ —
 # see local_dev/git-ignored-local-files.md.
 **/.agents/*
-!**/.agents/settings.json
 !**/.agents/commands/
 !**/.agents/hooks/
 !**/.agents/rules/
 !**/.agents/skills/
 AGENTS.local.md
 CLAUDE.local.md
-# settings.local.json is the *personal* overlay on the shareable settings.json, which is tracked in
-# the sub-projects. Keep this rule even though `**/.agents/*` above already covers it: it is what
-# keeps the personal file ignored if that broader rule is ever narrowed.
+# settings.local.json is the *personal* overlay; keep this rule even though `**/.agents/*` above
+# already covers it, so the personal file stays ignored if that broader rule is ever narrowed.
 **/.agents/settings.local.json
 **/.agents/agent-memory-local/
 # `.agents/skills/` holds the tracked, tool-neutral skills and is re-included above.
-# `.claudeignore` and `.clinerules` are NOT ignored either: both hold shared, tracked repo
-# conventions rather than personal state.
 __pycache__/
 # Python virtualenvs. `.venv/` currently protects itself with the `.gitignore` (`*`) that
 # `python -m venv` writes, but that file is not ours to rely on — this keeps the ~22 MB tree out

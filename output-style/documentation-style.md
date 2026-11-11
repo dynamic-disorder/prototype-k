@@ -12,7 +12,7 @@ every chat answer an AI assistant gives, not only the documents it writes.
 | :--- | :--- | :--- |
 | `~/.dsh/AGENTS.md` — managed block | DeepSeek Harness (`$DSH_HOME/AGENTS.md`) | every project on this machine |
 | `~/.claude/CLAUDE.md` — managed block | Claude Code | every project on this machine |
-| Cline and Continue global rules — whole file | Cline, Continue | every project on this machine |
+| Continue global rules — whole file | Continue | every project on this machine |
 | each repository's `AGENTS.md` — by hand | both harnesses | that repository, so a clone elsewhere still gets it |
 
 Two sources, no duplicates: this page holds the reasoning, and `managed-block.md` holds the exact wording

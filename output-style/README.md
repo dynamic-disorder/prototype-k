@@ -48,7 +48,7 @@ Where a document lives decides who may read it:
 
 Windows, Omarchy, Git Bash and WSL each have their own home directory, so the block is installed **per
 machine**, and the installer is itself the copy step: it writes only inside the profile
-(`%USERPROFILE%\.dsh\AGENTS.md`, `%USERPROFILE%\.claude\CLAUDE.md`, and the Cline/Continue rule files) and never
+(`%USERPROFILE%\.dsh\AGENTS.md`, `%USERPROFILE%\.claude\CLAUDE.md`, and the Continue rule file) and never
 into a system path. No sudo, no machine-wide state, nothing to undo outside your own home directory.
 
 Run in Git Bash, from this folder (Windows):
@@ -82,18 +82,17 @@ Every target receives **one** block delimited by
 ```
 
 Everything outside those markers is untouched, so your own global instructions survive. Rule-directory
-harnesses (Cline, Continue) get the file verbatim instead, since the file itself is the rule.
+harnesses (Continue) get the file verbatim instead, since the file itself is the rule.
 
 | Harness | Linux / macOS (Omarchy) | Windows |
 | :--- | :--- | :--- |
 | DeepSeek Harness | `$DSH_HOME/AGENTS.md` → `~/.dsh/AGENTS.md` | `%USERPROFILE%\.dsh\AGENTS.md` |
 | Claude Code | `~/.claude/CLAUDE.md` | `%USERPROFILE%\.claude\CLAUDE.md` |
-| Cline | `~/Documents/Cline/Rules/documentation-style.md` | `%USERPROFILE%\Documents\Cline\Rules\documentation-style.md` |
 | Continue | `~/.continue/rules/documentation-style.md` (if installed) | same shape under `%USERPROFILE%` |
 
-The scripts probe for an existing directory first (e.g. `~/Cline/Rules`, `~/.cline/rules`) and only
+The scripts probe for an existing directory first (`~/.continue/rules`, `~/.continue`) and only
 fall back to the documented default, so an established setup is detected rather than a parallel one
-created. If a path is wrong for your Cline build, fix the candidate list at the top of each script.
+created.
 
 ---
 
@@ -175,7 +174,7 @@ being silently lost.
 3. Restart each harness. Claude Code and DSH read these files at session start, so a running session
    will not pick up the change.
 
-`install.sh` keeps the marker scheme and the whole-file rule for Cline/Continue on purpose — they are
+`install.sh` keeps the marker scheme and the whole-file rule for Continue on purpose — they are
 what make a re-run idempotent and non-destructive. Change them only together with the README table, and
 re-test on Git Bash as well as on Linux.
 

@@ -30,12 +30,13 @@ Details worth knowing:
 ## The build gate
 
 One script is the whole gate — [`.agents/hooks/pre-commit-build-check.sh`](../.agents/hooks/pre-commit-build-check.sh) —
-and it serves two entry points:
+and it serves one entry point:
 
 | Entry point | Activated by | Status |
 | :---------- | :----------- | :----- |
 | **Git hook** — [`.githooks/pre-commit`](../.githooks/pre-commit), a thin wrapper that `exec`s the gate | `git config core.hooksPath .githooks` (repo-local, one line per clone) | **Working, and the path to rely on.** Verified: a passing build commits, a failing build aborts the commit with the compiler output. Gates your commits *and* an agent's. |
-| **Harness hook** — a `PreToolUse` entry in [`.agents/settings.json`](../.agents/settings.json) | A harness explicitly pointed at that file | **Inert by default.** Claude Code reads `.claude/settings.json`, which this repository no longer has, and DSH was never observed running it. Treat it as documentation of the gate; the git hook is the mechanism. |
+
+The harness `PreToolUse` hook was removed on 2026-11-11 with `.agents/settings.json`; the git hook is the only entry point.
 
 ### Where the gate lives after the split
 
@@ -62,44 +63,15 @@ To activate it in a clone:
 git config core.hooksPath .githooks
 ```
 
-The gate is dual-mode, which is why one file suffices: on a harness call it reads the tool-call JSON
-from stdin and gates on `git commit`; as a git hook there is no payload at all, and it treats that as
-"this is a commit, check it". It never reads stdin unconditionally — a git hook run from a terminal
-inherits a TTY, and a bare `cat` would hang the commit.
+The gate is a git hook: it acts only when `.cs`, `.csproj`, `.props` or `.targets` are staged, and a
+C# commit runs a `--no-incremental` build of the nearest solution first, blocking with the compiler
+output on failure.
 
-It acts only when `.cs`, `.csproj`, `.props` or `.targets` are staged, and a C# commit runs a
-`--no-incremental` build of the nearest solution first, blocking with the compiler output on failure.
+### The harness hook bridge (removed)
 
-### DSH's hook bridge: mounted, but not firing
-
-DSH ships `@deepseek-ai/dsh-hooks-claude-code`, which can run Claude Code command hooks. Getting it
-mounted involves three traps, all of which cost real time to find:
-
-1. **It is not part of `dsh-base`**, and a patch entry alone does not mount a plugin — it must be a
-   profile dependency:
-   `dsh plugin --profile web add @deepseek-ai/dsh-hooks-claude-code@0.2.0-rc.2`
-2. **Pin the version.** The registry's `latest` tag is stale (`0.0.1-rc.5`, a different release line
-   whose peers conflict with the runtime), while the matching build is on **`next`** (`0.2.0-rc.2`).
-   A bare `add <pkg>` is rejected by DSH's version guard.
-3. **A new plugin must be *inserted*, not overridden.** A patch entry with an `id` and no `insert` is an
-   override targeting an existing entry — since this plugin is in no bundle, that form fails with
-   `patch: entry … not found`. The working shape in `~/.dsh/profiles/web/cordis.patch.yml`:
-
-   ```yaml
-   - insert:
-       - name: "@deepseek-ai/dsh-hooks-claude-code"
-         config:
-           configPath: /absolute/path/to/repo/.agents/settings.json
-           projectDir: /absolute/path/to/repo
-   ```
-
-   `--dump-config` then composes it, and the bridge reads `configPath` **once at process load**, so a
-   restart is required after any change.
-
-**Even so, no hook has ever been observed to execute under DSH** — probed repeatedly across a restart,
-with staged C# and a matching command, and with no hook-run record in the session log. The mount is
-harmless and left in place in case a later DSH release honours it; the git hook is what actually
-enforces the build.
+`@deepseek-ai/dsh-hooks-claude-code` was mounted to run the gate as a `PreToolUse` hook, but no hook
+was ever observed to execute under DSH. The bridge and `.agents/settings.json` were removed on
+2026-11-11; the git hook is the only entry point, and the mount instructions are no longer maintained.
 
 ### A build the gate could not perform must not block a commit
 
@@ -145,8 +117,7 @@ To watch it block without creating anything, put a failing `dotnet` stub first o
 (`PATH=/tmp/stub:$PATH git commit -m probe`) and expect exit 2 plus
 `build FAILED … the commit is blocked`.
 
-To disable it: `git config --unset core.hooksPath` (git route) or drop the `hooks` key from
-`.agents/settings.json` (Claude Code). `git commit --no-verify` skips the git hook.
+To disable it: `git config --unset core.hooksPath`. `git commit --no-verify` skips the git hook.
 
 ## Related
 

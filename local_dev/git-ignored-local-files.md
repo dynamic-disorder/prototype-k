@@ -17,7 +17,7 @@ Why it was ignored originally, and why the cleanup was needed:
 1. **Personal / work configuration.** It had been adapted for a work Claude Code setup as well as for
    this repository, so it mixed two kinds of machine state: the author's own Windows profile path and
    drive letters, and a ticket-tracker key with work-domain example types. The tracked files under
-   `.agents/skills/`, `.clinerules` and `.claudeignore` were reviewed for exactly these markers at the
+   `.agents/skills/` was reviewed for exactly these markers at the
    same time; the unsanitised snapshot stayed out of git.
 2. **Outdated.** Written months earlier; practice had moved on, and several rules contradicted the
    repo's own `.editorconfig` and code.
@@ -38,7 +38,7 @@ left here now:
 ignore rule — that extra negation is what keeps the skills in git.
 
 Also present in the tree but **tracked**, so not part of the ignored set:
-`.agents/settings.json` and `.agents/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
+`.agents/hooks/pre-commit-build-check.sh` — the build gate. See section 2.
 
 Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into skills or generic),
 `skills/csharp-code-reviewer`, `skills/html-review-generator`, `skills/personal-cc-exporter`,
@@ -103,11 +103,9 @@ distro's own machine-level skills, which is the right scope for them.
 
 Two related notes:
 
-- **The build gate's configuration is shared; its activation is not.** `.agents/settings.json` and
-  `.agents/hooks/pre-commit-build-check.sh` are tracked, so every clone has them — but DSH only runs
-  them once `dsh-hooks-claude-code` is mounted in the machine's profile *and* DSH has been restarted.
-  The mechanism, the `bash|Bash` matcher subtlety and the verification steps are documented in
-  [`deepseek-harness.md`](deepseek-harness.md).
+- **The build gate is a git hook.** `.agents/hooks/pre-commit-build-check.sh` is tracked, so every
+  clone has it; `core.hooksPath .githooks` is the only activation. The former harness hook and its
+  `.agents/settings.json` were removed on 2026-11-11.
 - **User-global DSH config is outside this repository** — `~/.dsh/` (settings, profiles, sessions) and
   `~/.agents/skills/` — and outside the agent sandbox's writable area. Granting permission in
   conversation does **not** lift that: writes there are refused unless elevated sandbox access is
@@ -122,17 +120,13 @@ directory and re-includes the shared paths explicitly, so the rule and the track
 
 | Path | Role |
 | :--- | :--- |
-| `.agents/settings.json` | Shareable settings layer; carries the `PreToolUse` build gate |
 | `.agents/hooks/pre-commit-build-check.sh` | The enforcement itself |
 | the per-project `CsvTranslations/…`, `FilenameTools/…` entries | Commands, rules and settings for a project. **Moved with their projects on 2026-10-15** — they live in those repositories now, which carry the same ignore and re-include rules |
-| `.clinerules` | Cline rules, shared on purpose |
-| `.claudeignore` | Claude Code's file-exclusion list for this repository |
 
 The rules that carry it:
 
 ```gitignore
 **/.agents/*          # contents only, so re-inclusion below is possible at all
-!**/.agents/settings.json
 !**/.agents/commands/
 !**/.agents/hooks/
 !**/.agents/rules/

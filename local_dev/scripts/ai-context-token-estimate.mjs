@@ -23,9 +23,6 @@ import { parseArgs } from 'node:util';
 const patterns = [
   'AGENTS.md',
   '**/AGENTS.md',
-  '.clinerules',
-  '.github/copilot-instructions.md',
-  '**/.github/copilot-instructions.md',
   '**/.agents/rules/*.md',
 ];
 

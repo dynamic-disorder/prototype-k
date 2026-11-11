@@ -68,7 +68,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
 | `output-style/` | The executive-first writing style installed into every harness's user-global config: `documentation-style.md` (rules), `managed-block.md` (injected text), `install.sh` (`--check` reports drift) |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
-| `.github/`, `.clinerules`, `.claudeignore`, `.agents/`, `.githooks/` | Instruction and gate configuration, kept as templates |
+| `.github/`, `.agents/`, `.githooks/` | Instruction and gate configuration, kept as templates |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
 Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
@@ -94,11 +94,10 @@ One directory, `.agents/`, holds everything the harnesses read; `.claude/` no lo
 | :--- | :--- |
 | `AGENTS.md`, `CsvTranslations/AGENTS.md` | Instructions, chained from the repository root down to the working directory |
 | `.agents/skills/` | The canonical, tracked, tool-neutral skills; each project repository carries the subset it needs |
-| `.agents/settings.json`, `.agents/hooks/` | The `PreToolUse` build gate in Claude Code's settings format |
+| `.agents/hooks/` | The build gate |
 | `.agents/commands/`, `.agents/rules/` | Slash commands and path-scoped rules, when a tree carries them |
-| `.clinerules`, `.claudeignore`, `.github/copilot-instructions.md` | The Cline, Claude Code and Copilot surfaces |
 
-`.gitignore` ignores the *contents* of every `.agents/` directory and re-includes only that shared set, so anything else dropped there stays machine-local. `.agents/settings.json` is only effective when a harness is pointed at it — Claude Code reads `.claude/settings.json`, which is gone — so the git hook in `.githooks/pre-commit` is the gate that always runs. It also runs `local_dev/scripts/scan-publication-leaks.sh` before the build, and a hit blocks the commit.
+`.gitignore` ignores the *contents* of every `.agents/` directory and re-includes only that shared set, so anything else dropped there stays machine-local. The git hook in `.githooks/pre-commit` is the gate that always runs; it also runs `local_dev/scripts/scan-publication-leaks.sh` before the build, and a hit blocks the commit.
 
 ## Environment & style
 
