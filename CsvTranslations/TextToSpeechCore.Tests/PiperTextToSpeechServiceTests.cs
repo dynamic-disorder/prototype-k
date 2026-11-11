@@ -30,6 +30,9 @@ public sealed class PiperTextToSpeechServiceTests
 
     // --------------------------------------------------------------- construction / properties
 
+    /// <summary>
+    ///     Verifies the service exposes the language list it was given, unchanged.
+    /// </summary>
     [Fact]
     public void Constructor_ExposesConfiguredVoiceLanguages()
     {
@@ -44,6 +47,9 @@ public sealed class PiperTextToSpeechServiceTests
         sut.VoiceLanguages.Count.ShouldBe(2);
     }
 
+    /// <summary>
+    ///     Verifies the optional row entries may be omitted when constructing the service.
+    /// </summary>
     [Fact]
     public void Constructor_WithoutRowEntries_IsAccepted()
     {
@@ -59,6 +65,9 @@ public sealed class PiperTextToSpeechServiceTests
 
     // ------------------------------------------------------------------------ SpeakTextAsync
 
+    /// <summary>
+    ///     Verifies null text is ignored and playback is never called.
+    /// </summary>
     [Fact]
     public async Task SpeakTextAsync_NullText_DoesNotPlay()
     {
@@ -69,6 +78,9 @@ public sealed class PiperTextToSpeechServiceTests
         _playback.CallCount.ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies whitespace-only text is ignored and playback is never called.
+    /// </summary>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -84,6 +96,9 @@ public sealed class PiperTextToSpeechServiceTests
         _playback.CallCount.ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies a configured voice alone is not enough: without initialization nothing is played.
+    /// </summary>
     [Fact]
     public async Task SpeakTextAsync_TextButNoInitializedProvider_DoesNotPlay()
     {
@@ -97,6 +112,9 @@ public sealed class PiperTextToSpeechServiceTests
         _playback.CallCount.ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies a language with no configured voice is skipped silently and without an error.
+    /// </summary>
     [Fact]
     public async Task SpeakTextAsync_ExplicitLanguageWithoutConfiguredProvider_DoesNotPlay()
     {
@@ -111,6 +129,9 @@ public sealed class PiperTextToSpeechServiceTests
         _playback.CallCount.ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies the default voice is not spoken before a provider exists.
+    /// </summary>
     [Fact]
     public async Task SpeakTextAsync_DefaultVoice_DoesNotPlayWhenNoProviderExists()
     {
@@ -126,6 +147,9 @@ public sealed class PiperTextToSpeechServiceTests
 
     // ----------------------------------------------------------------------- SpeakEntryAsync
 
+    /// <summary>
+    ///     Verifies an entry whose text is empty is skipped.
+    /// </summary>
     [Fact]
     public async Task SpeakEntryAsync_EntryWithEmptyText_DoesNotPlay()
     {
@@ -137,6 +161,9 @@ public sealed class PiperTextToSpeechServiceTests
         _playback.CallCount.ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies an entry in a language with no provider is skipped.
+    /// </summary>
     [Fact]
     public async Task SpeakEntryAsync_EntryWhoseLanguageHasNoProvider_DoesNotPlay()
     {
@@ -153,6 +180,9 @@ public sealed class PiperTextToSpeechServiceTests
 
     // --------------------------------------------------------------------- ListInstalledVoices
 
+    /// <summary>
+    ///     Verifies each configured language is listed once, named by its built model key.
+    /// </summary>
     [Fact]
     public void ListInstalledVoices_ReturnsOneVoicePerConfiguredLanguage()
     {
@@ -170,6 +200,9 @@ public sealed class PiperTextToSpeechServiceTests
         voices.ShouldContain(v => v.DisplayName == "fi_FI-harri-medium" && v.TwoLetterIsoLanguageName == "Finnish");
     }
 
+    /// <summary>
+    ///     Verifies a service with no configured voices lists nothing.
+    /// </summary>
     [Fact]
     public void ListInstalledVoices_NoConfiguredVoices_ReturnsEmpty()
     {
@@ -178,6 +211,9 @@ public sealed class PiperTextToSpeechServiceTests
         sut.ListInstalledVoices().ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     Verifies voice listing describes configuration and works before initialization.
+    /// </summary>
     [Fact]
     public void ListInstalledVoices_DoesNotDependOnInitialization()
     {
@@ -193,6 +229,9 @@ public sealed class PiperTextToSpeechServiceTests
 
     // --------------------------------------------------------------------------------- Dispose
 
+    /// <summary>
+    ///     Verifies disposing the service twice is safe.
+    /// </summary>
     [Fact]
     public void Dispose_IsIdempotent()
     {
@@ -205,6 +244,9 @@ public sealed class PiperTextToSpeechServiceTests
         });
     }
 
+    /// <summary>
+    ///     Verifies speaking after disposal is a no-op rather than an error.
+    /// </summary>
     [Fact]
     public async Task Dispose_ThenSpeak_DoesNotPlay()
     {

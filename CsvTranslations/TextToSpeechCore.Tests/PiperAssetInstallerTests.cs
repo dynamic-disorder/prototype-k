@@ -24,6 +24,9 @@ public sealed class PiperAssetInstallerTests
 
     // ------------------------------------------------------------------------------------ engine
 
+    /// <summary>
+    ///     Verifies an engine already on disk is reported as cached, with no download and no new manifest.
+    /// </summary>
     [Fact]
     public async Task EnsureEngineAsync_FreshEngineOnDisk_ReportsCacheHitWithoutDownloading()
     {
@@ -50,6 +53,10 @@ public sealed class PiperAssetInstallerTests
         progress.Reports.ShouldNotContain(r => r.Stage == PiperAssetStage.Downloading);
     }
 
+    /// <summary>
+    ///     Verifies a missing engine is downloaded, extracted with its data, recorded in the manifest, and
+    ///     reported in megabytes.
+    /// </summary>
     [Fact]
     public async Task EnsureEngineAsync_MissingEngine_DownloadsExtractsAndRecordsTheInstall()
     {
@@ -90,6 +97,10 @@ public sealed class PiperAssetInstallerTests
         downloadReport.Message.ShouldContain(PiperSizeFormatter.Format(archive.Length));
     }
 
+    /// <summary>
+    ///     Verifies an archive without the executable fails the install instead of leaving a half-installed
+    ///     engine.
+    /// </summary>
     [Fact]
     public async Task EnsureEngineAsync_ArchiveWithoutTheExecutable_ReportsFailure()
     {
@@ -113,6 +124,10 @@ public sealed class PiperAssetInstallerTests
 
     // ------------------------------------------------------------------------------ voice models
 
+    /// <summary>
+    ///     Verifies a complete model on disk is loaded without touching the network or the remote voice
+    ///     list.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_CachedAndFresh_ReusesTheModelWithoutNetworkOrVoiceList()
     {
@@ -150,6 +165,10 @@ public sealed class PiperAssetInstallerTests
         progress.Reports.ShouldNotContain(r => r.Stage == PiperAssetStage.Downloading);
     }
 
+    /// <summary>
+    ///     Verifies every model file is downloaded from the voice repository, its audio config is kept, and
+    ///     progress reports megabytes.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_UncachedModel_DownloadsEveryFileAndRecordsTheInstall()
     {
@@ -212,6 +231,10 @@ public sealed class PiperAssetInstallerTests
         installedReport.AssetMegabytes.ShouldBeGreaterThan(3.0);
     }
 
+    /// <summary>
+    ///     Verifies an interrupted download fetches only the missing files and starts its progress from the
+    ///     bytes already on disk.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_PartiallyDownloadedModel_ReusesTheCompleteFiles()
     {
@@ -244,6 +267,9 @@ public sealed class PiperAssetInstallerTests
 
     // ------------------------------------------------------------------------------------ failures
 
+    /// <summary>
+    ///     Verifies a model absent from the voice list fails with a message naming that model.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_ModelNotInTheVoiceList_ReportsFailure()
     {
@@ -263,6 +289,9 @@ public sealed class PiperAssetInstallerTests
         progress.Reports.ShouldContain(r => r.IsFailed && r.AssetKey == "xx_XX-missing-low" && r.Kind == PiperAssetKind.VoiceModel);
     }
 
+    /// <summary>
+    ///     Verifies an unreachable voice list fails that one model without blocking the other languages.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_VoiceListUnavailable_ReportsFailure()
     {
@@ -283,6 +312,9 @@ public sealed class PiperAssetInstallerTests
         progress.Reports.ShouldContain(r => r.IsFailed);
     }
 
+    /// <summary>
+    ///     Verifies a failed download records no install, so the next run tries again.
+    /// </summary>
     [Fact]
     public async Task EnsureVoiceModelAsync_DownloadFails_ReportsFailureWithoutRecordingAnInstall()
     {

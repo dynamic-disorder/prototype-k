@@ -14,6 +14,10 @@ using Shouldly;
 
 namespace OllamaTranslatorApi.Tests;
 
+/// <summary>
+///     Tests for <see cref="OllamaTranslator" />: prompt selection, single and batch
+///     translation, order preservation under parallelism, and CSV file processing.
+/// </summary>
 public sealed class OllamaTranslatorTests
 {
     private readonly ITranslationService _translationService;
@@ -30,6 +34,10 @@ public sealed class OllamaTranslatorTests
     // TestTranslationService contract
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies the hand-written test service maps a known word to its fixed translation, so the other
+    ///     tests rest on a sound stub.
+    /// </summary>
     [Fact]
     public async Task TranslationService_KnownText_ReturnsExpectedTranslation()
     {
@@ -43,6 +51,9 @@ public sealed class OllamaTranslatorTests
         result.TranslatedText.ShouldBe("Hola");
     }
 
+    /// <summary>
+    ///     Verifies the test service marks its special sentinel text with a mock translation prefix.
+    /// </summary>
     [Fact]
     public async Task TranslationService_SpecialCaseText_ReturnsMockIndicator()
     {
@@ -60,6 +71,9 @@ public sealed class OllamaTranslatorTests
     // OllamaUrl
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies a translator built without settings points at the stock local Ollama endpoint.
+    /// </summary>
     [Fact]
     public void OllamaUrl_DefaultSettings_ReturnsDefaultApiUrl()
     {
@@ -72,6 +86,9 @@ public sealed class OllamaTranslatorTests
         url.ShouldBe("http://localhost:11434/api/generate");
     }
 
+    /// <summary>
+    ///     Verifies the API URL from settings is exposed unchanged.
+    /// </summary>
     [Fact]
     public void OllamaUrl_CustomSettings_ReturnsConfiguredUrl()
     {
@@ -90,6 +107,9 @@ public sealed class OllamaTranslatorTests
     // OllamaLlmModelName
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies the model name comes from the translation service rather than being cached locally.
+    /// </summary>
     [Fact]
     public void OllamaLlmModelName_WithService_DelegatesGetLlmModelNameToService()
     {
@@ -107,6 +127,10 @@ public sealed class OllamaTranslatorTests
     // TranslateAsync
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies a plain response becomes an entry that keeps the source text and carries the
+    ///     translation.
+    /// </summary>
     [Fact]
     public async Task TranslateAsync_KnownText_ReturnsEntryWithTargetText()
     {
@@ -123,6 +147,9 @@ public sealed class OllamaTranslatorTests
         result.TargetText.ShouldBe("Hola");
     }
 
+    /// <summary>
+    ///     Verifies a response carrying hashtags is split on the pipe into target text and hashtag parts.
+    /// </summary>
     [Fact]
     public async Task TranslateAsync_ResponseWithHashtags_PopulatesBothTargetTextAndHashtags()
     {
@@ -138,6 +165,9 @@ public sealed class OllamaTranslatorTests
         result.Hashtags.ShouldBe("#noun #animal");
     }
 
+    /// <summary>
+    ///     Verifies an empty service response yields an entry with no target text instead of throwing.
+    /// </summary>
     [Fact]
     public async Task TranslateAsync_EmptyServiceResponse_ReturnsEntryWithEmptyTargetText()
     {
@@ -152,6 +182,9 @@ public sealed class OllamaTranslatorTests
         result.TargetText.ShouldBe(string.Empty);
     }
 
+    /// <summary>
+    ///     Verifies a per-call prompt reaches the service unchanged alongside the source text.
+    /// </summary>
     [Fact]
     public async Task TranslateAsync_CustomPromptOverride_ForwardsPromptToService()
     {
@@ -169,6 +202,9 @@ public sealed class OllamaTranslatorTests
             .MustHaveHappenedOnceExactly();
     }
 
+    /// <summary>
+    ///     Verifies the prompt configured in settings is used when the call supplies none.
+    /// </summary>
     [Fact]
     public async Task TranslateAsync_DefaultPromptFromSettings_UsedWhenNoPromptProvided()
     {
@@ -192,6 +228,9 @@ public sealed class OllamaTranslatorTests
     // BatchTranslateAsync
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies an empty batch returns an empty list and never calls the service.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_EmptyList_ReturnsEmptyListWithoutCallingService()
     {
@@ -206,6 +245,9 @@ public sealed class OllamaTranslatorTests
         A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored)).MustNotHaveHappened();
     }
 
+    /// <summary>
+    ///     Verifies every entry in a batch is translated and returned in the caller's order.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_MultipleEntries_TranslatesAll()
     {
@@ -235,6 +277,9 @@ public sealed class OllamaTranslatorTests
         translated.ShouldContain(e => e.SourceText == "Test" && e.TargetText == "Prueba");
     }
 
+    /// <summary>
+    ///     Verifies results keep the input order even when the first entry is the slowest translation.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_TranslationsFinishOutOfOrder_StillPreservesInputOrder()
     {
@@ -263,6 +308,10 @@ public sealed class OllamaTranslatorTests
         translated.Select(e => e.TargetText).ShouldBe(["Ensimmäinen", "Toinen", "Kolmas"]);
     }
 
+    /// <summary>
+    ///     Verifies the input order survives when a batch exceeds the parallelism limit and completes in
+    ///     waves.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_ManyEntries_PreservesInputOrder()
     {
@@ -281,6 +330,9 @@ public sealed class OllamaTranslatorTests
         translated.Select(e => e.SourceText).ShouldBe(entries.Select(e => e.SourceText));
     }
 
+    /// <summary>
+    ///     Verifies one failing entry keeps its empty target text without losing the other translations.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_ServiceThrowsForOneEntry_OtherEntriesStillTranslated()
     {
@@ -304,6 +356,9 @@ public sealed class OllamaTranslatorTests
         result.ShouldContain(e => e.SourceText == "Bad" && e.TargetText == string.Empty);
     }
 
+    /// <summary>
+    ///     Verifies a reduced parallelism limit still translates every entry.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_WithMaxParallelism_AllEntriesTranslated()
     {
@@ -322,6 +377,9 @@ public sealed class OllamaTranslatorTests
         translated.ShouldAllBe(e => e.TargetText == "käännös");
     }
 
+    /// <summary>
+    ///     Verifies a batch holding one entry translates that entry.
+    /// </summary>
     [Fact]
     public async Task BatchTranslateAsync_SingleEntry_TranslatesEntry()
     {
@@ -342,6 +400,9 @@ public sealed class OllamaTranslatorTests
     // ProcessCsvAsync
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    ///     Verifies processing a CSV file writes an output file holding the translated rows.
+    /// </summary>
     [Fact]
     public async Task ProcessCsvAsync_ValidCsvFile_CreatesOutputWithTranslatedContent()
     {
@@ -368,6 +429,9 @@ public sealed class OllamaTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies an empty input creates the output file and triggers no translation calls.
+    /// </summary>
     [Fact]
     public async Task ProcessCsvAsync_EmptyInputFile_CreatesEmptyOutputWithoutTranslating()
     {
@@ -391,6 +455,9 @@ public sealed class OllamaTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies a missing input path is reported with the path that was looked for.
+    /// </summary>
     [Fact]
     public async Task ProcessCsvAsync_NonExistentInput_ThrowsFileNotFoundException()
     {

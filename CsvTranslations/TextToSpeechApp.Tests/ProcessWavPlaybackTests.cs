@@ -14,6 +14,10 @@ public sealed class ProcessWavPlaybackTests
 {
     // ---------- candidate lists and argument shapes ----------
 
+    /// <summary>
+    ///     Verifies the Linux list prefers PipeWire and falls back in order, handing every player just the
+    ///     WAV path.
+    /// </summary>
     [Fact]
     public void LinuxPlayers_ShouldPreferPipeWireAndPassTheFileAsTheOnlyArgument()
     {
@@ -31,6 +35,9 @@ public sealed class ProcessWavPlaybackTests
         }
     }
 
+    /// <summary>
+    ///     Verifies macOS offers only afplay and passes it just the WAV path.
+    /// </summary>
     [Fact]
     public void MacOsPlayers_ShouldUseAfplayWithTheFileAsTheOnlyArgument()
     {
@@ -42,6 +49,10 @@ public sealed class ProcessWavPlaybackTests
         players[0].ArgumentsFor("/tmp/speech.wav").ShouldBe(["/tmp/speech.wav"]);
     }
 
+    /// <summary>
+    ///     Verifies Windows tries both PowerShell editions, playing through PlaySync with the file named in
+    ///     the script.
+    /// </summary>
     [Fact]
     public void WindowsPlayers_ShouldPlayThroughPowerShellSoundPlayer()
     {
@@ -61,6 +72,9 @@ public sealed class ProcessWavPlaybackTests
         arguments.ShouldContain(argument => argument.Contains("/tmp/speech.wav", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    ///     Verifies a single quote in the WAV path is doubled so the PowerShell script stays valid.
+    /// </summary>
     [Fact]
     public void WindowsPlayers_WithAQuoteInThePath_ShouldEscapeItForPowerShell()
     {
@@ -71,6 +85,9 @@ public sealed class ProcessWavPlaybackTests
         arguments.ShouldContain(argument => argument.Contains("it''s here.wav", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    ///     Verifies the platform lookup returns the candidate list matching the running OS.
+    /// </summary>
     [Fact]
     public void GetPlayers_ShouldReturnTheListForThisPlatform()
     {
@@ -87,6 +104,9 @@ public sealed class ProcessWavPlaybackTests
 
     // ---------- discovery ----------
 
+    /// <summary>
+    ///     Verifies the most preferred installed player wins.
+    /// </summary>
     [Fact]
     public void FindPlayer_WhenTheFirstCandidateExists_ShouldPreferIt()
     {
@@ -101,6 +121,9 @@ public sealed class ProcessWavPlaybackTests
         actual.Value.Player.ExecutableName.ShouldBe(ProcessWavPlayback.GetPlayers()[0].ExecutableName);
     }
 
+    /// <summary>
+    ///     Verifies a later installed candidate is used together with its resolved path.
+    /// </summary>
     [Fact]
     public void FindPlayer_WhenOnlyALaterCandidateExists_ShouldUseThatOne()
     {
@@ -116,6 +139,9 @@ public sealed class ProcessWavPlaybackTests
         actual.Value.Path.ShouldBe("/usr/bin/aplay");
     }
 
+    /// <summary>
+    ///     Verifies a machine with no installed player reports nothing rather than throwing.
+    /// </summary>
     [Fact]
     public void FindPlayer_WhenNothingIsInstalled_ShouldReturnNull()
     {
@@ -126,6 +152,9 @@ public sealed class ProcessWavPlaybackTests
         actual.ShouldBeNull();
     }
 
+    /// <summary>
+    ///     Verifies creating playback without a player names one to install and mentions PATH.
+    /// </summary>
     [Fact]
     public void Create_WhenNoPlayerIsInstalled_ShouldExplainWhatToInstall()
     {
@@ -137,6 +166,9 @@ public sealed class ProcessWavPlaybackTests
         exception.Message.ShouldContain("PATH");
     }
 
+    /// <summary>
+    ///     Verifies an empty player path is rejected with the parameter named.
+    /// </summary>
     [Fact]
     public void Constructor_WithNoPlayerPath_ShouldRejectIt()
     {
@@ -150,6 +182,10 @@ public sealed class ProcessWavPlaybackTests
 
     // ---------- playback ----------
 
+    /// <summary>
+    ///     Verifies the player receives the complete WAV bytes and the temporary copy is removed
+    ///     afterwards.
+    /// </summary>
     [Fact]
     public async Task PlayWavAsync_ShouldGiveThePlayerTheWholeWavFileAndCleanItUp()
     {
@@ -189,6 +225,10 @@ public sealed class ProcessWavPlaybackTests
         }
     }
 
+    /// <summary>
+    ///     Verifies a failing player's exit code and its own error reach the exception, and the temporary
+    ///     copy is still removed.
+    /// </summary>
     [Fact]
     public async Task PlayWavAsync_WhenThePlayerFails_ShouldReportItsExitCodeAndCleanUp()
     {

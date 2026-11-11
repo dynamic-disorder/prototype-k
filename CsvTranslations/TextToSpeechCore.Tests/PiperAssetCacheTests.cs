@@ -16,6 +16,9 @@ public sealed class PiperAssetCacheTests
 
     // ------------------------------------------------------------------------------- paths / ttl
 
+    /// <summary>
+    ///     Verifies a cache without a root falls back to PiperSharp's own engine and model locations.
+    /// </summary>
     [Fact]
     public void Constructor_WithoutRoot_UsesPiperSharpsDefaultLocation()
     {
@@ -28,6 +31,9 @@ public sealed class PiperAssetCacheTests
         cache.ModelsDirectory.ShouldBe(Path.GetFullPath(PiperDownloader.DefaultModelLocation));
     }
 
+    /// <summary>
+    ///     Verifies the engine, models and per-model directories sit directly below the supplied root.
+    /// </summary>
     [Fact]
     public void Constructor_WithRoot_PlacesEngineAndModelsBelowIt()
     {
@@ -42,6 +48,9 @@ public sealed class PiperAssetCacheTests
             .ShouldBe(Path.Join(Path.GetFullPath(temp.Path), PiperAssetCache.ModelsDirectoryName, "vi_VN-vivos-x_low"));
     }
 
+    /// <summary>
+    ///     Verifies the cache time-to-live defaults to fourteen days.
+    /// </summary>
     [Fact]
     public void CacheTtl_DefaultsToTwoWeeks()
     {
@@ -53,6 +62,9 @@ public sealed class PiperAssetCacheTests
 
     // ---------------------------------------------------------------------------------- freshness
 
+    /// <summary>
+    ///     Verifies an empty directory is reported stale and every required file is listed as missing.
+    /// </summary>
     [Fact]
     public void InspectAsset_NothingOnDisk_IsNotFreshAndListsEveryMissingFile()
     {
@@ -73,6 +85,10 @@ public sealed class PiperAssetCacheTests
         status.Reason.ShouldContain("missing 2 file(s)");
     }
 
+    /// <summary>
+    ///     Verifies files without a manifest are reused on their newest write time, with their total size
+    ///     reported.
+    /// </summary>
     [Fact]
     public void InspectAsset_AllFilesPresentWithoutManifest_UsesTheNewestFileTimestamp()
     {
@@ -97,6 +113,9 @@ public sealed class PiperAssetCacheTests
         status.Reason.ShouldContain("within");
     }
 
+    /// <summary>
+    ///     Verifies an asset older than the time-to-live is downloaded and extracted again.
+    /// </summary>
     [Fact]
     public void InspectAsset_FilesOlderThanTheTtl_IsNotFresh()
     {
@@ -117,6 +136,9 @@ public sealed class PiperAssetCacheTests
         status.Reason.ShouldContain("exceeds");
     }
 
+    /// <summary>
+    ///     Verifies the manifest alone is not enough: a missing required file makes the asset stale.
+    /// </summary>
     [Fact]
     public void InspectAsset_ManifestPresentButARequiredFileIsMissing_IsNotFresh()
     {
@@ -136,6 +158,9 @@ public sealed class PiperAssetCacheTests
         status.Reason.ShouldContain("missing 1 file(s)");
     }
 
+    /// <summary>
+    ///     Verifies an unreadable manifest is ignored in favour of the file timestamps.
+    /// </summary>
     [Fact]
     public void InspectAsset_CorruptManifest_FallsBackToTheFileTimestamps()
     {
@@ -156,6 +181,10 @@ public sealed class PiperAssetCacheTests
 
     // ---------------------------------------------------------------------------------- manifests
 
+    /// <summary>
+    ///     Verifies a recorded install writes a manifest and the next inspection reuses the asset with its
+    ///     size.
+    /// </summary>
     [Fact]
     public void RecordAssetInstall_WritesAManifestThatKeepsTheAssetFresh()
     {
@@ -179,6 +208,10 @@ public sealed class PiperAssetCacheTests
         status.SizeBytes.ShouldBe(4096);
     }
 
+    /// <summary>
+    ///     Verifies the recorded install time, not the newer file timestamps, decides when an asset
+    ///     expires.
+    /// </summary>
     [Fact]
     public void InspectAsset_ManifestOlderThanTheTtl_IsNotFreshEvenWhenTheFilesAreNewer()
     {
@@ -213,6 +246,9 @@ public sealed class PiperAssetCacheTests
         staleStatus.Reason.ShouldContain("exceeds");
     }
 
+    /// <summary>
+    ///     Verifies an unlimited time-to-live keeps even a five-year-old asset fresh.
+    /// </summary>
     [Fact]
     public void InspectAsset_WithoutExpiry_KeepsTheAssetFreshForever()
     {
@@ -235,6 +271,9 @@ public sealed class PiperAssetCacheTests
 
     // ------------------------------------------------------------------------------------- sizing
 
+    /// <summary>
+    ///     Verifies the directory size adds nested files and leaves the manifest out.
+    /// </summary>
     [Fact]
     public void GetDirectorySizeBytes_SumsNestedFilesAndIgnoresManifests()
     {
@@ -250,6 +289,9 @@ public sealed class PiperAssetCacheTests
         PiperAssetCache.GetDirectorySizeBytes(modelDirectory).ShouldBe(350);
     }
 
+    /// <summary>
+    ///     Verifies a directory that does not exist measures zero bytes.
+    /// </summary>
     [Fact]
     public void GetDirectorySizeBytes_MissingDirectory_IsZero()
     {
@@ -259,6 +301,9 @@ public sealed class PiperAssetCacheTests
         PiperAssetCache.GetDirectorySizeBytes(cache.EngineDirectory).ShouldBe(0);
     }
 
+    /// <summary>
+    ///     Verifies a directory holding no files reports no write time at all.
+    /// </summary>
     [Fact]
     public void TryGetNewestWriteTimeUtc_DirectoryWithoutFiles_IsNull()
     {

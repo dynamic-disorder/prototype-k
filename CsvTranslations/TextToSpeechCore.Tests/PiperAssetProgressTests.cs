@@ -12,6 +12,9 @@ public sealed class PiperAssetProgressTests
 
     // ---------------------------------------------------------------------------------- labels
 
+    /// <summary>
+    ///     Verifies engine progress is labelled as the Piper TTS engine and keeps its asset key.
+    /// </summary>
     [Fact]
     public void Constructor_EngineKind_LabelsTheEngine()
     {
@@ -21,6 +24,9 @@ public sealed class PiperAssetProgressTests
         progress.AssetKey.ShouldBe(PiperAssetInstaller.EngineAssetKey);
     }
 
+    /// <summary>
+    ///     Verifies model progress names the voice model by its key.
+    /// </summary>
     [Fact]
     public void Constructor_VoiceModelKind_LabelsTheModelWithItsKey()
     {
@@ -29,6 +35,10 @@ public sealed class PiperAssetProgressTests
         progress.AssetLabel.ShouldBe("Voice model 'vi_VN-vivos-x_low'");
     }
 
+    /// <summary>
+    ///     Verifies a report without sizes shows zero bytes, megabytes and percent, and counts as
+    ///     indeterminate.
+    /// </summary>
     [Fact]
     public void Constructor_WithoutSizes_ReportsZeroMegabytes()
     {
@@ -46,6 +56,10 @@ public sealed class PiperAssetProgressTests
 
     // --------------------------------------------------------------------------- percent complete
 
+    /// <summary>
+    ///     Verifies the percentage is rounded and clamped between zero and one hundred for zero, negative
+    ///     and over-complete byte counts.
+    /// </summary>
     [Theory]
     [InlineData(0, 0, 0)]
     [InlineData(0, 100, 0)]
@@ -61,6 +75,9 @@ public sealed class PiperAssetProgressTests
         PiperAssetProgress.CalculatePercentComplete(receivedBytes, totalBytes).ShouldBe(expected);
     }
 
+    /// <summary>
+    ///     Verifies half the bytes downloaded reports fifty percent and a determinate bar.
+    /// </summary>
     [Fact]
     public void PercentComplete_ReportsTheDownloadedShare()
     {
@@ -78,6 +95,9 @@ public sealed class PiperAssetProgressTests
 
     // ----------------------------------------------------------------------------- size formatting
 
+    /// <summary>
+    ///     Verifies sizes are shown in binary megabytes with one decimal.
+    /// </summary>
     [Theory]
     [InlineData(0, "0.0 MB")]
     [InlineData(Megabyte, "1.0 MB")]
@@ -88,18 +108,27 @@ public sealed class PiperAssetProgressTests
         PiperSizeFormatter.Format(bytes).ShouldBe(expected);
     }
 
+    /// <summary>
+    ///     Verifies a megabyte is counted as 1024 times 1024 bytes.
+    /// </summary>
     [Fact]
     public void ToMegabytes_UsesBinaryMegabytes()
     {
         PiperSizeFormatter.ToMegabytes(2 * Megabyte).ShouldBe(2.0);
     }
 
+    /// <summary>
+    ///     Verifies progress text pairs received and total megabytes with the percentage.
+    /// </summary>
     [Fact]
     public void FormatProgress_WithTotal_ShowsReceivedTotalAndPercentage()
     {
         PiperSizeFormatter.FormatProgress(27 * Megabyte, 54 * Megabyte).ShouldBe("27.0 / 54.0 MB (50%)");
     }
 
+    /// <summary>
+    ///     Verifies progress text omits the total when none is known.
+    /// </summary>
     [Fact]
     public void FormatProgress_WithoutTotal_ShowsReceivedOnly()
     {
@@ -108,6 +137,9 @@ public sealed class PiperAssetProgressTests
 
     // ------------------------------------------------------------------------------------ stages
 
+    /// <summary>
+    ///     Verifies cache hits and installs count as complete and only failures count as failed.
+    /// </summary>
     [Theory]
     [InlineData(PiperAssetStage.CacheHit, true, false)]
     [InlineData(PiperAssetStage.Installed, true, false)]
@@ -121,6 +153,9 @@ public sealed class PiperAssetProgressTests
         progress.IsFailed.ShouldBe(expectedFailed);
     }
 
+    /// <summary>
+    ///     Verifies the text form pairs the asset label with the stage message.
+    /// </summary>
     [Fact]
     public void ToString_CombinesTheAssetLabelAndTheMessage()
     {

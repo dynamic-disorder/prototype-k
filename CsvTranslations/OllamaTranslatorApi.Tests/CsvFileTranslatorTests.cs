@@ -30,6 +30,10 @@ public sealed class CsvFileTranslatorTests
         _ollamaTranslator = new OllamaTranslator(_testTranslationService);
     }
 
+    /// <summary>
+    ///     Verifies a populated CSV file is translated row by row into the target file, with the row count
+    ///     in the returned message.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_ValidCsvFile_TranslatesAllRecords()
     {
@@ -60,6 +64,10 @@ public sealed class CsvFileTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies a missing input path surfaces as <see cref="FileNotFoundException" /> instead of an
+    ///     empty result.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_FileNotFound_ThrowsFileNotFoundException()
     {
@@ -73,6 +81,9 @@ public sealed class CsvFileTranslatorTests
             async () => await sut.TranslateFileAsync(inputPath, outputPath));
     }
 
+    /// <summary>
+    ///     Verifies a header-only CSV reports that no records were found and leaves no output file behind.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_EmptyCsvFile_ReturnsErrorMessage()
     {
@@ -99,6 +110,9 @@ public sealed class CsvFileTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies a per-call prompt is accepted and the file is still translated and written.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_WithCustomPrompt_UsesCustomPromptForTranslation()
     {
@@ -133,6 +147,10 @@ public sealed class CsvFileTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies one failed translation falls back to its source text while the other rows are still
+    ///     translated.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_TranslationFails_FallbackToSourceTextInOutput()
     {
@@ -164,6 +182,9 @@ public sealed class CsvFileTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies a missing output directory is created before the translated file is written.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_OutputDirectoryDoesNotExist_CreatesDirectory()
     {
@@ -197,6 +218,9 @@ public sealed class CsvFileTranslatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies translation succeeds through the translator's default prompt when the call passes none.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_WithoutCustomPrompt_UsesTranslatorDefaultPrompt()
     {

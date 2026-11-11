@@ -23,6 +23,9 @@ public sealed class TextFileTranslatorTests
 
     // ------------------------------------------------------------------------------ happy path
 
+    /// <summary>
+    ///     Verifies every line of a text file is translated and written, with the line count reported.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_SimpleTextFile_TranslatesAllLines()
     {
@@ -39,6 +42,9 @@ public sealed class TextFileTranslatorTests
             .ShouldBe(["Hola", "Mundo", "Prueba"], ignoreOrder: true);
     }
 
+    /// <summary>
+    ///     Verifies a nested output directory is created before the translated file is written.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_OutputDirectoryMissing_CreatesIt()
     {
@@ -55,6 +61,9 @@ public sealed class TextFileTranslatorTests
 
     // ---------------------------------------------------------------------------- edge / failure
 
+    /// <summary>
+    ///     Verifies an empty input reports no content and writes no output file.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_EmptyFile_ReturnsNoContentMessageAndWritesNothing()
     {
@@ -69,6 +78,9 @@ public sealed class TextFileTranslatorTests
         File.Exists(output).ShouldBeFalse();
     }
 
+    /// <summary>
+    ///     Verifies a missing input file throws <see cref="FileNotFoundException" />.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_MissingInput_ThrowsFileNotFound()
     {
@@ -79,6 +91,9 @@ public sealed class TextFileTranslatorTests
             () => sut.TranslateFileAsync(workspace.Combine("nope.txt"), workspace.Combine("out.txt")));
     }
 
+    /// <summary>
+    ///     Verifies a line whose translation fails is written back as its source text.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_TranslationThrows_FallsBackToSourceText()
     {
@@ -98,6 +113,9 @@ public sealed class TextFileTranslatorTests
 
     // ----------------------------------------------------------------------------------- context
 
+    /// <summary>
+    ///     Verifies context mode hands each line the line before it, and the first line no context.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_WithContext_PassesPreviousLineAsSemantics()
     {
@@ -114,6 +132,9 @@ public sealed class TextFileTranslatorTests
         RequestFor(recording, "Third line").Semantics.ShouldBe("Second line");
     }
 
+    /// <summary>
+    ///     Verifies context mode off sends no semantics for any line.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_WithoutContext_PassesNoSemantics()
     {
@@ -130,6 +151,9 @@ public sealed class TextFileTranslatorTests
 
     // ------------------------------------------------------------------------------------ prompts
 
+    /// <summary>
+    ///     Verifies a custom prompt reaches the service unchanged.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_CustomPrompt_IsForwardedVerbatim()
     {
@@ -143,6 +167,9 @@ public sealed class TextFileTranslatorTests
         RequestFor(recording, "Test").Prompt.ShouldBe(CustomPrompt);
     }
 
+    /// <summary>
+    ///     Verifies the simple narrative prompt is chosen when no prompt is given and context is off.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_NoCustomPromptWithoutContext_UsesNarrativeSimple()
     {
@@ -156,6 +183,9 @@ public sealed class TextFileTranslatorTests
         RequestFor(recording, "Test").Prompt.ShouldBe("NarrativeSimple");
     }
 
+    /// <summary>
+    ///     Verifies the context-aware narrative prompt is chosen when no prompt is given and context is on.
+    /// </summary>
     [Fact]
     public async Task TranslateFileAsync_NoCustomPromptWithContext_UsesNarrativeLineWithContext()
     {

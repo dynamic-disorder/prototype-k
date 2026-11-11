@@ -9,6 +9,9 @@ namespace TextToSpeechApp.Tests;
 /// </summary>
 public sealed class TtsProviderSelectionTests
 {
+    /// <summary>
+    ///     Verifies Piper is kept, in any casing, without a notice.
+    /// </summary>
     [Theory]
     [InlineData("Piper")]
     [InlineData("piper")]
@@ -23,6 +26,10 @@ public sealed class TtsProviderSelectionTests
         notice.ShouldBeNull();
     }
 
+    /// <summary>
+    ///     Verifies the removed Windows provider resolves to Piper with a notice saying it was removed and
+    ///     how to silence it.
+    /// </summary>
     [Fact]
     public void Resolve_RemovedWindowsProvider_ShouldFallBackToPiperWithNotice()
     {
@@ -37,6 +44,10 @@ public sealed class TtsProviderSelectionTests
         notice.ShouldContain("settings.json");
     }
 
+    /// <summary>
+    ///     Verifies an unknown provider resolves to Piper and the notice names both the requested value and
+    ///     the only provider.
+    /// </summary>
     [Fact]
     public void Resolve_UnknownProvider_ShouldFallBackToPiperWithNotice()
     {
@@ -50,6 +61,9 @@ public sealed class TtsProviderSelectionTests
         notice.ShouldContain(TtsProviderSelection.PiperProvider);
     }
 
+    /// <summary>
+    ///     Verifies an empty provider name resolves to Piper with an explanation.
+    /// </summary>
     [Fact]
     public void Resolve_EmptyProvider_ShouldFallBackToPiperWithNotice()
     {

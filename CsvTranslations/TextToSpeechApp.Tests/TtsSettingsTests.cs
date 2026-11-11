@@ -14,6 +14,9 @@ namespace TextToSpeechApp.Tests;
 /// </summary>
 public sealed class TtsSettingsTests
 {
+    /// <summary>
+    ///     Verifies a settings document naming both providers deserializes both and keeps Piper selected.
+    /// </summary>
     [Fact]
     public void Deserialize_FullJson_ShouldPopulateBothProviders()
     {
@@ -62,6 +65,9 @@ public sealed class TtsSettingsTests
         actual.TtsProviders.Count.ShouldBe(2);
     }
 
+    /// <summary>
+    ///     Verifies the Windows provider carries no Piper voices, even when Piper voices sit beside it.
+    /// </summary>
     [Fact]
     public void Deserialize_ActiveWindows_ShouldNotHavePiperVoices()
     {
@@ -97,6 +103,9 @@ public sealed class TtsSettingsTests
         windowsConfig.Comment.ShouldBeNull();
     }
 
+    /// <summary>
+    ///     Verifies a provider's Comment field survives deserialization.
+    /// </summary>
     [Fact]
     public void Deserialize_WindowsWithComment_ShouldPreserveComment()
     {
@@ -121,6 +130,10 @@ public sealed class TtsSettingsTests
         windowsConfig.Comment.ShouldBe("Windows speech voices are installed on the system.");
     }
 
+    /// <summary>
+    ///     Verifies every Piper voice field is read and the model key is built from language, card and
+    ///     quality.
+    /// </summary>
     [Fact]
     public void Deserialize_ActivePiper_ShouldReturnPiperVoiceConfigs()
     {
@@ -193,6 +206,9 @@ public sealed class TtsSettingsTests
         vietnamese.BuildModelKey().ShouldBe("vi_VN-vivos-x_low");
     }
 
+    /// <summary>
+    ///     Verifies omitted speaker fields stay null and the model key is still composed.
+    /// </summary>
     [Fact]
     public void Deserialize_ActivePiper_ShouldHandleMissingSpeakerFields()
     {
@@ -226,6 +242,9 @@ public sealed class TtsSettingsTests
         vietnamese.BuildModelKey().ShouldBe("vi_VN-vivos-x_low");
     }
 
+    /// <summary>
+    ///     Verifies an empty document defaults to Piper with no providers configured.
+    /// </summary>
     [Fact]
     public void Deserialize_EmptyObject_ShouldUseDefaults()
     {
@@ -241,6 +260,9 @@ public sealed class TtsSettingsTests
         sut.TtsProviders.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     Verifies setting only the provider name leaves the provider map empty.
+    /// </summary>
     [Fact]
     public void Deserialize_OnlyActiveProvider_ShouldDefaultOthers()
     {
@@ -260,6 +282,10 @@ public sealed class TtsSettingsTests
         sut.TtsProviders.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     Verifies a settings document holding only the Windows provider deserializes with no Piper
+    ///     voices.
+    /// </summary>
     [Fact]
     public void Deserialize_WindowsProviderOnly_ShouldWork()
     {
@@ -284,6 +310,9 @@ public sealed class TtsSettingsTests
         sut.TtsProviders["Windows"].PiperVoices.ShouldBeEmpty();
     }
 
+    /// <summary>
+    ///     Verifies a settings document holding only Piper deserializes its three voice configurations.
+    /// </summary>
     [Fact]
     public void Deserialize_PiperProviderOnly_ShouldWork()
     {
@@ -325,6 +354,9 @@ public sealed class TtsSettingsTests
         sut.TtsProviders["Piper"].PiperVoices.Count.ShouldBe(3);
     }
 
+    /// <summary>
+    ///     Verifies a provider entry without voices yields an empty dictionary rather than null.
+    /// </summary>
     [Fact]
     public void Deserialize_ProviderConfigWithoutVoices_ShouldReturnEmptyDictionary()
     {
@@ -350,6 +382,10 @@ public sealed class TtsSettingsTests
 
     // ---------- TryParseTtsArg tests ----------
 
+    /// <summary>
+    ///     Verifies the --tts: and -tts: switches accept a provider name in any casing and normalise it to
+    ///     title case.
+    /// </summary>
     [Theory]
     [InlineData("--tts:piper", "Piper")]
     [InlineData("--tts:windows", "Windows")]
@@ -369,6 +405,9 @@ public sealed class TtsSettingsTests
         provider.ShouldBe(expected);
     }
 
+    /// <summary>
+    ///     Verifies a recognised provider switch with an empty or unknown value yields no provider.
+    /// </summary>
     [Theory]
     [InlineData("--tts:")]
     [InlineData("-tts:")]
@@ -387,6 +426,9 @@ public sealed class TtsSettingsTests
         provider.ShouldBeNull();
     }
 
+    /// <summary>
+    ///     Verifies arguments that are not provider switches are left alone.
+    /// </summary>
     [Theory]
     [InlineData("")]
     [InlineData("somefile.csv")]

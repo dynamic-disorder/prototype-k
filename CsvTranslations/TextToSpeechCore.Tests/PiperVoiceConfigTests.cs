@@ -8,6 +8,9 @@ namespace TextToSpeechCore.Tests;
 /// </summary>
 public sealed class PiperVoiceConfigTests
 {
+    /// <summary>
+    ///     Verifies the model key joins language code, model card and quality with dashes.
+    /// </summary>
     [Fact]
     public void BuildModelKey_ComposesLanguageCodeModelCardAndQuality()
     {
@@ -21,6 +24,9 @@ public sealed class PiperVoiceConfigTests
         config.BuildModelKey().ShouldBe("vi_VN-vivos-x_low");
     }
 
+    /// <summary>
+    ///     Verifies an unset config still joins its empty parts, giving two dashes.
+    /// </summary>
     [Fact]
     public void BuildModelKey_DefaultConfig_IsTwoDashes()
     {
@@ -28,6 +34,9 @@ public sealed class PiperVoiceConfigTests
         new PiperVoiceConfig().BuildModelKey().ShouldBe("--");
     }
 
+    /// <summary>
+    ///     Verifies the key keeps the exact casing of each part, joined by dashes.
+    /// </summary>
     [Theory]
     [InlineData("en_GB", "northern_english_male", "medium")]
     [InlineData("fi_FI", "harri", "medium")]
@@ -44,6 +53,9 @@ public sealed class PiperVoiceConfigTests
         config.BuildModelKey().ShouldBe($"{languageCode}-{modelCard}-{quality}");
     }
 
+    /// <summary>
+    ///     Verifies a new config starts with empty strings and no speaker.
+    /// </summary>
     [Fact]
     public void Defaults_AreEmptyStringsAndNullSpeakers()
     {
@@ -56,6 +68,9 @@ public sealed class PiperVoiceConfigTests
         config.SpeakerId.ShouldBeNull();
     }
 
+    /// <summary>
+    ///     Verifies the optional speaker fields round-trip the values assigned.
+    /// </summary>
     [Fact]
     public void SpeakerFields_AreOptionalAndSettable()
     {
