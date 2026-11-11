@@ -2,494 +2,262 @@
 
 | | |
 | :--- | :--- |
-| **Need** | `prototype-k` still holds the project, its scratch and its tooling, so it cannot serve as the neutral configuration you carry to an empty machine. |
-| **Why** | One checkout that carries the agent rules, the skills, the build templates and the export turns a bare hackathon laptop into a configured one in minutes, instead of a hand-rebuilt setup. |
-| **What** | Move `CsvTranslations` out as `csv-translations` with `local_dev/` and `local_user_files/`, copy the `agent-skills` content into `prototype-k`, and add an export that packages the neutral configuration. |
-| **DoD** | A filtered copy of `csv-translations` builds, tests, publishes one app, and `git add` tracks no ignored asset; `prototype-k` holds no C# and no project scratch; `scripts/export-agents.mjs --check` is green; a bundle installs into a throwaway agents home and both installers pass `--check`. |
-| **Top risk** | The `.gitignore` rule for scratch is anchored to the repository root, so the move would expose every ignored cache file as untracked. Fixed first in Phase 1. |
+| **Need** | `prototype-k` still holds the project, its scratch and its tooling, and the agent configuration exists as six vendoried copies that drift. Neither can serve as the one configuration you install on an empty machine. |
+| **Why** | One canonical home, installed by links, is the only arrangement where a rule learned once is the rule every repository runs, and where the hackathon bundle is the same bytes as the machine you work on. |
+| **What** | Merge `agent-skills` into `prototype-k`, delete every vendored copy, move the project out as `csv-translations` with only what it owns, and build an export from the single home. |
+| **DoD** | No repository carries a shared skill, hook or style copy; every repository's commits run the same machine-level hook; `~/.agents/skills` points at one checkout; the export installs into a throwaway home and passes `--check`. |
+| **Top risk** | A vendored copy survives in a directory nobody checked, and the next rule edit silently skips that repository. Fixed by the deletion inventory, verified with `git ls-files`. |
 
-**TL;DR** — Two moves and one export: the project leaves with its scratch, tooling and every file it needs to stand alone; the umbrella becomes the neutral template; a script turns that template into a bundle for an empty machine.
+**TL;DR** — Stop copying. One checkout owns the skills, hooks and style; every repository gets them through links installed once per machine; the project leaves with only its own files.
 
 ## Target state
 
 ```
 $DYNAMIC_DISORDER_ROOT/
-  agent-skills/            # source of truth for .agents; unchanged
-  csv-translations/        # moved out of prototype-k; a repository when you make it one
-    AGENTS.md  LICENSE  CsvTranslations.sln  Directory.Packages.props  README.md
-    .agents/  .githooks/  .gitignore  .gitattributes  .editorconfig  Directory.Build.props
-    local_dev/            # tooling, plans, analyses, ildump
-    local_user_files/     # private scratch and tool caches (ignored)
-    <projects>/  scripts/  translations.csv
-  prototype-k/             # umbrella and the neutral template
-    AGENTS.md  README.md  LICENSE  docs/
-    .agents/               # synced skills and the build-gate hook
-    global/                # shared rules and their installer
-    output-style/          # writing style and its installer
-    scripts/               # install, export and publication gate
-    .editorconfig  Directory.Build.props  .gitattributes  .gitignore  .githooks/
+  prototype-k/             # umbrella, template, single source of agent config
+    AGENTS.md  README.md  docs/
+    .agents/skills/        # canonical skills
+    .agents/hooks/         # canonical harness hook
+    .githooks/             # canonical git gate
+    global/  output-style/ # rules and style blocks, with installers
+    scripts/               # install, export, publication scanner
+    .editorconfig  Directory.Build.props  .gitattributes  .gitignore
+  csv-translations/        # the project, moved out; no agent copies
+    AGENTS.md  LICENSE  CsvTranslations.sln  README.md
+    .editorconfig  Directory.Build.props  .gitattributes  .gitignore
+    local_dev/  local_user_files/  <projects>/  scripts/  translations.csv
+  cliutils/  filenametools/  mediarenamer/  snaerf/
+                           # project files only; no .agents/skills, no .githooks
 ```
 
-`prototype-k` keeps `.editorconfig`, `Directory.Build.props` and `.gitattributes` as the templates a new
-project copies; `csv-translations` gets its own copies before it leaves, because MSBuild and the editor
-walk up to the nearest file and lose it the moment the directory moves out.
+Machine-level, installed once and identical on Windows and Omarchy:
 
-## What `csv-translations` needs to work
+```
+~/.agents/AGENTS.md          shared rules + style blocks
+~/.agents/skills/<name>   -> prototype-k/.agents/skills/<name>
+~/.agents/hooks           -> prototype-k/.agents/hooks
+~/.agents/scripts         -> prototype-k/scripts
+~/.agents/githooks        -> prototype-k/.githooks
+git config --global core.hooksPath  ->  ~/.agents/githooks
+~/.claude/CLAUDE.md          one import line: @~/.agents/AGENTS.md
+~/.claude/skills          -> ~/.agents/skills
+```
 
-Every row is proved by the rehearsal in Phase 2, not assumed.
+## The rule
 
-| Need | Source | Proof |
-| :--- | :--- | :--- |
-| Build inheritance (`net10.0`, analyzers, symbols, Windows targeting) | `Directory.Build.props` copied to the project root | `dotnet build` from the project root |
-| Editor and analyzer style, with `root = true` | `.editorconfig` copied | `dotnet build` (warnings behave as before) |
-| LF everywhere, `*.csv binary` | `.gitattributes` copied | `git ls-files --eol` reports `i/lf w/lf` for a tracked source file |
-| Ignore rules for artifacts, models, scratch and `.agents` | `.gitignore` written for the project | `git ls-files` omits models, Piper, caches |
-| Solution, projects, dictionary, data scripts | already inside the folder | `dotnet test` |
-| Tooling: build, publish, runtime installer, env resolvers, token estimate, ildump | `local_dev/` moved in | `build-all-linux.sh --test`, `publish-selfcontained.mjs --help`, `repo_paths.py` |
-| Scratch and tool caches | `local_user_files/` moved in | `sandbox-env.sh` writes there; git ignores it |
-| License | root `LICENSE` copied | file present at the root |
-| Agent skills, build gate, publication gate | `.agents/`, `.githooks/`, `local_dev/scripts/scan-publication-leaks.sh` | `git config core.hooksPath` and one commit |
-| Drift check against the source of truth | `agent-skills/sync.json` gains a `csv-translations` target | `sync-skills.mjs --target csv-translations` reports 0 differences |
-| Path resolvers that no longer assume the umbrella | `repo_paths.py`, `publish-selfcontained.mjs`, four data scripts | Phase 1 edits and the rehearsal |
-| Editor workspace entry | `dynamic-disorder.code-workspace` (outside the repository) | folder list includes `csv-translations` |
+- **One physical copy of the common configuration.** Skills, hooks, rules, style and drafting instructions
+  live in `prototype-k` and nowhere else.
+- **Repositories carry project instructions only.** A project's `AGENTS.md` says what is true of that
+  project; it does not restate the shared rules, and it does not carry a skill the other repositories use.
+- **A project-specific skill or command may stay in its repository** only when no other repository can
+  use it. `snaerf`'s engineering-standards skill is the example. Everything shared is deleted from the
+  repository.
+- **Hooks are machine-level.** `core.hooksPath` points at the canonical hooks once; repositories have no
+  `.githooks` and no `core.hooksPath` of their own.
+- **Memory is machine-level.** No checkout carries a memory directory today; the rule keeps it that way.
 
 ## Decisions
 
 | # | Decision | Why |
 | :--- | :--- | :--- |
-| D1 | `agent-skills` stays the source of truth; `prototype-k` and `csv-translations` are synced targets. | The sync script, lock and pre-commit drift check already exist; a second source would silently diverge. |
-| D2 | Copy everything from `agent-skills` except `.git/`, `sync.json`, `sync-lock.json` and `scripts/sync-skills.mjs`. | The three files describe this checkout's sibling targets, and `.git/` is never copied. A template that claims to be the source of other repositories is wrong on an empty machine. |
-| D3 | `local_user_files/` moves whole, caches included, as asked. | One move, no split logic. The cost is a few hundred MB of regenerable caches (measured 2026-11-11: about 414 MB) inside a checkout that will become public — see the last risk. |
-| D4 | The publication scanner keeps `local_dev/scripts/` in the project and gains a copy at `scripts/` in the template; both derive their own path. | The git hook and the synced `git-commit` skill must work in either layout, and a fixed `SELF` literal makes `--all` flag the pattern list itself. |
-| D5 | `publish` and `install-net10-runtime` move to `csv-translations`, not to the template. | Their wrappers live in that checkout's `local_dev/scripts/`; they ship one project, not a neutral configuration. |
-| D6 | `deck-card-video-generate` stays in `prototype-k` and is excluded from the export. | It depends on an untracked `node_modules/` and a Playwright browser; it is not reproducible from git today. |
-| D7 | The export is configuration plus project templates, never credentials or harness logins. | A USB stick with keys on it is the one leak that cannot be rotated in time. |
+| D1 | `prototype-k` is the single home: merge `agent-skills` into it, then archive `agent-skills`. | Two homes means one of them is stale. The umbrella is what you carry; the tool repository is redundant once its files live there. |
+| D2 | Delete the vendoring machinery: `sync.json`, `sync-lock.json`, `scripts/sync-skills.mjs`, and the hook's drift check. | They exist to keep copies identical. With no copies, they are the mechanism of the problem. |
+| D3 | Hooks and scripts become machine-level links under `~/.agents`, wired by one global `core.hooksPath`. | A repository should not need a hook file to be gated; a new clone is gated by being on the machine. |
+| D4 | Project-specific entries are kept; shared ones are deleted. | `snaerf`'s standards skill and `filenametools`' rule are not copies; the seven-skill sets in three repositories are. |
+| D5 | The export builds from the single home and installs by link, never by copy. | The bundle on the USB stick is the same bytes the working machine runs, not a snapshot that diverges. |
+| D6 | `local_dev/` and `local_user_files/` are classified before moving: project parts go with the project, machine and umbrella notes stay. | `local_dev/TODOS.md` is CliUtils follow-ups, and the mount notes carry literal mount paths; moving them into a project repository misplaces both. |
+| D7 | The export never contains credentials or harness logins. | A USB stick with keys cannot be rotated in time. |
 
-**D4 in practice.** The scanner's `SELF='local_dev/scripts/scan-publication-leaks.sh'` line is what makes
-`--all` skip its own pattern list. Replace it with a path derived from the script's location, and update the
-usage lines that still spell the old path:
+## Phase 1 — one home, no copies
 
-```bash
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-root="$(git rev-parse --show-toplevel)" || exit 2
-SELF="${script_dir#"$root"/}/$(basename -- "${BASH_SOURCE[0]}")"
-```
+Run from `$DYNAMIC_DISORDER_ROOT/prototype-k`. Start when the tree is clean.
 
-## Phase 1 — make `CsvTranslations` self-contained
-
-Run from `$DYNAMIC_DISORDER_ROOT/prototype-k`. Start only when `git status --short` is empty.
-
-1. **Record the baseline.** `./local_dev/scripts/build-all-linux.sh --test` must pass before anything moves.
-
-2. **Fix the scratch ignore rule first.** In `.gitignore`, replace the root-anchored pair:
-
-   ```diff
-   -local_user_files/*
-   -!local_user_files/README.md
-   +**/local_user_files/*
-   +!**/local_user_files/README.md
-   ```
-
-   A pattern containing a `/` is anchored to the `.gitignore`'s directory, so the old pair does not cover
-   `CsvTranslations/local_user_files/`. Without this edit the move exposes every cache file as untracked.
-
-   Prove it: `git check-ignore -v CsvTranslations/local_user_files/README.md` names the negated rule, and
-   `git check-ignore -v CsvTranslations/local_user_files/nuget/packages` names the ignored rule.
-
-3. **Copy the project layer into `CsvTranslations/`.** Each file exists for a reason the new repository
-   cannot get after the move:
-
-   | File | Source | Why it must be copied |
-   | :--- | :--- | :--- |
-   | `.editorconfig` | repository root | Editor settings are found by walking up; the parent is gone after the move. It carries `root = true`, so the copy is self-contained |
-   | `Directory.Build.props` | repository root | The `TargetFramework`, analyzer and symbol settings the solution inherits |
-   | `.gitattributes` | repository root | LF everywhere, `*.csv binary` — the new repository has no root to inherit from |
-   | `.gitignore` | new file | The block below |
-   | `LICENSE` | repository root | A published repository without a license is not reusable |
-   | `.agents/skills/`, `.agents/hooks/` | repository root | The eight managed skills and the build gate, at the paths the hook expects; `deck-card-video-generate` and `pdf-to-markdown-and-assets-extract` stay in the umbrella |
-   | `.githooks/pre-commit` | repository root, copied | Scan at `local_dev/scripts/`, then the build gate — unchanged, because the project keeps that layout |
-   | `local_dev/scripts/scan-publication-leaks.sh` | `local_dev/scripts/`, edited | The publication gate; it moves with the tooling, and the derived `SELF` (D4) lets the template keep the same file at `scripts/` |
-
-   The eight managed skills are `csharp-build-verify`, `csharp-conventions`, `csharp-refactor`,
-   `explain`, `git-commit`, `issue-investigate`, `spike` and `unit-test-writer` — the list
-   `agent-skills/sync.json` gives for `prototype-k`.
-
-   The project `.gitignore`:
-
-   ```gitignore
-   # Build output and IDE state
-   **/obj/
-   **/bin/
-   *.user
-   .vs/
-   *.code-workspace
-   [Tt]est[Rr]esult*/
-   *.trx
-   *.sln.docstates
-   *_wpftmp.csproj
-   .vscode/
-   __pycache__/
-   .venv/
-   venv/
-
-   # Distribution output
-   publish/
-   artifacts/
-
-   # Runtime assets, downloaded on first use (~190 MB on disk, not reproducible from git)
-   **/TextToSpeechApp/models/
-   **/TextToSpeechApp/piper/
-
-   # Private scratch: contents ignored, README kept
-   **/local_user_files/*
-   !**/local_user_files/README.md
-
-   # Agent configuration: track the shared layer only
-   **/.agents/*
-   !**/.agents/commands/
-   !**/.agents/hooks/
-   !**/.agents/rules/
-   !**/.agents/skills/
-   **/.agents/settings.local.json
-   **/.agents/agent-memory-local/
-   AGENTS.local.md
-   CLAUDE.local.md
-
-   # Personal tool configuration
-   .continue
-   .aider*
-   ```
-
-   Move the two project skills in the same step:
-   `git mv .agents/skills/publish CsvTranslations/.agents/skills/publish` and the same for
-   `install-net10-runtime`. Their `local_dev/scripts/` references become correct once `local_dev` moves.
-
-   `prototype-k` needs the scanner now, not later: its `.githooks/pre-commit` runs on the Phase 1 commit.
-   Copy the current hook and scanner into the project first, then edit the umbrella's own copies: place the
-   edited scanner at `scripts/scan-publication-leaks.sh` and change the hook's `scan=` line to
-   `$root/scripts/scan-publication-leaks.sh`. The project keeps its own copy in `local_dev/scripts/`, where
-   its existing hook already looks.
-
-4. **Move the folders.**
-
-   ```bash
-   git mv local_dev CsvTranslations/local_dev
-   mv local_user_files CsvTranslations/local_user_files
-   git add -A -- local_user_files
-   ```
-
-   `git mv` carries the tracked files and any untracked build output under `local_dev`; the scratch
-   folder moves on disk because all but its `README.md` is ignored.
-
-5. **Fix the path assumptions the move invalidates.** These are correct once `local_dev` is inside the
-   project, and stay correct when the project moves out. Nothing else in the tooling hard-codes the
-   umbrella.
-
-   | File | Old | New |
-   | :--- | :--- | :--- |
-   | `local_dev/scripts/repo_paths.py` | `repo_root() / "CsvTranslations" / "translations.csv"` | `repo_root() / "translations.csv"` |
-   | `local_dev/scripts/repo_paths.py` docstring | `parents[2] / "local_dev"` for a caller in `scripts/` | `parents[1] / "local_dev"` |
-   | `local_dev/scripts/repo-env.ps1` docstring | `"$RepoRoot\CsvTranslations\CsvTranslations.sln"` | `"$RepoRoot\CsvTranslations.sln"` |
-   | `local_dev/scripts/publish-selfcontained.mjs` | `'CsvTranslations/AddEntryApp/AddEntryApp.csproj'` and its three siblings | the same paths without the `CsvTranslations/` prefix |
-   | `scripts/make_append.py`, `make_csv.py`, `sort_translations.py`, `unify_english.py` | `Path(__file__).resolve().parents[2] / "local_dev" / "scripts"` | `parents[1]` |
-   | `local_dev/README.md` | "in this umbrella that finds `CsvTranslations/CsvTranslations.sln`" | "in this repository that finds `CsvTranslations.sln`"; "from the umbrella repository root" → "from the repository root" |
-   | `local_dev/deepseek-harness.md` | "uses the umbrella's" | the project's own tree |
-
-6. **Update the two project docs.** `CsvTranslations/AGENTS.md`: drop the `cd CsvTranslations` step and
-   point the build-gate reference at `.agents/skills/csharp-build-verify/SKILL.md` instead of the
-   non-existent `.agents/commands/build.md`. `CsvTranslations/README.md` already uses project-relative
-   paths and needs no edit.
-
-7. **Verify from inside the moved directory.**
-
-   ```bash
-   cd CsvTranslations
-   ./local_dev/scripts/repo-env.sh          # repository: .../CsvTranslations
-   ./local_dev/scripts/build-all-linux.sh --test
-   python3 local_dev/scripts/repo_paths.py  # dictionary: .../CsvTranslations/translations.csv
-   python3 -m py_compile scripts/*.py
-   grep -n 'parents\[1\] / "local_dev"' scripts/*.py
-   node --check local_dev/scripts/publish-selfcontained.mjs
-   grep -rn "CsvTranslations/" local_dev/scripts/*.mjs || echo "no stale prefix"
-   ```
-
-   `repo-env.sh` walks two levels up from `local_dev/scripts/`, so it resolves the new root with no edit.
-   `build-all-linux.sh` now finds exactly one solution.
-
-8. **Draft the commit and wait for approval.** Suggested subject:
-   `refactor(project): make CsvTranslations self-contained`; it carries the moves, the ignore fix, the path
-   fixes and the new project layer.
-
-## Phase 2 — move `csv-translations` out
-
-1. **Move the directory out.**
-
-   ```bash
-   mv CsvTranslations ../csv-translations
-   git add -A -- CsvTranslations
-   ```
-
-   PowerShell: `Move-Item -LiteralPath CsvTranslations -Destination ..\csv-translations`.
-
-2. **Verify the umbrella.** From `prototype-k`: `find . -name '*.sln' -o -name '*.csproj'` returns
-   nothing outside `.agents/`, and `git status --short` shows the staged deletions only.
-
-3. **Register the new checkout as a sync target.** In `agent-skills/sync.json`, add a `csv-translations`
-   entry with the same eight skills and hook as the other project repositories, then from `agent-skills`:
-
-   ```bash
-   node scripts/sync-skills.mjs --write --target csv-translations
-   node scripts/sync-skills.mjs --target csv-translations    # 0 differences
-   ```
-
-   This is what makes the new checkout's drift check name it instead of printing "not managed by
-   agent-skills — skipping". Commit `agent-skills` separately with its lock.
-
-4. **Rehearse the standalone checkout.** Copy the project without its runtime assets and caches, then prove
-   the whole list above from the copy:
-
-   ```bash
-   tmp="$(mktemp -d)/csv-translations"
-   mkdir -p "$tmp"
-   tar -C "$DYNAMIC_DISORDER_ROOT" -cf - \
-     --exclude='csv-translations/TextToSpeechApp/models' \
-     --exclude='csv-translations/TextToSpeechApp/piper' \
-     --exclude='csv-translations/local_user_files/nuget' \
-     --exclude='csv-translations/local_user_files/dotnet-home' \
-     --exclude='csv-translations/local_user_files/xdg' \
-     --exclude='*/bin' --exclude='*/obj' \
-     csv-translations | tar -C "$tmp" -xf -
-
-   mkdir -p "$tmp/TextToSpeechApp/models" "$tmp/TextToSpeechApp/piper" "$tmp/local_user_files"
-   printf 'probe\n' > "$tmp/TextToSpeechApp/models/probe.bin"
-   printf 'probe\n' > "$tmp/TextToSpeechApp/piper/probe"
-   printf 'scratch\n' > "$tmp/local_user_files/README.md"
-
-   cd "$tmp"
-   dotnet build CsvTranslations.sln
-   dotnet test  CsvTranslations.sln
-   node local_dev/scripts/publish-selfcontained.mjs AddEntryApp   # proves the project map
-   python3 local_dev/scripts/repo_paths.py
-
-   git init -q
-   git add -A
-   git ls-files --eol TextToSpeechApp/TextToSpeechApp.csproj
-   git ls-files | grep -E '^TextToSpeechApp/(models|piper)/' && echo "IGNORE BROKEN" || echo "models ignored"
-   git ls-files | grep -q '^local_user_files/README.md' && echo "scratch README tracked"
-   git ls-files .agents/skills | head -1
-   git config core.hooksPath .githooks
-   git -c user.name=probe -c user.email=probe@example.com commit -q -m probe
-   git status --short
-   ```
-
-   Expected: build and tests green; the publish run writes `publish/AddEntryApp/...` and nothing else; no
-   model, Piper or cache file is listed by `git ls-files`; the scratch README and the managed skills are
-   listed; the probe commit passes the publication gate and the build gate, and leaves `git status --short`
-   empty. Delete the copy afterwards.
-
-5. **Update the editor workspace.** `$DYNAMIC_DISORDER_ROOT/dynamic-disorder.code-workspace` is outside
-   every repository: add `{ "path": "csv-translations" }` to its folder list so the editor sees the new
-   checkout beside the others.
-
-6. **Draft and commit** the deletion with
-   `refactor: move the project checkout to csv-translations`. The publication gate runs; the build gate
-   finds no solution and exits 0 after its skill-drift check, which is correct — the umbrella has no code.
-
-## When you make it a repository
-
-The folder is ready before this step; these commands only make it a git repository and connect a remote.
-
-```bash
-cd "$DYNAMIC_DISORDER_ROOT/csv-translations"
-git init
-git branch -M main
-git config core.autocrlf false        # LF in the working tree, as .gitattributes expects
-git config core.ignorecase false      # the umbrella's clone rule, kept for path-case safety
-git config core.hooksPath .githooks
-git add -A
-git update-index --chmod=+x .githooks/pre-commit .agents/hooks/pre-commit-build-check.sh
-git commit -m "Initial commit"
-git remote add origin <remote-url>    # when the remote exists
-git push -u origin main
-```
-
-The `--chmod=+x` call is not optional on a Windows checkout: without it the two hooks enter the index as
-`100644`, the clone on Omarchy cannot execute them, and the gate silently does nothing.
-
-## Phase 3 — `prototype-k` becomes the template
-
-1. **Copy `agent-skills` in.**
+1. **Merge `agent-skills` into the umbrella.**
 
    ```bash
    git -C ../agent-skills archive -o ../agents-copy.tar HEAD
    tar -xf ../agents-copy.tar
    rm ../agents-copy.tar
-   rm sync.json sync-lock.json scripts/sync-skills.mjs
    ```
 
-   The archive brings `global/`, `output-style/`, `scripts/` and the full `.agents/skills/` set, and
-   overwrites the eight managed skills with byte-identical copies. Keep the scanner already placed under
-   `scripts/` in Phase 1.
+   This adds `.agents/skills/` (the nine), `global/`, `output-style/` and `scripts/`. The eight skills
+   `prototype-k` already had are byte-identical, so the copy is a no-op for them.
 
-2. **Register the new skill in the sync config, and widen two path references.** In
-   `agent-skills/sync.json`, add `skills/import-cc-generic-configuration-and-adapt` to the `prototype-k`
-   list, then `node scripts/sync-skills.mjs --write --target prototype-k` from `agent-skills`. In the same
-   edit, widen the synced `git-commit` skill: it names `local_dev/scripts/scan-publication-leaks.sh` and the
-   root variable from `local_dev/scripts/repo-env.sh`, and the template has neither. Name both scanner
-   locations, and the root variable without a file path. Commit that repository separately: it is the
-   source, and the lock must match.
+2. **Move the scanner and the hook to their canonical places.** `git mv local_dev/scripts/scan-publication-leaks.sh scripts/`
+   and derive its `SELF` from its own location (the pattern list must still skip the file itself). Edit
+   `.githooks/pre-commit` to call `"$HOME/.agents/scripts/scan-publication-leaks.sh"` and
+   `"$HOME/.agents/hooks/pre-commit-build-check.sh"`. Delete the sync-drift block from the build gate:
+   there is nothing left to sync. Update the canonical `git-commit` skill to name that machine-level
+   scanner path, and the root variable without assuming `local_dev/scripts/repo-env.sh` exists in every
+   repository.
 
-3. **Rewrite the umbrella documents.** `AGENTS.md` and `README.md` describe a template, not a product: the
-   project table lists `csv-translations` as a sibling, `local_dev` and `local_user_files` are gone, the
-   export is named, and the build commands become the template's own verification. `docs/README.md` drops
-   the "belongs in `local_dev/`" paragraph, because those folders now live with the project.
+3. **Extend `scripts/install-global.mjs`.** It already links `~/.agents/skills`; add:
 
-4. **Adjust the ignore rules.** Keep `**/.agents/*` and `**/local_user_files/*`; add `dist/` for the export
-   output; drop the `TextToSpeechApp` model and Piper rules, which belong to the project's own
-   `.gitignore`.
+   | Link | Target |
+   | :--- | :--- |
+   | `~/.agents/hooks` | `<repo>/.agents/hooks` |
+   | `~/.agents/scripts` | `<repo>/scripts` |
+   | `~/.agents/githooks` | `<repo>/.githooks` |
+   | `~/.claude/skills` | `~/.agents/skills` (only when `~/.claude` exists) |
 
-5. **Verify.**
+   Then write `git config --global core.hooksPath <absolute ~/.agents/githooks>` and verify it in
+   `--check`. Compute the absolute path; do not rely on `~` expansion in git config.
+
+4. **Switch this machine to the new home.**
 
    ```bash
-   node ../agent-skills/scripts/sync-skills.mjs --target prototype-k   # 0 differences
-   node global/install.mjs --check                                      # shared block current
-   node output-style/install.mjs --check                                # style block current
-   bash scripts/scan-publication-leaks.sh --all                         # 0 FAIL hits
-   node --test scripts/lib/managed-block.test.mjs scripts/lib/install-block.test.mjs
+   node scripts/install-global.mjs --write
+   node scripts/install-global.mjs
+   node global/install.mjs
+   node output-style/install.mjs
+   git config --global core.hooksPath "$HOME/.agents/githooks"
    ```
 
-6. **Draft and commit** `feat(agents): make prototype-k the neutral template`.
+   `readlink ~/.agents/skills/git-commit` must now name the `prototype-k` checkout.
 
-**Do not run `scripts/install-global.mjs --write` in `prototype-k` on this machine.** It would repoint
-`~/.agents/skills` from `agent-skills` to the template copy; the two are identical today, so nothing would
-break, and the next edit to either would. The bundle runs that command on the new machine, where pointing
-at the bundle is exactly the intent.
+5. **Delete the vendored copies, one repository at a time**, each its own commit:
 
-## Phase 4 — the export
+   | Repository | Remove | Keep |
+   | :--- | :--- | :--- |
+   | `cliutils` | `.agents/skills/` (7), `.agents/hooks/`, `.githooks/` | `AGENTS.md` |
+   | `filenametools` | `.agents/skills/` (8), `.agents/hooks/`, `.githooks/`, `.agents/commands/build.md`, `.agents/rules/` after folding the rule into `AGENTS.md` | `AGENTS.md` |
+   | `mediarenamer` | `.agents/skills/` (7), `.agents/hooks/`, `.githooks/` | `AGENTS.md` |
+   | `snaerf` | `.dsh/hooks/` (a second copy of the build gate), `.agents/commands/` if no harness reads that path | `.agents/skills/snaerf-engineering-standards/`, `AGENTS.md` |
+   | `prototype-k` | nothing — it is the home | everything |
 
-1. **Add `scripts/export-agents.mjs`** and a pure `scripts/lib/export-plan.mjs` (the file list, the
-   exclusions, the leak check) with `node:test` coverage. Node first, so the same command runs on Omarchy
-   and in PowerShell.
+   In each repository, `git config --local --unset core.hooksPath` first, or the local setting keeps
+   running the deleted hook and the global one never fires. Then commit; the shared gate runs and prints
+   `PASS`.
+
+6. **Delete the sync machinery** from the home: `sync.json`, `sync-lock.json`, `scripts/sync-skills.mjs`.
+   The build gate no longer references them.
+
+7. **Verify the absence, not the intention.**
+
+   ```bash
+   for r in cliutils filenametools mediarenamer snaerf; do
+     printf '%s: %s shared files\n' "$r" "$(git -C ../$r ls-files '*.agents/skills/*' | wc -l)"
+   done
+   git -C ../cliutils config --local --get core.hooksPath || echo "no local override"
+   git config --global --get core.hooksPath
+   readlink ~/.agents/skills/git-commit
+   ```
+
+   Expected: only `snaerf` lists a skill, no repository has a local `core.hooksPath`, the global one is
+   set, and every link resolves into `prototype-k`.
+
+8. **Archive `agent-skills`** once the links and the export are green: archive the GitHub repository and
+   remove the checkout. Nothing reads it after step 4. This is a separate, final action.
+
+## Phase 2 — the export
+
+1. **Add `scripts/export-agents.mjs`** and a pure `scripts/lib/export-plan.mjs` (file list, exclusions,
+   leak check) with `node:test` coverage.
 
    | Mode | Behaviour |
    | :--- | :--- |
    | `--out <dir>` | Write the bundle, default `dist/agents-export` |
-   | `--check` | Rebuild into a temporary directory and compare file lists and hashes to `--out` |
+   | `--check` | Rebuild and compare file lists and hashes; report drift, never write |
    | `--archive` | Also write `dist/agents-export-<date>.tar.gz` |
 
-2. **Bundle layout.** Two parts, so the install steps and the project seed are not confused:
+2. **Bundle layout.** One install part, one project seed:
 
    ```
    agents-export/
-     README.md                 # the runbook: prerequisites, install commands, what to do for a new project
-     MANIFEST.json             # relative path + sha256 for every file
-     global/                   # AGENTS.shared.md, install.mjs, README.md
-     output-style/             # managed-block.md, documentation-style.md, install.mjs, README.md
-     scripts/                  # install-global.mjs, lib/managed-block.mjs, lib/install-block.mjs
-     .agents/skills/           # the eight managed skills plus the import and PDF skills
-     .agents/hooks/            # pre-commit-build-check.sh
-     docs/agents/              # the skill-authoring specs
-     claude/CLAUDE.md          # one line: @~/.agents/AGENTS.md
-     project-seed/             # .editorconfig, Directory.Build.props, .gitattributes, .gitignore,
-                               # .githooks/pre-commit, scripts/scan-publication-leaks.sh
+     README.md              # prerequisites, install commands, new-project steps
+     MANIFEST.json          # relative path + sha256
+     global/                # AGENTS.shared.md, install.mjs, README.md
+     output-style/          # managed-block.md, documentation-style.md, install.mjs, README.md
+     scripts/               # install-global.mjs, scan-publication-leaks.sh, lib/managed-block.mjs, lib/install-block.mjs
+     githooks/pre-commit
+     .agents/skills/        # the canonical skills
+     .agents/hooks/         # pre-commit-build-check.sh
+     docs/agents/           # skill-authoring specs
+     claude/CLAUDE.md       # @~/.agents/AGENTS.md
+     project-seed/          # AGENTS.md, .editorconfig, Directory.Build.props, .gitattributes, .gitignore
    ```
 
-   Excluded and why: `sync.json`, `sync-lock.json`, `scripts/sync-skills.mjs` (they describe this
-   checkout's siblings), `deck-card-video-generate` (D6), every `node_modules/` and `test-results/`,
-   `dist/` itself, `.git/`, and everything in `local_user_files/` or a harness config directory.
+   Excluded: `sync.json`-era files, `deck-card-video-generate` (its `node_modules/` is untracked), every
+   `node_modules/` and `test-results/`, `dist/`, `.git/`, `local_user_files/`, and any harness state.
 
-3. **Make the bundle installable and prove it.** The runbook is:
+3. **Prove the install path**, not just the files:
 
    ```bash
-   # on the empty machine, after installing git and Node 20+
-   cp -R agents-export ~/agent-config        # %USERPROFILE%\agent-config on Windows
+   cp -R agents-export ~/agent-config
    cd ~/agent-config
-   node global/install.mjs
-   node output-style/install.mjs
+   node global/install.mjs && node output-style/install.mjs
    node scripts/install-global.mjs --write
-   node global/install.mjs --check
-   node output-style/install.mjs --check
-   node scripts/install-global.mjs
+   node global/install.mjs --check && node output-style/install.mjs --check && node scripts/install-global.mjs
    ```
 
-   Verification on this machine, in a throwaway home:
-   `DSH_AGENTS_HOME=$(mktemp -d)`, run the three installers against the bundle, confirm both `--check`
-   exit 0 with no network access. Then remove the links with `--remove` and the temporary home.
+   Then repeat it in a clean Linux container with Node, so case, junction and permission problems surface
+   here and not on the hackathon laptop.
 
-4. **Leak check.** The export scans every text file it writes for the three FAIL shapes — profile path,
-   mount root, home directory — and refuses on a hit. It skips the scanner copy in `project-seed/`, which
-   contains the patterns by design, the same exemption the scanner gives itself.
+4. **Leak check and archive.** The export scans its text files for profile paths, mount roots and home
+   directories, skipping the scanner itself. `tar -czf dist/agents-export-<date>.tar.gz -C dist agents-export`.
 
-5. **Archive.** `tar -czf dist/agents-export-<date>.tar.gz -C dist agents-export`; `tar` ships with
-   Windows 10 and every Linux. The archive is the thing on the USB stick.
+## Phase 3 — move the project out
 
-6. **Write `docs/agents/export-runbook.md`** with the Phase 5 table and the install commands, and point
-   the bundle's `README.md` at the same steps. Two readers, one instruction set: the person at the
-   laptop, and an agent asked to set the laptop up.
+1. **Classify the two folders before moving anything.**
 
-7. **Draft and commit** `feat(agents): export the neutral configuration bundle`.
+   | Item | Destination | Why |
+   | :--- | :--- | :--- |
+   | `local_dev/scripts/` (`build-all`, `repo-env`, `sandbox-env`, `publish`, `install-net10-runtime`, token estimate, VS Code cleaner, `repo_paths`) | `csv-translations` | They run the project |
+   | `local_dev/tools/ildump/` | `csv-translations` | It inspects the project's assemblies |
+   | `local_dev/analyses/tts_analysis.md` | `csv-translations` | It is about the project |
+   | `local_dev/TODOS.md` | stay in the umbrella, or move to `cliutils` | It is a CliUtils release list |
+   | `local_dev/deepseek-harness.md`, `git-ignored-local-files.md`, `README.md` | stay in the umbrella | Machine and umbrella documentation |
+   | `local_dev/plans/` | stay in the umbrella | Dated records about the umbrella |
+   | `local_user_files/*.md` project analyses | `csv-translations` | Project evidence |
+   | `local_user_files/omarchy-mount-notes.md`, both OS startup checklists, `handoff-2026-10-31-prototype-k.md` | stay in the umbrella | Machine and umbrella notes; they carry mount paths |
 
-## Phase 5 — the hackathon runbook
+2. **Give the project its build layer**: copy `.editorconfig`, `Directory.Build.props`, `.gitattributes`,
+   `LICENSE`, and write its `.gitignore` (artifacts, `publish/`, models and Piper, `local_user_files/`,
+   `.agents`). No `.agents`, no `.githooks`, no scanner: the machine provides them.
 
-The bundle's `README.md` carries this, and so does `docs/agents/export-runbook.md`:
+3. **Fix the path assumptions the move invalidates**: `repo_paths.translations_csv()` drops the
+   `CsvTranslations/` segment; the four data scripts use `parents[1]`; `publish-selfcontained.mjs` drops
+   the prefix from its four project paths; the `repo-env.ps1` example follows.
 
-| Step | Action | Who |
-| :--- | :--- | :--- |
-| 1 | Install git, Node 20+, and the .NET 10 SDK if the project needs it | Owner |
-| 2 | Copy `agents-export` to `%USERPROFILE%\agent-config` (Windows) or `~/agent-config` | Owner |
-| 3 | Run the three installers from that folder | Owner or agent |
-| 4 | Sign in to the harness with its own command; never copy a credential | Owner |
-| 5 | New project: copy the contents of `project-seed/`, dotfiles included, to its root, then `git config core.hooksPath .githooks` | Owner |
-| 6 | Write the project's `AGENTS.md` from `docs/agents/` | Agent |
+4. **Move in one pass, one umbrella commit.**
 
-The export is rebuilt, not edited: change `prototype-k`, run the export, carry the new archive.
+   ```bash
+   mv CsvTranslations ../csv-translations
+   mv local_dev/scripts ../csv-translations/local_dev/scripts   # after the classification above
+   git add -A -- CsvTranslations local_dev local_user_files
+   ```
 
-## Reference updates
+5. **Rehearse the standalone checkout** in a filtered copy: build, test, publish `AddEntryApp`, print
+   `repo_paths.py`, and confirm no machine path or ignored asset is tracked. Expected: green, with the
+   gate supplied by the machine rather than the repository.
 
-| File | Change |
-| :--- | :--- |
-| `.gitignore` (umbrella) | `**/local_user_files/*`, add `dist/`, drop project-specific model rules |
-| `.githooks/pre-commit` (template) | Scan at `scripts/scan-publication-leaks.sh`; the project's copy keeps `local_dev/scripts/` |
-| `scripts/scan-publication-leaks.sh` | Path-independent `SELF`; the template copy lives at `scripts/`, the project copy at `local_dev/scripts/` |
-| `agent-skills/.agents/skills/git-commit/SKILL.md` | Name both scanner locations; the root variable without a file path |
-| `AGENTS.md`, `README.md` | Rewrite for the umbrella/template; project table, no `local_dev` |
-| `docs/README.md` | `local_dev/` and `local_user_files/` now live in the project checkout |
-| `local_dev/scripts/repo_paths.py` | Dictionary at the repository root; docstring index |
-| `local_dev/scripts/repo-env.ps1` | Docstring solution path |
-| `local_dev/scripts/publish-selfcontained.mjs` | Project map without the `CsvTranslations/` prefix |
-| `scripts/make_append.py`, `make_csv.py`, `sort_translations.py`, `unify_english.py` | `parents[1]` for the resolver import |
-| `CsvTranslations/AGENTS.md` | Build command; build-gate reference |
-| `.agents/skills/publish`, `install-net10-runtime` | Moved to the project checkout |
-| `agent-skills/sync.json` | `prototype-k` gains the import skill; `csv-translations` is a new target |
-| `dynamic-disorder.code-workspace` (outside git) | Add the `csv-translations` folder |
-| `local_dev/**`, dated plans | Left as written; they are dated records, not live references |
+## Phase 4 — the umbrella documents
+
+Rewrite `AGENTS.md` and `README.md` for a template with no product code; update `docs/README.md`; add
+`csv-translations` to `dynamic-disorder.code-workspace`; run the gate and the link check.
 
 ## Risks
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Root-anchored scratch ignore exposes the entire ignored scratch tree as untracked | Phase 1 step 2, proved with `git check-ignore` before the move |
-| Project loses `Directory.Build.props` and `.editorconfig` inheritance | Copied into the project before it moves; the Phase 1 build proves it |
-| A path assumption survives the move and fails only when someone publishes or runs a data script | Phase 1 step 5 fixes the four known families; the Phase 2 rehearsal runs each one |
-| Runtime assets enter the new repository | `.gitignore` rules for `models/` and `piper/`; the rehearsal checks `git ls-files` |
-| Template copies drift from `agent-skills` | `.agents` is synced and drift-checked; the export's `--check` compares the rest |
-| The scratch caches sit inside a future public repository | Ignore rules plus a pre-publish step that moves the caches out and repoints `sandbox-env.sh` |
-| The publication gate silently skips the removal commit | The template's scanner and hook are in place before anything is staged (D4) |
-| Export includes a machine path or a credential | The export's own leak scan refuses on a hit; harness logins are out of scope (D7) |
+| A copy survives and keeps teaching an old rule | Phase 1's `git ls-files` loop; a copy that is not tracked is caught by the rehearsal's `--all` scan |
+| A repository keeps a local `core.hooksPath` and skips the new gate | The local `--unset` step, verified with `git config --local --get` |
+| Global hooks fire in unrelated repositories | The gate exits 0 when nothing is staged, and the build gate needs staged C#; the machine-level choice is documented |
+| Machine notes move into a project repository | The Phase 3 classification table; mount-path notes stay in the umbrella |
+| `~/.claude/skills` link missing, so Claude Code sees no skills | The installer creates it and `--check` reports it |
+| The merge leaves `agent-skills` referenced somewhere | `readlink` of every link, plus the global hooks path, checked before archiving |
+| Export drifts from the working install | The bundle is built from the same files and installed by link; `--check` recomputes hashes |
 
 ## Out of scope
 
-- Creating the remote and pushing; the repository commands are listed for when you choose to run them.
-- Renaming the solution or the project directories.
-- Retiring `agent-skills` or moving `sync.json` ownership into `prototype-k`.
-- Carrying harness credentials, session state or model configuration.
+- Creating the `csv-translations` remote and its first push.
+- Renaming the solution or project directories.
+- Deleting `agent-skills` history; the repository is archived, not rewritten.
+- Carrying credentials, session state or model configuration.
 
 ## How to start
 
-Paste this into a session opened at `prototype-k`:
-
 ```
-Read docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md and execute Phase 1 only.
-Follow the commit rule in ~/.agents/AGENTS.md: draft, ask, wait for approval.
-Touch only the paths the phase lists; do not start Phase 2 in the same turn.
+Read docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md in prototype-k and execute
+Phase 1 only. Follow the commit rule in ~/.agents/AGENTS.md: draft, ask, wait. One repository per commit.
 ```
