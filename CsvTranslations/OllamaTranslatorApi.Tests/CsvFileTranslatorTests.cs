@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-using NSubstitute;
+using FakeItEasy;
 
 using OllamaTranslatorApi;
 using OllamaTranslatorApi.Core;
@@ -210,7 +210,7 @@ public sealed class CsvFileTranslatorTests
         {
             // Arrange: translation service that returns a known translation
             var (translationService, _) = CreateTranslationServiceWithRequestCapture();
-            translationService.GetLlmModelName().Returns("TestModel");
+            A.CallTo(() => translationService.GetLlmModelName()).Returns("TestModel");
             
             var translator = new OllamaTranslator(translationService);
             var sut = new CsvFileTranslator(translator);
@@ -236,19 +236,15 @@ public sealed class CsvFileTranslatorTests
 
     private static (ITranslationService, List<TranslationRequest>) CreateTranslationServiceWithRequestCapture()
     {
-        var translationService = Substitute.For<ITranslationService>();
+        var translationService = A.Fake<ITranslationService>();
         var capturedRequests = new List<TranslationRequest>();
-        
-        translationService.TranslateAsync(Arg.Any<TranslationRequest>())
-            .Returns(call =>
-            {
-                var request = call.Arg<TranslationRequest>();
-                capturedRequests.Add(request);
-                return Task.FromResult(new TranslationResponse("Translated"));
-            });
-        
-        translationService.GetLlmModelName().Returns("TestModel");
-        
+
+        A.CallTo(() => translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Invokes((TranslationRequest request) => capturedRequests.Add(request))
+            .Returns(Task.FromResult(new TranslationResponse("Translated")));
+
+        A.CallTo(() => translationService.GetLlmModelName()).Returns("TestModel");
+
         return (translationService, capturedRequests);
     }
 

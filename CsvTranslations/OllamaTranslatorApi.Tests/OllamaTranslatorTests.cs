@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-using NSubstitute;
+using FakeItEasy;
 
 using OllamaTranslatorApi.Configuration;
 using OllamaTranslatorApi.Core;
@@ -21,8 +21,8 @@ public sealed class OllamaTranslatorTests
 
     public OllamaTranslatorTests()
     {
-        _translationService = Substitute.For<ITranslationService>();
-        _translationService.GetLlmModelName().Returns("TestModel");
+        _translationService = A.Fake<ITranslationService>();
+        A.CallTo(() => _translationService.GetLlmModelName()).Returns("TestModel");
         _sut = new OllamaTranslator(_translationService);
     }
 
@@ -94,7 +94,7 @@ public sealed class OllamaTranslatorTests
     public void OllamaLlmModelName_WithService_DelegatesGetLlmModelNameToService()
     {
         // Given: a service configured to return a specific model name
-        _translationService.GetLlmModelName().Returns("my-model:7b");
+        A.CallTo(() => _translationService.GetLlmModelName()).Returns("my-model:7b");
 
         // When: reading the model name from the translator
         var modelName = _sut.OllamaLlmModelName;
@@ -111,7 +111,8 @@ public sealed class OllamaTranslatorTests
     public async Task TranslateAsync_KnownText_ReturnsEntryWithTargetText()
     {
         // Given: a service that returns a plain translation response
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("Hola"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("Hola")));
 
         // When: translating a single word
         var result = await _sut.TranslateAsync("Hello");
@@ -126,7 +127,8 @@ public sealed class OllamaTranslatorTests
     public async Task TranslateAsync_ResponseWithHashtags_PopulatesBothTargetTextAndHashtags()
     {
         // Given: a service that returns a structured response with translation and hashtags
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("koira", "#noun #animal"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("koira", "#noun #animal")));
 
         // When: translating
         var result = await _sut.TranslateAsync("dog");
@@ -140,7 +142,8 @@ public sealed class OllamaTranslatorTests
     public async Task TranslateAsync_EmptyServiceResponse_ReturnsEntryWithEmptyTargetText()
     {
         // Given: a service that returns an empty response (e.g. after a failed HTTP call)
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(TranslationResponse.Empty);
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(TranslationResponse.Empty));
 
         // When: translating
         var result = await _sut.TranslateAsync("Hello");
@@ -154,14 +157,16 @@ public sealed class OllamaTranslatorTests
     {
         // Given: a custom prompt template
         const string customPrompt = "Translate '{text}' to German. Return only the word.";
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("Hallo"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("Hallo")));
 
         // When: translating with the custom prompt
         await _sut.TranslateAsync("Hello", customPrompt);
 
         // Then: the prompt is forwarded to the service exactly as provided
-        await _translationService.Received(1).TranslateAsync(
-            Arg.Is<TranslationRequest>(r => r.Text == "Hello" && r.Prompt == customPrompt));
+        A.CallTo(() => _translationService.TranslateAsync(
+            A<TranslationRequest>.That.Matches(r => r.Text == "Hello" && r.Prompt == customPrompt)))
+            .MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -171,14 +176,16 @@ public sealed class OllamaTranslatorTests
         const string defaultPrompt = "Translate '{text}' to French.";
         var settings = new OllamaTranslatorSettings { Prompt = defaultPrompt };
         var sut = new OllamaTranslator(_translationService, settings);
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("Bonjour"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("Bonjour")));
 
         // When: translating without an explicit per-call prompt
         await sut.TranslateAsync("Hello");
 
         // Then: the settings prompt is forwarded to the service
-        await _translationService.Received(1).TranslateAsync(
-            Arg.Is<TranslationRequest>(r => r.Prompt == defaultPrompt));
+        A.CallTo(() => _translationService.TranslateAsync(
+            A<TranslationRequest>.That.Matches(r => r.Prompt == defaultPrompt)))
+            .MustHaveHappenedOnceExactly();
     }
 
     // -------------------------------------------------------------------------
@@ -196,16 +203,19 @@ public sealed class OllamaTranslatorTests
         // Then: the result is empty and no service calls were made
         result.ShouldNotBeNull();
         result.ShouldBeEmpty();
-        _ = _translationService.DidNotReceive().TranslateAsync(Arg.Any<TranslationRequest>());
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored)).MustNotHaveHappened();
     }
 
     [Fact]
     public async Task BatchTranslateAsync_MultipleEntries_TranslatesAll()
     {
         // Given: entries with per-text service stubs
-        _translationService.TranslateAsync(Arg.Is<TranslationRequest>(r => r.Text == "Hello")).Returns(new TranslationResponse("Hola"));
-        _translationService.TranslateAsync(Arg.Is<TranslationRequest>(r => r.Text == "World")).Returns(new TranslationResponse("Mundo"));
-        _translationService.TranslateAsync(Arg.Is<TranslationRequest>(r => r.Text == "Test")).Returns(new TranslationResponse("Prueba"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.That.Matches(r => r.Text == "Hello")))
+            .Returns(Task.FromResult(new TranslationResponse("Hola")));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.That.Matches(r => r.Text == "World")))
+            .Returns(Task.FromResult(new TranslationResponse("Mundo")));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.That.Matches(r => r.Text == "Test")))
+            .Returns(Task.FromResult(new TranslationResponse("Prueba")));
         var entries = new List<CsvEntry>
         {
             new() { SourceText = "Hello" },
@@ -275,8 +285,9 @@ public sealed class OllamaTranslatorTests
     public async Task BatchTranslateAsync_ServiceThrowsForOneEntry_OtherEntriesStillTranslated()
     {
         // Given: a service that returns normally for one entry but throws for another
-        _translationService.TranslateAsync(Arg.Is<TranslationRequest>(r => r.Text == "Hello")).Returns(new TranslationResponse("Hola"));
-        _translationService.TranslateAsync(Arg.Is<TranslationRequest>(r => r.Text == "Bad"))
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.That.Matches(r => r.Text == "Hello")))
+            .Returns(Task.FromResult(new TranslationResponse("Hola")));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.That.Matches(r => r.Text == "Bad")))
             .Returns(Task.FromException<TranslationResponse>(new HttpRequestException("Connection refused")));
         var entries = new List<CsvEntry>
         {
@@ -297,7 +308,8 @@ public sealed class OllamaTranslatorTests
     public async Task BatchTranslateAsync_WithMaxParallelism_AllEntriesTranslated()
     {
         // Given: 10 entries and a service that handles any request
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("käännös"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("käännös")));
         var entries = Enumerable.Range(1, 10)
             .Select(i => new CsvEntry { SourceText = $"Text {i}" })
             .ToList();
@@ -314,7 +326,8 @@ public sealed class OllamaTranslatorTests
     public async Task BatchTranslateAsync_SingleEntry_TranslatesEntry()
     {
         // Given: a single entry
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("kissa"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("kissa")));
         var entries = new List<CsvEntry> { new() { SourceText = "cat" } };
 
         // When: batch translating
@@ -333,7 +346,8 @@ public sealed class OllamaTranslatorTests
     public async Task ProcessCsvAsync_ValidCsvFile_CreatesOutputWithTranslatedContent()
     {
         // Given: a mock service and a temp CSV with two source texts
-        _translationService.TranslateAsync(Arg.Any<TranslationRequest>()).Returns(new TranslationResponse("käännös"));
+        A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored))
+            .Returns(Task.FromResult(new TranslationResponse("käännös")));
         var (testInput, testOutput) = CreateTempInputOutputCsv("SourceText,TargetText,Hashtags\r\n\r\nhello,,\r\n\r\nworld,,\r\n\r\n");
 
         try
@@ -368,7 +382,7 @@ public sealed class OllamaTranslatorTests
 
             // Then: an output file is still created; no translation service calls were made
             File.Exists(emptyOutput).ShouldBeTrue();
-            _ = _translationService.DidNotReceive().TranslateAsync(Arg.Any<TranslationRequest>());
+            A.CallTo(() => _translationService.TranslateAsync(A<TranslationRequest>.Ignored)).MustNotHaveHappened();
         }
         finally
         {

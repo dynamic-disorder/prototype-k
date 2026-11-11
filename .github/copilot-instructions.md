@@ -52,7 +52,7 @@
   - Private fields: use a leading underscore (`_myField`).
   - Expression-bodied members are DISABLED — use block bodies.
   - No `this.` qualifier; use `is null` / `is not null` instead of `== null` / `!= null`.
-  - Testing: xUnit + Shouldly, NSubstitute for mocking, NEVER Moq (SponsorLink dependency).
+  - Testing: xUnit + Shouldly, FakeItEasy for fakes, NEVER Moq (SponsorLink dependency).
   - Test names: `SubjectUnderTestOrMethodName_StateOrCondition_ExpectedOutcomeOrBehaviour`.
   - Test body uses `// Given:`, `// When:`, `// Then:` blocks.
 - Refer to `clean_code_general_instructions.md` for detailed style and design guidelines.
