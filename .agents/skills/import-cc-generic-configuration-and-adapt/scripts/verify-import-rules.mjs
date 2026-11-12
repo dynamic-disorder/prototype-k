@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-export const SKIP_DIRS = new Set(['.git', 'node_modules', 'bin', 'obj', 'local_user_files', 'claude']);
+export const SKIP_DIRS = new Set(['.git', 'node_modules', 'bin', 'obj', 'dist', 'local_user_files', 'claude']);
 export const TEXT_EXT = new Set(['.md', '.mjs', '.js', '.sh', '.ps1', '.json', '.txt', '.yml', '.yaml', '.cs']);
 export const REFUSED = [
   'claude_placeholder_values.txt',

@@ -60,5 +60,5 @@ public sealed class ParserTests
 ```
 
 **Files:** `extract-unit-test-context.mjs <class-or-file>` prints the class, its dependencies and existing
-tests as one brief; `references/helper-patterns.md` holds the shared test-double patterns and
+tests as one brief; `references/helper_patterns.md` holds the shared test-double patterns and
 `references/test_anti_patterns.md` the anti-patterns to avoid.

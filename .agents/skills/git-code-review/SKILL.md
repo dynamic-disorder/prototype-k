@@ -18,7 +18,8 @@ NAME="${REPO##*/}"
 ## Invocation
 
 - **Claude Code** lists each skill as a slash command under its own name: `/git-code-review <target>`. That
-  needs `~/.claude/skills` to resolve to the shared skills root; without the link, no shared skill is listed.
+  needs Claude Code's skills directory to point at the shared skills root; without it, no shared skill is
+  listed.
 - **DeepSeek Harness** has no skill slash commands. It selects this skill from the description, so both
   "review this branch" and "/code-review <target>" reach it; a real `/code-review` command needs an entry in
   the harness's command directory.

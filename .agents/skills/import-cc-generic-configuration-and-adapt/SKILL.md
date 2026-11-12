@@ -72,7 +72,7 @@ Any file matching a secret pattern stops the import. Name the file and the rule;
 | `git-code-review` | `.agents/skills/git-code-review/` | New; with `references/living-lens.md` |
 | `git-code-review-resolve-feedbacks` | `.agents/skills/git-code-review-resolve-feedbacks/` | New |
 | `git-pr-fetch` | `.agents/skills/git-pr-fetch/` | New |
-| `git-pr-description-write` | `.agents/skills/git-pr-description-write/` | New; with `TEMPLATES.md` |
+| `git-pr-description-write` | `.agents/skills/git-pr-description-write/` | New; with `templates.md` |
 | `git-pr-squash-message-write` | `.agents/skills/git-pr-squash-message-write/` | New |
 | `git-fetch-context` | merge into `git-pr-fetch` | One context-fetch skill |
 | `output-html-brief-generate` | `.agents/skills/output-html-brief-generate/` | New |

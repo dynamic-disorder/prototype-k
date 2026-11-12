@@ -24,7 +24,7 @@ Purpose, audience, and base writing rules (reader-friendly language, concise par
 
 ## Template Styles
 
-See [TEMPLATES.md](./TEMPLATES.md) for:
+See [templates.md](./templates.md) for:
 - Which style to use (Lean Summary vs. Full Template)
 - Complete template structure for each style
 - 5 worked examples (metric-driven fix, root-cause bug, docs-only, bundled concerns, per-case breakdown)
@@ -38,17 +38,17 @@ Key format rules:
 - **Alert callouts** (max 1-2): `[!IMPORTANT]` for root causes, `[!WARNING]`/`[!CAUTION]` for risks, `[!NOTE]` for non-obvious context, `[!TIP]` for follow-ups
 - **Status emoji** (✅/❌/🟠): on Verification/Definition of Done bullets, Expected Outcome bullets stating outcomes, per-case Status lines
 - **Bullets over tables** - convert every table row to a bullet with reason folded in after a dash
-- **Lengthy verification:** when a reviewer repeats more than ~3 manual steps, keep the Verification bullets as the executive summary and nest the steps in a collapsible `<details>` as a child of the related bullet (see TEMPLATES.md § Verification / Definition of Done)
+- **Lengthy verification:** when a reviewer repeats more than ~3 manual steps, keep the Verification bullets as the executive summary and nest the steps in a collapsible `<details>` as a child of the related bullet (see templates.md § Verification / Definition of Done)
 - **Executive summary first:** 1-3 plain-language lines under the Ticket link: what the PR does, the risk or open point, what the reviewer must decide or check. A reviewer who stops here must still know the state. Expand acronyms; no code names in this block unless unavoidable
-- **Documentation section** when the PR adds or changes docs (wiki, `docs/`, README): one bullet per page, linked, with a 5-10 word note on what changed there. Wiki pages are listed by full link, never "wiki updated" (see TEMPLATES.md § Documentation)
-- **Verification: at most 5 top-level lines**, one status each. Group same-kind checks into one line with the count. Per-run commands, counts, environments and evidence go in a collapsed `<details>` child of the line they support (see TEMPLATES.md § Verification / Definition of Done)
-- **Complex test scenarios:** one collapsible panel per scenario, named like its Verification line. Steps while 🟠. When verified, the same panel records who, environment, date and outcome per step, and the line turns ✅ (TEMPLATES.md § 7). Ask for any missing fact, never invent it
+- **Documentation section** when the PR adds or changes docs (wiki, `docs/`, README): one bullet per page, linked, with a 5-10 word note on what changed there. Wiki pages are listed by full link, never "wiki updated" (see templates.md § Documentation)
+- **Verification: at most 5 top-level lines**, one status each. Group same-kind checks into one line with the count. Per-run commands, counts, environments and evidence go in a collapsed `<details>` child of the line they support (see templates.md § Verification / Definition of Done)
+- **Complex test scenarios:** one collapsible panel per scenario, named like its Verification line. Steps while 🟠. When verified, the same panel records who, environment, date and outcome per step, and the line turns ✅ (templates.md § 7). Ask for any missing fact, never invent it
 - **Mixed audience:** write each top-level line for a reviewer who does not know the area. Put precise names in sub-bullets or `<details>`, not in the first clause
 - **Length target:** 15-25 visible lines total (Executive summary + Issue + Changes + Documentation + Verification); a collapsed `<details>` block does not count
 - **Shorter is better** - cut any section that doesn't answer a reviewer's actual question
-- **Changes bullets: high level, 4 max, one plain-language fact and about 15 words each** - say what behaviour changes, not which files or functions. File, function and setting names go in one collapsed `<details>` "Code and script changes" block after the bullets, for the reader who wants the code (see TEMPLATES.md § Changes)
+- **Changes bullets: high level, 4 max, one plain-language fact and about 15 words each** - say what behaviour changes, not which files or functions. File, function and setting names go in one collapsed `<details>` "Code and script changes" block after the bullets, for the reader who wants the code (see templates.md § Changes)
 
-For detailed format guidance, examples, and anti-patterns, see [TEMPLATES.md](./TEMPLATES.md).
+For detailed format guidance, examples, and anti-patterns, see [templates.md](./templates.md).
 
 ## Workflow
 
