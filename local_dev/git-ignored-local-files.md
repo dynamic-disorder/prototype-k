@@ -176,7 +176,7 @@ reports the *directory* as not ignored even though its contents are — and
 
 | Present in scratch | Purpose | Durable? |
 | :--- | :------ | :------- |
-| `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox, created by [`scripts/sandbox-env.sh`](scripts/sandbox-env.sh), which points every cache variable here because `$HOME` is read-only. | No — all reproducible |
+| `nuget/`, `dotnet-home/`, `dotnet-tools/`, `xdg/` | Package/runtime caches and tool installs for the sandbox, created by the project repositories' `local_dev/scripts/sandbox-env.sh`, which points every cache variable here because `$HOME` is read-only. | No — all reproducible |
 | `compatcheck/` | One-off: resolved every member reference PiperSharp 1.0.7 makes against NAudio 3.1.0 to prove zero missing members. | No — the finding is recorded in `analyses/linux-build-audit.md` |
 | `parsecheck/` | One-off: ran the real `translations.csv` through `TranslationTools` to validate the parser fixes (3077/3077 rows). | No — the finding is recorded in the audit |
 | `*.md` analyses and spike write-ups | Notes the investigation and spike skills leave here. | Deliberately local |
@@ -190,7 +190,7 @@ and the `.git` backup. Only the pre-cleanup configuration snapshot — purged de
 are gone. The pre-split history also survives as ancestors of this repository's own history.
 
 **Promoted out of scratch:** the .NET assembly inspector `ildump` moved to
-[`tools/ildump/`](tools/ildump/) once it was judged reusable rather than one-off — the rule being that
+`local_dev/tools/ildump/` (now in the `csv-translations` checkout) once it was judged reusable rather than one-off — the rule being that
 anything wanted later belongs in `local_dev/`, not here.
 
 ## Removed during this work

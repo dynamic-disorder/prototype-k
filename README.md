@@ -1,57 +1,87 @@
 # prototype-k
 
-> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
-> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
-> in the next pass; the gate, the skills and the export it also describes are current.
+**TL;DR** — The one home of the agent configuration this machine installs: the skills, the shared rules,
+the style block and the git gates, with the installers that put them in place and the bundle that carries
+them to another machine. The five projects that were built here live in their own repositories now.
 
-**TL;DR** — Umbrella repository: one project lives here (`CsvTranslations/`), the other four are
-separate repositories cloned beside this one. This repository holds the cross-project picture, the
-tooling templates every project was created from, and the complete pre-split history.
+## What this repository is
+
+| | |
+| :--- | :--- |
+| **Problem** | The configuration existed as copies in six repositories. Every rule edit had to be repeated, and a copy that drifted taught the old rule silently. |
+| **Value** | One physical copy, installed by links, so a rule learned once reaches every repository on the machine — and a second machine gets the same bytes through the export. |
+| **Verify** | `node scripts/install-global.mjs` exits 0 with every link in place; `node scripts/export-agents.mjs --check` reports no drift; a commit in any repository prints the gate's `PASS`. |
+
+There is no application code here. What lives in this checkout:
+
+| Path | Holds |
+| :--- | :--- |
+| `.agents/skills/` | The canonical agent skills — one copy, linked into `~/.agents/skills/<name>` |
+| `.agents/hooks/`, `.githooks/` | The build gate and the two git gates |
+| `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
+| `scripts/` | `install-global.mjs` (links and `core.hooksPath`), `export-agents.mjs` (the portable bundle), `scan-publication-leaks.sh`, and the shared libraries |
+| `export/` | The portable bundle's own inputs: `settings.json`, its `README.md`, the `project-seed/` templates |
+| `.editorconfig`, `.gitattributes`, `Directory.Build.props`, `LICENSE` | The canonical templates a new project repository starts from |
+| `docs/`, `local_dev/` | The public documentation tier, and the working notes: harness details, build audits, plan records |
+| `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
+
+## Install it on a machine
+
+The configuration is installed by links, never by copying. Run in Bash, from this checkout:
+
+```bash
+node scripts/install-global.mjs --write   # skills, hooks, scripts, githooks, global core.hooksPath
+node scripts/install-global.mjs           # check: every link and the hooks path
+node global/install.mjs                   # the shared rules block
+node output-style/install.mjs             # the style block
+```
+
+That done, every repository on the machine is gated on commit by the one checkout: the publication scan
+runs first, then the build gate when C# is staged.
+
+A machine that cannot see this checkout uses the portable bundle instead. Generate it here:
+
+```bash
+node scripts/export-agents.mjs --archive  # writes dist/.agents-generic-<date>/ and its .tar.gz
+```
+
+Copy that folder to ~/\.agents on the receiving machine and point git at its hooks. Run in Bash:
+
+```bash
+git config --global core.hooksPath "$HOME/.agents/githooks"
+```
+
+`export/README.md` carries the full install steps, what the bundle holds, and the files it refuses.
 
 ## Projects
 
-| Project | Where the code is | What it is | Visibility |
-| :--- | :--- | :--- | :--- |
-| **CliUtils** | [dynamic-disorder/cliutils](https://github.com/dynamic-disorder/cliutils) | Console output utilities — coloured output, Spectre.Console wrappers, an in-memory logger. Packaged as `DynamicDisorder.CliUtils` | public |
-| **CsvTranslations** | `CsvTranslations/` — **in this repository** | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management | public |
-| **FilenameTools** | [dynamic-disorder/filenametools](https://github.com/dynamic-disorder/filenametools) | Filename sanitization — invalid characters, Unicode normalization, batch CLI | public |
-| **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata | public |
-| **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides | **private** |
+None of these lives here. Each is a separate repository, cloned beside this one, with its own history,
+ignore list and `AGENTS.md`.
 
-## Layout
-
-The four separate projects are cloned **at the same directory level** as this repository, each with
-its own `.gitignore`, README and instruction files. Nothing is nested and nothing is symlinked:
-
-```text
-My/
-├── ai-offline/
-├── cliutils/
-├── filenametools/
-├── mediarenamer/
-└── prototype-k/          ← this repository, which also contains CsvTranslations/
-```
-
-Work in the repository that owns the code. Each project is worked on, verified and released on its
-own, and there are no cross-repository relative paths: reference another project by repository name,
-or by its package.
+| Project | Repository | What it is |
+| :--- | :--- | :--- |
+| **CliUtils** | [dynamic-disorder/cliutils](https://github.com/dynamic-disorder/cliutils) | Console output utilities — coloured output, Spectre.Console wrappers, an in-memory logger. Packaged as `DynamicDisorder.CliUtils` |
+| **CsvTranslations** | `csv-translations` — separate checkout, no remote yet | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management |
+| **FilenameTools** | [dynamic-disorder/filenametools](https://github.com/dynamic-disorder/filenametools) | Filename sanitization — invalid characters, Unicode normalization, batch CLI |
+| **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata |
+| **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides |
 
 ## Umbrella environment variable
 
-`DYNAMIC_DISORDER_ROOT` names the directory that contains **every** clone — this repository and the four
-projects beside it. It exists so tooling and humans can address a sibling repository without a
-cross-repository relative path, which this project forbids.
+`DYNAMIC_DISORDER_ROOT` names the directory that contains every clone — this repository and the projects
+beside it. It exists so tooling and humans can address a sibling repository without a cross-repository
+relative path, which this project forbids.
 
 It is not the same variable as `REPO_ROOT`, and the two do not replace each other:
 
 | Variable | Scope | Where the value comes from |
 | :--- | :--- | :--- |
-| `REPO_ROOT` / `$RepoRoot` | one repository | Derived, per clone: `local_dev/scripts/repo-env.sh` / `repo-env.ps1` walk up from their own location |
+| `REPO_ROOT` / `$RepoRoot` | one repository | Derived, per clone, by that repository's own `local_dev/scripts/repo-env.sh` / `repo-env.ps1` |
 | `DYNAMIC_DISORDER_ROOT` | one machine | Set by hand, once per machine, in user-global shell or environment config |
 
-`DYNAMIC_DISORDER_ROOT` is never derived, on purpose: a standalone clone of any project has no umbrella parent
-to walk up to, and deriving one would be exactly the `../` path the project bans. Nothing breaks when
-it is unset — it is a convenience for tooling that wants to reach a sibling repository, and each
+`DYNAMIC_DISORDER_ROOT` is never derived, on purpose: a standalone clone of any project has no umbrella
+parent to walk up to, and deriving one would be exactly the `../` path the project bans. Nothing breaks
+when it is unset — it is a convenience for tooling that wants to reach a sibling repository, and each
 script that uses it should say what it does when the variable is missing.
 
 The name is spelled with underscores, not hyphens: bash rejects a hyphenated variable name, and this one
@@ -131,57 +161,19 @@ Bash:
 rm -f ~/.config/environment.d/umbrella.conf
 ```
 
-## What lives here
-
-| Path | Purpose |
-| :--- | :--- |
-| `CsvTranslations/` | The one project that lives here — `CsvTranslations.sln`, twelve projects (seven source, five test), the dictionary `translations.csv` and its corpora |
-| `local_dev/scripts/` | Template tooling: `build-all-linux.sh`, the `repo-env.*` / `repo_paths.py` environment resolvers, `sandbox-env.sh` cache redirection, the self-contained publisher, the AI-context token estimator, the VS Code cache cleaner |
-| `local_dev/tools/` | `ildump` — a `System.Reflection.Metadata` assembly inspector |
-| `local_dev/analyses/`, `local_dev/plans/` | The cross-platform build audit, the TTS analysis, and the consolidation/split plan |
-| `local_dev/*.md` | Tooling index, harness documentation, the git-ignored-files reference |
-| `.agents/skills/` | The agent skills — one copy; the machine links each into `~/.agents/skills/<name>` for every repository |
-| `.editorconfig`, `.gitattributes`, `Directory.Build.props` | The canonical formatting, line-ending and build-property templates the project repositories were created from |
-| `.github/`, `.agents/`, `.githooks/`, `global/`, `output-style/`, `scripts/` | Instruction, style and gate configuration, with the installers that put it at machine level |
-| `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
-
-The executive-first writing style lives in `output-style/` here; `output-style/install.mjs` upserts it
-into `~/.agents/AGENTS.md`.
-
-Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
-not live in this repository: they belong to the machine, in user-global agent configuration.
-
-## Working here
-
-`CsvTranslations/` is worked on in place. From this directory, on Linux or macOS:
-
-```bash
-./local_dev/scripts/build-all-linux.sh --test      # builds and tests the solution
-```
-
-From `CsvTranslations/`, on any platform:
-
-```bash
-dotnet build CsvTranslations.sln
-dotnet test  CsvTranslations.sln
-```
-
-The build script discovers solutions by glob; here that finds `CsvTranslations.sln` only. The four
-separate projects verify in their own repositories.
-
 ## Instructions for agents
 
-`AGENTS.md` is the entry point for this repository: non-negotiables, the project table and the
-cross-project pointers. `CsvTranslations/AGENTS.md` covers the solution that lives here. Every other
-project carries its own `AGENTS.md` — clone it and read that one.
+`AGENTS.md` is the entry point: the non-negotiables, what lives here, how the configuration reaches a
+machine, and where to look next. Every project carries its own `AGENTS.md` — clone it and read that one.
 
 ## History
 
-The complete history lives here, including every commit that built the projects before the split —
-each project repository starts from a single import commit. `CsvTranslations` was split out on
-2026-10-15 and merged back here on 2026-10-16. How and why the split happened, with the decisions
-behind it, is in
-[`local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md`](local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md).
+This is the original working tree. It built all five projects until the split of 2026-10-15, merged
+`CsvTranslations` back on 2026-10-16, moved it out again on 2026-11-13, and became the single home of the
+agent configuration the same day. The decisions behind the split are in
+[`local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md`](local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md);
+the merge, the export and the move are in
+[`docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md`](docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md).
 
 ## License
 

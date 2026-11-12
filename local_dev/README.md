@@ -232,7 +232,7 @@ internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-aud
   solution and project (2026-10-10): per-solution Debug/Release/test results, the case-sensitive
   `ProjectReference` and `EnableWindowsTargeting` failures, the `git core.ignorecase` rename trap,
   open issues, and a cross-platform checklist for future changes.
-- [`analyses/tts_analysis.md`](analyses/tts_analysis.md) — text-to-speech implementation analysis.
+- the TTS analysis, `local_dev/analyses/tts_analysis.md`, moved to the `csv-translations` checkout with the project.
 
 ## Documentation
 

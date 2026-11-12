@@ -1,119 +1,122 @@
-# AGENTS.md — umbrella repository
+# AGENTS.md — umbrella, template and agent-configuration home
 
-> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
-> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
-> in the next pass; the gate, the skills and the export it also describes are current.
+**TL;DR** — This repository holds no application. It is the one home of the agent configuration this
+machine installs — the skills, the shared rules, the style block, the git gates and the scripts that put
+them all in place — and it keeps the cross-project documentation, the templates a new repository starts
+from, and the history of the projects that were built here before they split out.
 
-**TL;DR** — This repository is an umbrella. One project lives here, `CsvTranslations/`; the other four
-are separate repositories. Beyond that it holds the cross-project documentation, the tooling templates
-they were created from, and the complete history.
-
-**Verify everything:** `./local_dev/scripts/build-all-linux.sh --test` builds and tests the solution
-in `CsvTranslations/`; the `ildump` inspector under `local_dev/tools/` is the only other C#
-here. The four separate projects verify in their own repositories.
+**Verify everything:** `node scripts/install-global.mjs` (links and hooks path), `node global/install.mjs
+--check` and `node output-style/install.mjs --check` (the installed blocks), `node scripts/export-agents.mjs
+--check` (the portable bundle). Each project verifies in its own repository.
 
 ## Executive summary
 
 | | |
 | :--- | :--- |
-| **Problem** | Five unrelated projects shared one working tree, one `.gitignore`, one build gate and one instruction tree; one of them needed different visibility. |
-| **Value** | Each project now has its own repository, history, `.gitignore` and instruction files; this repository keeps the cross-project picture and the original history. |
-| **Change** | Cleanup, consolidation of the root and meta layer, then the split — one project per repository, with the AI stack private. `CsvTranslations` was merged back here on 2026-10-16. |
-| **Verify** | Builds and tests run in `CsvTranslations/` here and in the four project repositories; each was verified from a fresh tree before its first push. |
-| **Top risk** | Editing a file here that belongs to a project. Check the project table first. |
+| **Problem** | The agent configuration existed as copies in six repositories, so every rule edit had to be repeated and a copy that drifted taught the old rule silently. The five projects also shared one working tree, one gate and one ignore list. |
+| **Value** | Skills, rules, style and gates now have one physical copy, installed by links, so a rule learned once reaches every repository on the machine. Each project owns its own code, build and history. |
+| **What** | The configuration, its installers, the export for a second machine, the canonical templates, the cross-project documentation and the dated plan records. Deliberately not here: product code, project tooling, machine notes. |
+| **Verify** | The three `--check` commands above exit 0, and a commit in any repository prints the gate's `PASS` line. |
+| **Top risk** | Editing a project file here, or a copy of the configuration in a project repository. Neither exists any more; if one appears, it is the defect. |
 
 ## Non-negotiables
 
 - **LF line endings everywhere** — repository *and* working tree (`.gitattributes`: `* text=auto eol=lf`, `core.autocrlf=false`).
-- **Never hard-code a machine path** — source `local_dev/scripts/repo-env.sh` (or the PowerShell/Python sibling) instead. The project repositories carry the same rule.
-- **Everything committed is public** — files and commit messages alike. Never a drive letter, home or profile path, account/user/host name, or employer/ticket identifier, masked or not: write `%USERPROFILE%\…` on Windows and `~/…` on Linux/macOS. Never describe content that was removed or anonymised. Scan the staged diff before committing; rules and the command in `.agents/skills/git-commit/SKILL.md`.
+- **Never hard-code a machine path** — derive it from the file's own location, or use `DYNAMIC_DISORDER_ROOT` when a sibling checkout is meant. The project repositories carry the same rule.
+- **Everything committed is public** — files and commit messages alike. Never a drive letter, home or profile path, account/user/host name, or employer/ticket identifier, masked or not: write `%USERPROFILE%\…` on Windows and `~/…` on Linux/macOS. The gate scans every commit; the rules and the command are in `.agents/skills/git-commit/SKILL.md`.
 - **No cross-repository relative paths** — reference another project by repository name or by its package, never by `../`.
-- **Match on-disk path case exactly** in every `ProjectReference` / `Include` — wrong-case paths are silently skipped during restore on Linux.
+- **Match on-disk path case exactly** in every `ProjectReference` / `Include` a template produces — wrong-case paths are silently skipped during restore on Linux.
 - **Keep git `core.ignorecase=false`** in this clone.
-
-## Writing & response style
-
-Applies to responses, messages and any document written here. Write for fast comprehension; assume limited
-reader time and mixed technical backgrounds. One voice, three modes — pick from the artifact:
-
-- **Direct answer** (default): outcome first, minimalist, budgeted, bullets only for lists; after doing
-  work, recap what changed → status → open issues → next step → verification numbers.
-- **Document** (any file, including a commit body): executive summary table, then
-  Problem → Value → Change → Verify in descending importance.
-- **Message** (text that leaves the session): simplest register, one blank line between paragraphs, the ask
-  in the first paragraph, no preamble.
-
-In every mode: outcomes and rationale over implementation detail, plain words, short sections, the number
-behind every claim, secrets never echoed, and nothing re-shown that did not change. Full rules:
-`output-style/` in this repository.
 
 ## Projects
 
-This table is the index, with the state each project was verified in. Only `CsvTranslations/` lives in this repository.
+None of these lives in this repository. Work in the checkout that owns the code, and read that
+repository's own `AGENTS.md`.
 
-| Project | Repository | Type | Verified |
-| :--- | :--- | :--- | :--- |
-| **CliUtils** | [cliutils](https://github.com/dynamic-disorder/cliutils) | Library | builds and packs standalone |
-| **CsvTranslations** | `CsvTranslations/` — **in this repository** | Solution | builds clean, 280/280 tests pass |
-| **FilenameTools** | [filenametools](https://github.com/dynamic-disorder/filenametools) | Solution | builds clean, 78/78 tests pass |
-| **MediaRenamer** | [mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF | builds clean; the solution has no test projects |
-| **ai_offline** | [ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Docker | compose setups and guides |
+| Project | Where the code is | What it is |
+| :--- | :--- | :--- |
+| **CliUtils** | [dynamic-disorder/cliutils](https://github.com/dynamic-disorder/cliutils) | Console output utilities — coloured output, Spectre.Console wrappers, an in-memory logger. Packaged as `DynamicDisorder.CliUtils` |
+| **CsvTranslations** | `csv-translations` — separate checkout, no remote yet | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management |
+| **FilenameTools** | [dynamic-disorder/filenametools](https://github.com/dynamic-disorder/filenametools) | Filename sanitization — invalid characters, Unicode normalization, batch CLI |
+| **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata |
+| **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides |
 
 ## What lives here
 
 | Path | Purpose |
 | :--- | :--- |
-| `CsvTranslations/` | The one project that lives here: solution, twelve projects, the dictionary and its corpora |
-| `local_dev/scripts/` | Template tooling: `sandbox-env.sh` (cache redirection where `$HOME` is read-only), `repo-env.sh` / `repo-env.ps1` / `repo_paths.py`, `build-all-linux.sh`, `publish-selfcontained.mjs`, `install-net10-runtime.ps1`, the token estimator, the VS Code cache cleaner |
-| `local_dev/analyses/` | The cross-platform build audit and the TTS analysis, as recorded before the split |
-| `local_dev/plans/` | The consolidation and split plan |
-| `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
-| `docs/` | The public documentation tier; `docs/agents/` holds the three specs for authoring a skill |
 | `.agents/skills/` | The canonical agent skills — one copy; `scripts/install-global.mjs` links each into `~/.agents/skills/<name>` for every repository on the machine |
-| `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
-| `.github/`, `.agents/`, `.githooks/`, `global/`, `output-style/`, `scripts/` | The instruction and gate configuration, and the installers that put it at machine level |
+| `.agents/hooks/` | The build gate, run by the git gate and by harness tool-call hooks |
+| `.githooks/` | `pre-commit` (publication scan, then the build gate) and `pre-push` (forwards to a repository's own `git_tools/pre-push`) |
+| `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
+| `scripts/` | `install-global.mjs` (the links and `core.hooksPath`), `export-agents.mjs` and its planner (the portable bundle), `scan-publication-leaks.sh`, and the shared libraries |
 | `export/` | The portable bundle's own inputs: its `settings.json`, its `README.md` and the `project-seed/` templates |
+| `.editorconfig`, `.gitattributes`, `Directory.Build.props`, `LICENSE` | The canonical templates a new project repository starts from |
+| `docs/` | The public documentation tier: the skill-authoring specs and the dated plans |
+| `local_dev/` | The harness notes, the cross-platform build audit, the plan records and the working TODOs — documentation about this repository, not tooling |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
-The executive-first writing style lives in `output-style/` here; `output-style/install.mjs` upserts it
-into `~/.agents/AGENTS.md`, so both machines run the same block.
+## How the configuration reaches a machine
 
-Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
-not live in this repository: they belong to the machine, in user-global agent configuration.
+One checkout, many links. Nothing is copied, so nothing can drift:
+
+```
+~/.agents/skills/<name>  ->  <this checkout>/.agents/skills/<name>
+~/.agents/hooks          ->  <this checkout>/.agents/hooks
+~/.agents/scripts        ->  <this checkout>/scripts
+~/.agents/githooks       ->  <this checkout>/.githooks
+git config --global core.hooksPath  ->  ~/.agents/githooks
+```
+
+`node scripts/install-global.mjs --write` creates them and writes the global hooks path; run the same
+command with no option to check. The rules and the style block are installed separately by
+`node global/install.mjs` and `node output-style/install.mjs`, which own one managed block each in
+`~/.agents/AGENTS.md`.
+
+A machine that cannot see this checkout copies the portable bundle instead:
+`node scripts/export-agents.mjs --archive` writes `dist/.agents-generic-<date>/` and its `.tar.gz`, and
+the receiving machine copies that folder to `~/.agents` and sets `core.hooksPath` to its `githooks`.
+
+## Verify
+
+Run in Bash, from this repository:
+
+```bash
+node scripts/install-global.mjs            # every link and the hooks path; exit 0 when installed
+node global/install.mjs --check            # shared rules block current
+node output-style/install.mjs --check      # style block current
+node scripts/export-agents.mjs --check     # the newest export matches the checkout
+node --test scripts/lib/*.test.mjs         # the planner and block libraries
+```
+
+The git gate runs `scripts/scan-publication-leaks.sh` and then the build gate on every commit. A
+repository with no staged C# costs a scan only; the gate exits 0 and prints `PASS`.
 
 ## Where to look next
 
-Read this index first, then open only the file you need.
-
-- **The split and its rationale**: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md` — decisions, per-repository `.gitignore` tables, progress.
+- **Installing or repairing a machine**: `scripts/install-global.mjs` and the `global/` and `output-style/` installers; the machine notes in `~/.agents/AGENTS.md` cover what differs per box.
+- **The portable bundle**: `export/README.md` — what it holds, what it refuses, and how to install it.
+- **Skill authoring**: `docs/agents/README.md` — the four specs, not a paraphrase.
+- **The split and its rationale**: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md`.
+- **The merge, the export and the move**: `docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md` and its neighbours in `docs/plans/`.
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md`.
-- **Tooling**: `local_dev/README.md`.
-- **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and how the machine-level gate is activated.
+- **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and how the gate is activated.
 - **Git-ignored files**: `local_dev/git-ignored-local-files.md` — what stays out of version control and why.
-- **Agent skill authoring**: `docs/agents/README.md` — the three source specs for writing or revising anything under `.agents/skills/`, rather than paraphrasing them from memory.
-- **Working on `CsvTranslations`**: read `CsvTranslations/AGENTS.md`. For any other project, clone it and read that repository's own `AGENTS.md`.
-
-## Agent configuration
-
-One directory, `.agents/`, holds everything the harnesses read; `.claude/` no longer exists.
-
-| Path | Contents |
-| :--- | :--- |
-| `AGENTS.md`, `CsvTranslations/AGENTS.md` | Instructions, chained from the repository root down to the working directory |
-| `.agents/skills/` | The canonical, tracked, tool-neutral skills — one copy, linked into `~/.agents/skills/<name>` on each machine |
-| `.agents/hooks/` | The build gate |
-| `.githooks/pre-commit`, `pre-push` | The git gates — installed machine-wide as `~/.agents/githooks`, wired by `core.hooksPath`; `pre-push` forwards to a repository's own `git_tools/pre-push` when it carries one |
-| `scripts/` | `install-global.mjs` (the machine-level links and `core.hooksPath`), `export-agents.mjs` with its planner (the portable bundle), `scan-publication-leaks.sh`, and the block installers' libraries |
-| `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
-| `.agents/commands/`, `.agents/rules/` | Slash commands and path-scoped rules, when a tree carries them |
-
-`.gitignore` ignores the *contents* of every `.agents/` directory and re-includes only that shared set, so anything else dropped there stays machine-local. The gate is machine-level: `core.hooksPath` points at `~/.agents/githooks`, a link into this checkout, so every commit in every repository runs `scripts/scan-publication-leaks.sh` and then the build gate. A repository carries no hook file of its own.
+- **Working on a project**: clone the repository and read its own `AGENTS.md`.
 
 ## Environment & style
 
 - **Platforms**: Omarchy Linux (Arch-based, primary since Oct 2026) and Windows 11.
-- **SDK**: .NET 10.0.x. Every project targets `net10.0` (MediaRenamer: `net10.0-windows`; TextToSpeechApp: `net10.0` on every platform — one build, no Windows target).
-- **Runtime**: only the .NET 10 runtime is installed on the Linux box, and it runs every project — no roll-forward needed.
-- **Shell**: bash on Linux; PowerShell (preferred) or Git Bash on Windows.
-- **Read-only `$HOME`**: source `local_dev/scripts/sandbox-env.sh` before restoring, or the package caches cannot be written.
+- **SDK**: .NET 10.0.x. The templates target `net10.0`; the project repositories carry their own target frameworks.
+- **Shell**: bash on Linux; PowerShell (preferred) or Git Bash on Windows. Every installer here is Node, so it runs in any of them.
+- **Node**: 20 or newer — the installers, the exporter and the planner tests all use it.
 - **Line endings**: **LF everywhere** per `.gitattributes` with `core.autocrlf=false`. The old Windows-first CRLF-for-`.cs` policy was dropped in Oct 2026.
+
+Machine- and user-level notes — tools missing on a box, environment workarounds, mount points — live in
+the machine notes of `~/.agents/AGENTS.md`, never in this repository.
+
+## History
+
+This is the original working tree. It built all five projects until the split on 2026-10-15, merged
+`CsvTranslations` back on 2026-10-16, moved it out again on 2026-11-13, and became the single home of the
+agent configuration the same day. How and why: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md`.

@@ -48,13 +48,6 @@ venv/
 # `.clinerules` is deliberately NOT ignored: it holds the shared, tracked project rules.
 .aider*
 
-# --- merged back from the CsvTranslations repository -------------------------------
-# TTS runtime assets: downloaded on first use, ~274 MB, not reproducible from git.
-**/TextToSpeechApp/models/
-**/TextToSpeechApp/piper/
-# Output of local_dev/scripts/publish-selfcontained.mjs, and of dotnet pack.
-/publish/
-artifacts/
 # Generated portable export (dist/.agents-generic-<date>); regenerate with scripts/export-agents.mjs.
 /dist/
 # Test and IDE output the C# projects produce.

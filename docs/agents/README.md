@@ -1,17 +1,18 @@
 # Agent skill authoring specs
 
-**TL;DR** — Three source specs for writing an agent skill in this repository: the `SKILL.md` structure, the
-skill `README.md` style, and why skill logic is written as `.mjs`.
+**TL;DR** — Four source specs for writing an agent skill in this repository: the `SKILL.md` structure, the
+skill `README.md` style, why skill logic is written as `.mjs`, and which work belongs in a script.
 
 | File | Answers | Applies to |
 | :--- | :--- | :--- |
 | [`skill-md-structure-and-style.md`](skill-md-structure-and-style.md) | Frontmatter rules, the eight body sections in order, the engineering rules (imperative voice, prerequisites as a table, name every loss), and the Functional Requirements table shape. | Any `SKILL.md`, including the ones under [`.agents/skills/`](../../.agents/skills/). |
 | [`skill-readme-writing-style.md`](skill-readme-writing-style.md) | The README skeleton — title, executive summary, Problem/Why/What/Verification table, Import for AI blocks split by platform, agent execution rules, tests, files index. | The `README.md` beside a skill. |
 | [`mjs-files-reference.md`](mjs-files-reference.md) | What `.mjs` is, how it differs from `.js` and CommonJS, and when a task belongs in Node instead of PowerShell or Bash. | `scripts/*.mjs` inside a skill. |
+| [`skill-script-delegation.md`](skill-script-delegation.md) | Which skills delegate to a script, where each script lives, and the helper scripts shared between them. | A skill whose body is a command and a report. |
 
 ## How to use them
 
-Read the file, do not paraphrase from memory: the global agent instructions carry a summary of all three, and
+Read the file, do not paraphrase from memory: the global agent instructions carry a summary of all four, and
 the summary is deliberately shorter than the specs. A skill that is large, or a case the summary does not
 settle, is settled here.
 
@@ -27,5 +28,5 @@ the two versions drift.
 
 ## Documentation
 
-Written here: this index and the three specs beside it. The [docs map](../README.md) lists this folder in its
+Written here: this index and the four specs beside it. The [docs map](../README.md) lists this folder in its
 "The set" table.
