@@ -136,13 +136,13 @@ rm -f ~/.config/environment.d/umbrella.conf
 | `local_dev/tools/` | `ildump` — a `System.Reflection.Metadata` assembly inspector |
 | `local_dev/analyses/`, `local_dev/plans/` | The cross-platform build audit, the TTS analysis, and the consolidation/split plan |
 | `local_dev/*.md` | Tooling index, harness documentation, the git-ignored-files reference |
-| `.agents/skills/` | The ten agent skills used across the projects; each project repository carries the subset it needs |
+| `.agents/skills/` | The agent skills — one copy; the machine links each into `~/.agents/skills/<name>` for every repository |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | The canonical formatting, line-ending and build-property templates the project repositories were created from |
-| `.github/`, `.agents/`, `.githooks/` | Instruction and build-gate configuration, kept as the template for new repositories |
+| `.github/`, `.agents/`, `.githooks/`, `global/`, `output-style/`, `scripts/` | Instruction, style and gate configuration, with the installers that put it at machine level |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
-The executive-first writing style lives in `agent-skills/output-style/`; this repository no longer carries a
-copy.
+The executive-first writing style lives in `output-style/` here; `output-style/install.mjs` upserts it
+into `~/.agents/AGENTS.md`.
 
 Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
 not live in this repository: they belong to the machine, in user-global agent configuration.

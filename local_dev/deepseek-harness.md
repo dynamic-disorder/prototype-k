@@ -11,7 +11,7 @@ Checked against `@deepseek-ai/dsh` 0.2.0-rc.2 (`dsh-agent-instructions`, `dsh-sk
 | Input | Where it comes from | Shared with Claude Code? |
 | :---- | :------------------ | :----------------------- |
 | Instructions | `AGENTS.md`, plus the `AGENTS.local.md` / `CLAUDE.local.md` overlays, chained from the project root down to the session working directory. DSH also reads `CLAUDE.md` where a tree still carries one | Yes — the same files serve both harnesses, so there is no duplicate to maintain |
-| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` | Yes — canonical copy is the tracked [`.agents/skills/`](../.agents/skills/), which both harnesses scan directly |
+| Skills | Project roots `.dsh/skills/` and `.agents/skills/`; user roots `~/.dsh/skills/` and `~/.agents/skills/` | Yes — one canonical copy in this checkout's [`.agents/skills/`](../.agents/skills/), linked from `~/.agents/skills/<name>`, so both harnesses and every repository read the same files |
 | Hooks | **Not natively** — an extra package has to be mounted per machine (below) | No — the configuration is shared, the *activation* is not |
 
 Details worth knowing:
@@ -30,42 +30,43 @@ Details worth knowing:
 ## The build gate
 
 One script is the whole gate — [`.agents/hooks/pre-commit-build-check.sh`](../.agents/hooks/pre-commit-build-check.sh) —
-and it serves one entry point:
+and one wrapper calls it:
 
 | Entry point | Activated by | Status |
 | :---------- | :----------- | :----- |
-| **Git hook** — [`.githooks/pre-commit`](../.githooks/pre-commit), a thin wrapper that `exec`s the gate | `git config core.hooksPath .githooks` (repo-local, one line per clone) | **Working, and the path to rely on.** Verified: a passing build commits, a failing build aborts the commit with the compiler output. Gates your commits *and* an agent's. |
+| **Git hook** — [`.githooks/pre-commit`](../.githooks/pre-commit), a thin wrapper that runs the gate | `git config --global core.hooksPath <absolute ~/.agents/githooks>`, written once per machine by `node scripts/install-global.mjs --write` | **Working, and the path to rely on.** Every repository on the machine runs it, and a clone carries no hook file of its own. |
 
 The harness `PreToolUse` hook was removed on 2026-11-11 with `.agents/settings.json`; the git hook is the only entry point.
 
-### Where the gate lives after the split
+### Where the gate lives
 
-The C# projects each have the gate: `cliutils`, `filenametools` and `mediarenamer` carry their own copy
-of the three files, and the `CsvTranslations/` tree merged back into this repository uses the umbrella's
-copy. `core.hooksPath` is set per clone. `ai-offline` holds no C# and so carries no gate.
+This checkout is its only home. `~/.agents/hooks`, `~/.agents/scripts` and `~/.agents/githooks` are
+links into it, and `core.hooksPath` points at the last one, so no repository carries a copy of the
+gate — or anything else the machine installs. `ai-offline` holds no C# and the gate exits 0 there.
 
-Two changes came out of that distribution:
+Two changes came out of the earlier distribution and stay in the shared script:
 
 - The script prefers the tracked `local_dev/scripts/sandbox-env.sh` and only falls back to the older
   scratch `local_user_files/nuget/env.sh`, so a repository carrying the tracked script builds on a
   read-only `$HOME` without needing a scratch file.
 - A repository holding a single project and no solution is gated too: the script builds that project.
   `cliutils` has no `.sln`, and the script previously found nothing there and let every commit through
-  unchecked.
+  unchecked. Both solution formats are searched: `.sln` and `.slnx`.
 
 Installing it was not cosmetic: the first probe blocked `mediarenamer`, whose repo-root
 `Directory.Build.props` had not survived the split, so a plain `dotnet build` there failed with
 `NETSDK1100`. That repository was publicly broken on Linux until the file was restored.
 
-To activate it in a clone:
+To activate it on a machine, from this checkout:
 
 ```bash
-git config core.hooksPath .githooks
+node scripts/install-global.mjs --write    # links hooks, scripts and githooks; writes core.hooksPath
+node scripts/install-global.mjs            # check: every link and the setting
 ```
 
-The gate is a git hook: it acts only when `.cs`, `.csproj`, `.props` or `.targets` are staged, and a
-C# commit runs a `--no-incremental` build of the nearest solution first, blocking with the compiler
-output on failure.
+The gate is a git hook: it acts only when `.cs`, `.csproj`, `.props`, `.targets`, `.sln` or `.slnx` are
+staged, and a C# commit runs a `--no-incremental` build of the nearest solution first, blocking with
+the compiler output on failure.
 
 ### The harness hook bridge (removed)
 
@@ -87,7 +88,8 @@ writability first and, if the workspace is read-only, warns and allows:
 
 One more detail for the harness route: the matcher is `bash|Bash`. Claude Code names the tool `Bash`
 and DSH names it `bash`, and a literal matcher (word characters and `|`) is compared by **exact,
-case-sensitive membership** — so `Bash` alone would silently never fire in DSH.
+case-sensitive membership** — so `Bash` alone would silently never fire in DSH. The route is gone; the
+detail is kept for the day it comes back.
 
 ### Scope
 
@@ -117,7 +119,7 @@ To watch it block without creating anything, put a failing `dotnet` stub first o
 (`PATH=/tmp/stub:$PATH git commit -m probe`) and expect exit 2 plus
 `build FAILED … the commit is blocked`.
 
-To disable it: `git config --unset core.hooksPath`. `git commit --no-verify` skips the git hook.
+To disable it: `git config --global --unset core.hooksPath`. `git commit --no-verify` skips the git hook.
 
 ## Related
 

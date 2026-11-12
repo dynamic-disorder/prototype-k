@@ -41,7 +41,7 @@ reader time and mixed technical backgrounds. One voice, three modes — pick fro
 
 In every mode: outcomes and rationale over implementation detail, plain words, short sections, the number
 behind every claim, secrets never echoed, and nothing re-shown that did not change. Full rules:
-the `output-style` folder in the `agent-skills` repository.
+`output-style/` in this repository.
 
 ## Projects
 
@@ -65,13 +65,13 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | `local_dev/plans/` | The consolidation and split plan |
 | `local_dev/*.md` | Harness documentation and the git-ignored-files reference |
 | `docs/` | The public documentation tier; `docs/agents/` holds the three specs for authoring a skill |
-| `.agents/skills/` | The agent skills used across the projects; each project repository carries the subset it needs |
+| `.agents/skills/` | The canonical agent skills — one copy; `scripts/install-global.mjs` links each into `~/.agents/skills/<name>` for every repository on the machine |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
-| `.github/`, `.agents/`, `.githooks/` | Instruction and gate configuration, kept as templates |
+| `.github/`, `.agents/`, `.githooks/`, `global/`, `output-style/`, `scripts/` | The instruction and gate configuration, and the installers that put it at machine level |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
-The executive-first writing style lives in `agent-skills/output-style/`; this repository no longer carries a
-copy.
+The executive-first writing style lives in `output-style/` here; `output-style/install.mjs` upserts it
+into `~/.agents/AGENTS.md`, so both machines run the same block.
 
 Machine- and user-level notes — tools missing on this box, environment workarounds — deliberately do
 not live in this repository: they belong to the machine, in user-global agent configuration.
@@ -83,7 +83,7 @@ Read this index first, then open only the file you need.
 - **The split and its rationale**: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md` — decisions, per-repository `.gitignore` tables, progress.
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md`.
 - **Tooling**: `local_dev/README.md`.
-- **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and the build-gate activation git cannot carry.
+- **Harness details**: `local_dev/deepseek-harness.md` — what the harnesses read here, and how the machine-level gate is activated.
 - **Git-ignored files**: `local_dev/git-ignored-local-files.md` — what stays out of version control and why.
 - **Agent skill authoring**: `docs/agents/README.md` — the three source specs for writing or revising anything under `.agents/skills/`, rather than paraphrasing them from memory.
 - **Working on `CsvTranslations`**: read `CsvTranslations/AGENTS.md`. For any other project, clone it and read that repository's own `AGENTS.md`.
@@ -95,11 +95,14 @@ One directory, `.agents/`, holds everything the harnesses read; `.claude/` no lo
 | Path | Contents |
 | :--- | :--- |
 | `AGENTS.md`, `CsvTranslations/AGENTS.md` | Instructions, chained from the repository root down to the working directory |
-| `.agents/skills/` | The canonical, tracked, tool-neutral skills; each project repository carries the subset it needs |
+| `.agents/skills/` | The canonical, tracked, tool-neutral skills — one copy, linked into `~/.agents/skills/<name>` on each machine |
 | `.agents/hooks/` | The build gate |
+| `.githooks/pre-commit` | The git gate — installed machine-wide as `~/.agents/githooks`, wired by `core.hooksPath` |
+| `scripts/` | `install-global.mjs` (the machine-level links and `core.hooksPath`), `scan-publication-leaks.sh`, and the block installers' libraries |
+| `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
 | `.agents/commands/`, `.agents/rules/` | Slash commands and path-scoped rules, when a tree carries them |
 
-`.gitignore` ignores the *contents* of every `.agents/` directory and re-includes only that shared set, so anything else dropped there stays machine-local. The git hook in `.githooks/pre-commit` is the gate that always runs; it also runs `local_dev/scripts/scan-publication-leaks.sh` before the build, and a hit blocks the commit.
+`.gitignore` ignores the *contents* of every `.agents/` directory and re-includes only that shared set, so anything else dropped there stays machine-local. The gate is machine-level: `core.hooksPath` points at `~/.agents/githooks`, a link into this checkout, so every commit in every repository runs `scripts/scan-publication-leaks.sh` and then the build gate. A repository carries no hook file of its own.
 
 ## Environment & style
 

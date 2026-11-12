@@ -131,23 +131,27 @@ node local_dev/scripts/publish-selfcontained.mjs --runtime linux-x64      # anot
 
 Every commit is public text, so no machine-specific identifier may reach one. This scans for the
 classes that actually leak: a profile or home path, an account or host name, a mounted drive tree.
+The canonical copy is now `scripts/scan-publication-leaks.sh` in this checkout, installed as a
+machine-level link (`~/.agents/scripts/scan-publication-leaks.sh`), so it runs in every repository
+rather than only here.
 
 ```bash
-bash local_dev/scripts/scan-publication-leaks.sh            # staged changes — the pre-commit gate
-bash local_dev/scripts/scan-publication-leaks.sh --diff     # unstaged working tree
-bash local_dev/scripts/scan-publication-leaks.sh --all      # every tracked file
+bash ~/.agents/scripts/scan-publication-leaks.sh            # staged changes — the pre-commit gate
+bash ~/.agents/scripts/scan-publication-leaks.sh --diff     # unstaged working tree
+bash ~/.agents/scripts/scan-publication-leaks.sh --all      # every tracked file
 ```
 
 **Notes**:
 - Exit 0 = no identity or mount leak; exit 1 = the listed lines must be rewritten before committing.
 - `FAIL` lines are leaks and always block. `warn` lines are drive-letter paths — a documented
   `C:\data\input.csv` example is fine, a path that exists on one machine only is not.
-- Write `%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or `$REPO_ROOT` (bash) /
-  `$RepoRoot` (PowerShell), both exported by `repo-env.sh` and its siblings.
-- The pattern list lives only in that script. It skips itself for that reason, and no document keeps
-  an inline copy: a hand-copied `grep` in the rules matched its own prose.
-- `.githooks/pre-commit` runs it before the build gate, once the hook is activated with
-  `git config core.hooksPath .githooks`.
+- Write `%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or the root variable the repository
+  exports (`$REPO_ROOT` / `$RepoRoot` in the project repositories).
+- The pattern list lives only in that script. It derives its own path at runtime and skips itself for
+  that reason, and no document keeps an inline copy: a hand-copied `grep` in the rules matched its own
+  prose.
+- `~/.agents/githooks/pre-commit` runs it before the build gate, wired once per machine by
+  `node scripts/install-global.mjs --write`.
 
 ### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)
 
