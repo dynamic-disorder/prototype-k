@@ -1,0 +1,33 @@
+# PR #7: Add widget
+
+| Field | Value |
+|-------|-------|
+| **Title** | Add widget |
+| **State** | open |
+| **Author** | alice |
+| **Created** | 2026-01-03 |
+| **Updated** | 2026-01-07 |
+| **Base** | develop |
+| **Head** | feature/widget |
+| **Commits** | 3 |
+| **Changed Files** | 5 |
+| **Additions** | +120 |
+| **Deletions** | -4 |
+
+## Description
+
+*(No description provided)*
+
+## Comments (0)
+
+*(No comments)*
+
+## Reviews (0)
+
+*(No reviews)*
+
+# Unresolved Review Comments
+
+*(No review comments)*
+--- stderr ---
+--- exit 0 ---

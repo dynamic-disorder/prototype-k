@@ -117,3 +117,6 @@ deletes files — then commit with `-m`, or a heredoc when there is a body.
 - Never `git add -A` or `git commit -a` across groups: that is what merges unrelated changes.
 - Never amend, never pass `--no-verify`.
 - Commit each group separately, then report every subject line, in the order committed.
+
+**Context for a target outside the working tree:** `scripts/git-commit-context-fetch.mjs <ref>` returns a
+change's context (diff, files, message) without switching branches.

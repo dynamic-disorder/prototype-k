@@ -1,0 +1,8 @@
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[
+ {"id":"PRRT_a","isResolved":false,"comments":{"nodes":[
+   {"databaseId":101,"body":"Please rename this.","path":"src/a.cs","line":12,"commit":{"oid":"abc123"}},
+   {"databaseId":102,"body":"Also here.","path":"src/a.cs","line":null,"commit":null},
+   {"databaseId":null,"body":"ghost","path":"src/a.cs","line":3,"commit":{"oid":"zzz"}}]}},
+ {"id":"PRRT_b","isResolved":true,"comments":{"nodes":[{"databaseId":201,"body":"done","path":"x","line":1,"commit":{"oid":"d"}}]}},
+ {"id":"PRRT_c","isResolved":false,"comments":{"nodes":[]}}
+]}}}}}

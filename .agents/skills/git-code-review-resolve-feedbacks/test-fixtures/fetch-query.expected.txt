@@ -1,0 +1,15 @@
+{
+      repository(owner: "CompanyOrOrganizationName", name: "product_name") {
+        pullRequest(number: 22515) {
+          reviewThreads(first: 100) {
+            nodes {
+              id
+              isResolved
+              comments(first: 10) {
+                nodes { databaseId body path line commit { oid } }
+              }
+            }
+          }
+        }
+      }
+    }

@@ -1,0 +1,3 @@
+--- stderr ---
+ERROR: GitHub API rate limit exceeded. Wait until <DATE>.
+--- exit 1 ---

@@ -1,0 +1,3 @@
+--- stderr ---
+ERROR: Comments file not found: /no/such/file.json
+--- exit 1 ---

@@ -1,0 +1,7 @@
+--- stderr ---
+ERROR: No PR identifier provided
+Usage: fetch-pr.mjs <PR_NUMBER|PR_URL>
+Examples:
+  fetch-pr.mjs 22312
+  fetch-pr.mjs https://github.com/{{DEFAULT_REPO}}/pull/1234
+--- exit 1 ---

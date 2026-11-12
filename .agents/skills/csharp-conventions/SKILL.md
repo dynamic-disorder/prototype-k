@@ -37,3 +37,6 @@ These surface as warnings: braces on every block even when single-line (`IDE0011
 qualification, `_camelCase` private fields, file-scoped namespaces, and `using` directives
 grouped `System.*`/`Microsoft.*` → third-party → own namespaces with a blank line between groups.
 The third-party/own split is convention only.
+
+**Reference:** `references/code_review_csharp_conventions.md` — these rules in the form a reviewer applies
+them, with the failure each one prevents.

@@ -1,0 +1,3 @@
+--- stderr ---
+ERROR: Authentication failed (HTTP 403). Check GITHUB_TOKEN in settings.local.json.
+--- exit 1 ---

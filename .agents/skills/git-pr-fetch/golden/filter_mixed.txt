@@ -1,0 +1,45 @@
+# Unresolved Review Comments
+
+**PR Author:** alice
+**Total threads:** 3
+
+## 1. **bob** on `src/A.cs:10`
+
+**Date:** 2026-01-05
+
+**Replies:** 0 (no discussion yet)
+
+**Comment:**
+
+Why not use a constant here?
+
+---
+
+## 2. **carol** on `src/C.cs:30`
+
+**Date:** 2026-01-05
+
+**Replies:** 2 (last by carol)
+
+**Comment:**
+
+Please rename.
+
+<details><summary>Show replies</summary>
+
+**alice:**
+
+Renamed.
+
+**carol:**
+
+Still wrong.
+
+</details>
+
+---
+
+
+**Total unresolved:** 2/3
+--- stderr ---
+--- exit 0 ---

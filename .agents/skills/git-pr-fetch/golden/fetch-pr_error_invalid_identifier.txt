@@ -1,0 +1,4 @@
+--- stderr ---
+ERROR: Invalid PR identifier: not a pr
+Use: URL, number, or owner/repo#number
+--- exit 1 ---

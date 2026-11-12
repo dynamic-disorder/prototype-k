@@ -1,0 +1,3 @@
+--- stderr ---
+ERROR: PR #7 not found in {{DEFAULT_REPO}} or you don't have access.
+--- exit 1 ---

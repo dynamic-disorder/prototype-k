@@ -1,0 +1,95 @@
+# PR #7: Add widget
+
+| Field | Value |
+|-------|-------|
+| **Title** | Add widget |
+| **State** | open |
+| **Author** | alice |
+| **Created** | 2026-01-03 |
+| **Updated** | 2026-01-07 |
+| **Base** | develop |
+| **Head** | feature/widget |
+| **Commits** | 3 |
+| **Changed Files** | 5 |
+| **Additions** | +120 |
+| **Deletions** | -4 |
+
+## Description
+
+Adds the widget.
+
+Second paragraph.
+
+## Comments (2)
+
+**carol** on 2026-01-04:
+
+Looks good overall.
+
+---
+
+**bob** on 2026-01-04:
+
+One more thing.
+
+---
+
+## Reviews (3)
+
+**bob** - CHANGES_REQUESTED on 2026-01-06:
+
+See inline.
+
+---
+
+**carol** - APPROVED on 2026-01-06:
+
+(no comment)
+
+---
+
+# Unresolved Review Comments
+
+**PR Author:** alice
+**Total threads:** 3
+
+## 1. **bob** on `src/A.cs:10`
+
+**Date:** 2026-01-05
+
+**Replies:** 0 (no discussion yet)
+
+**Comment:**
+
+Why not use a constant here?
+
+---
+
+## 2. **carol** on `src/C.cs:30`
+
+**Date:** 2026-01-05
+
+**Replies:** 2 (last by carol)
+
+**Comment:**
+
+Please rename.
+
+<details><summary>Show replies</summary>
+
+**alice:**
+
+Renamed.
+
+**carol:**
+
+Still wrong.
+
+</details>
+
+---
+
+
+**Total unresolved:** 2/3
+--- stderr ---
+--- exit 0 ---

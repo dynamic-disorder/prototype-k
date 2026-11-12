@@ -1,0 +1,3 @@
+--- stderr ---
+ERROR: Unexpected HTTP 500 from GitHub API.
+--- exit 1 ---

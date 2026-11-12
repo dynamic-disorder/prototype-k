@@ -1,0 +1,34 @@
+{
+  "title": "Review of PR #123 <script>alert('x')</script> & \"friends\"",
+  "verdict": {
+    "recommendation": "Approve with suggestions",
+    "riskLevel": "medium",
+    "summary": "Mostly fine; <b>one</b> issue & a \"nit\" remain."
+  },
+  "metadata": {
+    "Branch": "feature/PROJECT_ISSUE_PREFIX-1234-example",
+    "Files changed": 12,
+    "Author <x>": "Jane & John",
+    "Draft": false
+  },
+  "sections": [
+    {"title": "Summary <overview>", "type": "text", "content": "Plain text with <b>markup</b> kept as-is.\nSecond line."},
+    {"title": "Code", "type": "code", "content": "if (a < b && c > d) { return \"x\" + 'y'; }"},
+    {"title": "Findings", "type": "list", "items": [
+      {"text": "Tests pass", "type": "success"},
+      {"text": "Null deref in <code>Foo.cs:42</code>", "type": "error"},
+      {"text": "Missing docs", "type": "warning"},
+      {"text": "FYI note", "type": "info"},
+      {"text": "No explicit type"},
+      {"text": "Custom type", "type": "custom"}
+    ]},
+    {"title": "Risks if merged without fixes", "type": "risks", "items": [
+      {"text": "Crash at <code>Foo.cs:42</code> when <b>input</b> is null"},
+      {"text": "Escapes <script>bad()</script> & \"quotes\" 'single'"},
+      {"text": "Unbalanced </b> and <code> tags"}
+    ]},
+    {"title": "Empty list", "type": "list"},
+    {"title": "Empty risks list", "type": "risks", "items": []},
+    {"title": "Unknown type", "type": "table", "content": "ignored"}
+  ]
+}

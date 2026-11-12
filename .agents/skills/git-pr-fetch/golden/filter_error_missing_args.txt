@@ -1,0 +1,4 @@
+--- stderr ---
+ERROR: Missing required arguments.
+Usage: filter-unresolved.mjs <review_comments.json> <pr_author>
+--- exit 1 ---

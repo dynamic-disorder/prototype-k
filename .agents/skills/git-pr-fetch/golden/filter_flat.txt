@@ -1,0 +1,45 @@
+# Unresolved Review Comments
+
+**PR Author:** alice
+**Total threads:** 3
+
+## 1. **bob** on `b.cs:9`
+
+**Date:** 2026-02-03
+
+**Replies:** 0 (no discussion yet)
+
+**Comment:**
+
+Second
+
+---
+
+## 2. **carol** on `c.cs`
+
+**Date:** 2026-02-04
+
+**Replies:** 2 (last by carol)
+
+**Comment:**
+
+Q
+
+<details><summary>Show replies</summary>
+
+**alice:**
+
+A
+
+**carol:**
+
+B
+
+</details>
+
+---
+
+
+**Total unresolved:** 2/3
+--- stderr ---
+--- exit 0 ---

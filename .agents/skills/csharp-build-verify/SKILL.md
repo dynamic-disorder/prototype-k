@@ -39,3 +39,7 @@ exception is a legacy `<Project>` without `Sdk=`, which gets no automatic import
 on-disk casing exactly.
 
 Warnings do not block; errors do. Report every error with its file and line number.
+
+**Scripts:** `scripts/csharp-build-verifier.mjs` runs the build for the affected solution and reports the
+errors; `scripts/csharp-sln-find-nearest.sh <path>` finds the nearest solution or project from a path. Both
+are run through `node` and `bash` from the skill directory, so the skill keeps working from any checkout.
