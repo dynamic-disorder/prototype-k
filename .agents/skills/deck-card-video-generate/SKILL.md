@@ -124,7 +124,7 @@ ffmpeg -v error -ss 12.5 -i demo.mp4 -frames:v 1 check.jpg
 | Symptom / Error | Root Cause | Autonomous Correction Action |
 |---|---|---|
 | Guard exits 1 | missing or invalid input | inspect stderr, fix named field in config/segments, re-run guard. |
-| Beat drift over 50 ms | slow load or a beat inside a segment | check `pitfalls.md`; move the beat outside segment execution. |
+| Beat drift over 50 ms | slow load or a beat inside a segment | check `references/pitfalls.md`; move the beat outside segment execution. |
 | `slack` below 0.8 s | speech longer than the slot | shorten the text in `segments.json` or widen slot, re-run with `--force`. |
 | Duration off by more than 0.2 s | trim or encode setting | check `t0Offset` and length parameters. |
 | Compose refuses: recorded for X s, composing Y s | `--seconds` differs from take | re-record at new length or pass matching recorded length parameter. |
@@ -141,3 +141,10 @@ ffmpeg -v error -ss 12.5 -i demo.mp4 -frames:v 1 check.jpg
 | `video/captions.ass`, `video/narration.wav`, `video/<name>.mp4` | Burned captions, mixed audio, final cut — `demo.mp4` by default |
 
 **Exit criteria:** duration within 0.2 s of the length; one caption cue per sentence, none wider than `captions.maxChars`; every measured silence over 2 s intentional; the hand-off carries the numbers, not a description. Deliver the MP4 path, keep the task folder until the cut is accepted, then delete it.
+
+## Reference files
+
+- [`references/pitfalls.md`](references/pitfalls.md) — every failure this skill has already met, with the
+  correction that worked.
+- [`references/insert_cards.md`](references/insert_cards.md) — how to write a static HTML card for a point
+  the app does not show: one 16:9 page, one beat, readable type.
