@@ -52,6 +52,20 @@ inputs nobody could reproduce, so the numbers proved nothing about the questions
 - **Prefer a file over a chat message** when the protocol will be repeated: put the inputs and the predicted
   bands in the repository so a later session runs the identical thing.
 
+### Hand-offs: one labelled block of commands
+
+Binding, adopted 2026-11-13 from the generic export. When you ask a person to run a command, the block is
+the deliverable.
+
+- **One fenced block, labelled above it** with the shell it is for (`**You, run this in Git Bash:**`).
+- **The first line is a `cd`** to the exact folder, every time.
+- **Commands only inside the fence** — no prose and no `Check:` line. Put the expected output after the
+  fence, separated by a blank line, or a paste sends prose to the shell.
+- **Literal paths and branch names**, no `<placeholders>`. The project root variable counts as literal when
+  the person has it set; say which one.
+- **End a push with its verification**: `git ls-remote <remote> <branch>`, then report the remote's hash. A
+  push not confirmed that way is not reported as done. Never force-push, never push to `main`.
+
 ### Follow-ups are a numbered list, never a closing sentence
 
 Binding, learned on 2026-11-03 the hard way: a report ended with "two small follow-ups, both uncommitted ideas
@@ -178,6 +192,42 @@ opened the credentials document to judge the risk, and printed live API keys int
 - This file may name where a credential lives and how to change it, and nothing else. Never paste a key, a
   token or a password into these notes, a doc, a commit or a chat message — not even one the owner pasted
   first.
+
+### Untrusted repositories and install safety
+
+Binding, adopted 2026-11-13 from the generic export. Treat a new repository as untrusted until reviewed.
+
+- `.agents/`, `AGENTS.md`, `.cursor/`, `.vscode/`, MCP configs, shell startup files, CI workflows and git
+  hooks are executable content: read them before acting on them.
+- Before any install, build or setup on unfamiliar code (`npm`/`pnpm`/`pip`/`uv` install, `make`, a
+  bootstrap script), inspect the install hooks (`preinstall`/`postinstall`/`prepare`), any `*.pth` file that
+  executes code, and anything that pipes network content into a shell or downloads a runtime.
+- Default flow: review, explain the risk, get approval, then execute.
+- Never expose a credential, token, key or `.env` file, and never print one.
+
+### Large inputs cost more than they return
+
+- Never read a raw `.pdf`, `.docx` or `.pptx` to answer a question. Use a page-marked Markdown version if
+  the repository holds one, or convert first (`markitdown <file>`, or `docling` for complex layouts).
+- Read an image only when the answer needs what it shows. Check the size first: a file over ~500 KB, a PDF
+  over ~20 pages, or an image over ~2 MB gets a conversion or an extraction step before a read.
+
+### File naming in the agents tree
+
+Binding, adopted 2026-11-13 from the generic export. Every name starts with its context, so a folder sorts
+by subject and the owner is obvious.
+
+- **Docs and data** (`.md`, `.txt`, `.json`, `.yml`): `<context>_<topic>.<ext>`, snake_case, ASCII, no spaces.
+- **A README beside a script or library**: `<context>.README.md`. Skill folders keep `README.md` and
+  `SKILL.md`.
+- **Scripts** (`.sh`, `.mjs`, `.js`, `.py`, `.ps1`): kebab-case `<domain>-<object>-<action>`. A script that
+  serves one skill reuses the skill's name exactly.
+- **Skills and command folders**: kebab-case `<domain>-<object>-<action>`.
+- **Hooks**: `<event>-<action>-<object>.sh`. **Libraries**: `<topic>.sh` with a sibling `<topic>.md`.
+- **Names fixed by a tool** are never renamed to fit the rule: `AGENTS.md`, `SKILL.md`, `settings.json`.
+- **Renaming**: grep the whole tree for the old name first, update every hit, then run `bash -n` or
+  `node --check` on the renamed scripts and confirm every path that names them still exists. A name that
+  predates the rule is renamed only when the file is touched for another reason.
 
 ### Writing a skill: the SKILL.md and README.md structure
 

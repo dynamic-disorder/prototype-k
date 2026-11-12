@@ -51,10 +51,10 @@ Deleted: the entire `commands/` (6, legacy layout) and `rules/` (5, folded into 
   identity) in `settings.local.json`, plus `D:` drive-letter paths and a dead `outputStyle`.
 - The owner **surname**, `whoami` and a personal folder path on the `C:` drive from
   `personal-cc-exporter`. The folder name is deliberately not repeated here.
-- A **work ticket key** and branch convention, and work-domain example types: ticket-tracker IDs and
+- A **work-tracker identifier** and branch convention, and work-domain example types: tracker IDs and
   domain model names taken from an employer codebase. The literals are deliberately not repeated here.
 - References to files that no longer exist (`scripts/statusline.js`, the CRLF fixers) and to a
-  non-existent `temp_user_files/` (the real directory is `local_user_files/`).
+  non-existent task-folder name (the real directory is `local_user_files/`).
 - **Rules that contradicted the repo** — corrected with evidence rather than kept: the `int`/`Int32`
   rule (backwards vs `.editorconfig`), a blanket "no `Async` suffix" rule (the codebase uses it
   everywhere), "XML docs on every `[Fact]`" (the code then documented the test class only;

@@ -334,3 +334,26 @@ file and nothing else, so `managed-block.md` — not this page — is the text a
 Do not keep a hand-copied duplicate here. This section used to hold one, and that duplicate is how the
 written rule and the installed rule drifted apart. To change the rule: edit `documentation-style.md` (the
 reasoning) and `managed-block.md` (the injected wording), then re-run the installer.
+
+## Instructions another person runs
+
+Applies to runbooks, setup steps, tester steps and how-to text.
+
+- **One numbered list, all actions.** No separate "Prerequisites" list of states: a prerequisite is either a
+  step (create the file, set the secret) or a one-line "You need" list of what only a person can arrange.
+- **Assume a clean machine.** Never assume a file, profile, secret or tool exists. Each step is "check, then
+  create if missing", with the exact path.
+- **Per step: the command, then the check.** One command block, then one line with the exact expected
+  output. Name the error text and its fix beside the step that can raise it.
+- **No explanations inside the steps.** The why goes in one line above the list, or behind a link.
+- **End with a contact line** for a run someone else performs: who to ask when stuck.
+
+## Alerts, links and technical names
+
+- **GitHub alerts by intent:** NOTE/TIP for context, IMPORTANT for something the reader must act on,
+  WARNING/CAUTION for real risk of breakage. One or two per page, and never a repeat of a section below.
+- **Status markers** at the start of a real status line only.
+- **Attach the URL to every PR and page mention, each time.** Where a link cannot render — a `.txt`, a
+  console reply, a code comment — write `ABC-1234 (URL: <url>)`.
+- **Names a reader cannot guess from plain English go in inline code**; two or more become one bullet each,
+  `Name` - short description. Never invent a description for a name whose purpose is unknown.
