@@ -55,6 +55,8 @@ venv/
 # Output of local_dev/scripts/publish-selfcontained.mjs, and of dotnet pack.
 /publish/
 artifacts/
+# Generated portable export (dist/.agents-generic-<date>); regenerate with scripts/export-agents.mjs.
+/dist/
 # Test and IDE output the C# projects produce.
 [Tt]est[Rr]esult*/
 *.trx

@@ -153,6 +153,27 @@ bash ~/.agents/scripts/scan-publication-leaks.sh --all      # every tracked file
 - `~/.agents/githooks/pre-commit` runs it before the build gate, wired once per machine by
   `node scripts/install-global.mjs --write`.
 
+### Portable export (`export-agents.mjs`)
+
+Builds the `.agents-generic-<date>` tree a second machine copies into `~/.agents`: the rules as one
+`AGENTS.md`, every skill with its own scripts and tests, both git gates, the publication scanner, the shared
+libraries, the settings file and a project seed. The bundle is generated from this checkout and never edited.
+
+```bash
+node scripts/export-agents.mjs              # write dist/.agents-generic-<date>
+node scripts/export-agents.mjs --check      # compare the newest export with the checkout
+node scripts/export-agents.mjs --archive    # also write the matching .tar.gz
+```
+
+**Notes**:
+- `--check` compares the file list and every sha256 and writes nothing; exit 1 lists what drifted.
+- A refused file stops the run by name: the Windows credential helper, the placeholder map that names real
+  identities, the secret-scan allowlist and the environment lookups that read secret stores. The list is
+  `REFUSED_PATHS` in `scripts/lib/export-plan.mjs`.
+- The tree lands in `dist/`, which is git-ignored: it is regenerated, never committed.
+- The install proof is a copy into a throwaway home: `settings.json` parses, every script passes its syntax
+  check, and `hooks/pre-commit-build-check.sh` exits 0 with no payload.
+
 ### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)
 
 A cross-platform Python script to clear Visual Studio Code cache folders without deleting settings or extensions.

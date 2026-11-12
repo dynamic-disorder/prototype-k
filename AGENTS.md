@@ -68,6 +68,7 @@ This table is the index, with the state each project was verified in. Only `CsvT
 | `.agents/skills/` | The canonical agent skills — one copy; `scripts/install-global.mjs` links each into `~/.agents/skills/<name>` for every repository on the machine |
 | `.editorconfig`, `.gitattributes`, `Directory.Build.props` | Canonical templates for a new project repository |
 | `.github/`, `.agents/`, `.githooks/`, `global/`, `output-style/`, `scripts/` | The instruction and gate configuration, and the installers that put it at machine level |
+| `export/` | The portable bundle's own inputs: its `settings.json`, its `README.md` and the `project-seed/` templates |
 | `local_user_files/` | Git-ignored scratch. Nothing durable belongs here |
 
 The executive-first writing style lives in `output-style/` here; `output-style/install.mjs` upserts it
@@ -98,7 +99,7 @@ One directory, `.agents/`, holds everything the harnesses read; `.claude/` no lo
 | `.agents/skills/` | The canonical, tracked, tool-neutral skills — one copy, linked into `~/.agents/skills/<name>` on each machine |
 | `.agents/hooks/` | The build gate |
 | `.githooks/pre-commit`, `pre-push` | The git gates — installed machine-wide as `~/.agents/githooks`, wired by `core.hooksPath`; `pre-push` forwards to a repository's own `git_tools/pre-push` when it carries one |
-| `scripts/` | `install-global.mjs` (the machine-level links and `core.hooksPath`), `scan-publication-leaks.sh`, and the block installers' libraries |
+| `scripts/` | `install-global.mjs` (the machine-level links and `core.hooksPath`), `export-agents.mjs` with its planner (the portable bundle), `scan-publication-leaks.sh`, and the block installers' libraries |
 | `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
 | `.agents/commands/`, `.agents/rules/` | Slash commands and path-scoped rules, when a tree carries them |
 

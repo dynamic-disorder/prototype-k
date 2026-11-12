@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+[Tt]est[Rr]esult*/
+*.trx
+*.nupkg
+
+# IDE and editor
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local scratch; the README stays so the folder exists
+local_user_files/*
+!local_user_files/README.md
+
+# Machine-level agent configuration is installed, not committed
+.agents/
+
+# Local environment files
+.env

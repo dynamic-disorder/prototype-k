@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "$comment": "Machine-level settings shipped in the portable bundle. Every path points at the installed tree under $HOME/.agents; no credential, token or account-specific value belongs in this file.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(git commit *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.agents/hooks/pre-commit-build-check.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(git *)",
+      "Bash(mkdir *)",
+      "Write",
+      "Edit"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/*)"
+    ],
+    "defaultMode": "plan"
+  },
+  "timeFormat": "24-hour"
+}
