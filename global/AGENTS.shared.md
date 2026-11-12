@@ -228,6 +228,10 @@ by subject and the owner is obvious.
 - **Renaming**: grep the whole tree for the old name first, update every hit, then run `bash -n` or
   `node --check` on the renamed scripts and confirm every path that names them still exists. A name that
   predates the rule is renamed only when the file is touched for another reason.
+- **A case-only rename takes two steps.** On Windows and macOS the filesystem ignores case, so `git mv`
+  followed by a commit that names the path can leave both spellings in the tree, and a clone then creates
+  a second copy. Rename through a temporary name — `git mv A tmp && git mv tmp b` — then confirm
+  `git ls-files` and `git ls-tree HEAD` list only the new spelling before committing.
 
 ### Writing a skill: the SKILL.md and README.md structure
 
