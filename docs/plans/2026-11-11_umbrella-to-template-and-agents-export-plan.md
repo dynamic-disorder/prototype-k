@@ -67,6 +67,25 @@ git config --global core.hooksPath  ->  ~/.agents/githooks
 | D5 | The export builds from the single home and installs by link, never by copy. | The bundle on the USB stick is the same bytes the working machine runs, not a snapshot that diverges. |
 | D6 | `local_dev/` and `local_user_files/` are classified before moving: project parts go with the project, machine and umbrella notes stay. | `local_dev/TODOS.md` is CliUtils follow-ups, and the mount notes carry literal mount paths; moving them into a project repository misplaces both. |
 | D7 | The export never contains credentials or harness logins. | A USB stick with keys cannot be rotated in time. |
+| D8 | A DSH plugin is an optional adapter, never the source of the configuration. | The configuration must load in any harness that reads `AGENTS.md`; a plugin is DSH-only and would be the only copy on a machine without it. |
+
+**Why this is not a DSH plugin.** DSH already implements instructions, skills, commands and hooks as
+plugins that read directories and settings — `agent-instructions`, `skill-filesystem`, `commands`, and the
+hook bridge. A plugin carrying the same rules would be a second implementation, and it would load in no
+other harness. The split:
+
+| Rule | Layer | Why |
+| :--- | :--- | :--- |
+| Answer shape, recap order, commit approval, follow-ups | Prompt | Judgment; no code decides whether a report is honest |
+| Never read the credential file | Hook | Deterministic, and the loss is irreversible |
+| No machine path in a commit | Hook (scanner) | Already code, already runs |
+| Build before commit | Hook | Already code |
+| Skills, commands, instructions | Files plus links | Every harness reads them; a plugin only re-registers them |
+
+A plugin earns its place only as a thin adapter: register the canonical root, add `/commit`, `/export` and
+`/install`, wire the two guards. It copies nothing, and removing it loses no configuration. Build it after
+the merge, not before: DSH is `0.2.2-rc.1`, and the checkout path recorded in the session context no longer
+resolves — the API is still moving.
 
 ## Phase 1 — one home, no copies
 
