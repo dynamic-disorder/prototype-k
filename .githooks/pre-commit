@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# Git pre-commit hook, activated by `git config core.hooksPath .githooks`.
+# Git pre-commit hook — the machine-level gate.
+#
+# Activated once per machine, not once per repository:
+#
+#   git config --global core.hooksPath <absolute path of ~/.agents/githooks>
+#
+# `node scripts/install-global.mjs --write` writes that setting. A repository carries no hook file
+# of its own, so a new clone is gated by being on the machine.
 #
 # Two gates, in this order:
 #   1. The publication gate — no machine-specific identifiers may enter a public commit. Runs first
@@ -8,17 +15,34 @@
 #      as the harness PreToolUse hook. There it reads the tool-call JSON that Claude Code / DSH put
 #      on stdin; here git passes no payload at all, and the script reads that as "this is a commit,
 #      check it". Keeping one file means the two entry points cannot drift apart.
+#
+# Both scripts are read from the shared agents root, which is a set of links into the canonical
+# checkout. Nothing is read from the repository being committed.
 
-root="$(git rev-parse --show-toplevel)" || exit 0
+set -u
 
-scan="$root/local_dev/scripts/scan-publication-leaks.sh"
+agents_home="${HOME:-${USERPROFILE:-}}"
+if [ -z "$agents_home" ]; then
+    echo "pre-commit: neither HOME nor USERPROFILE is set — cannot find the machine-level gate" >&2
+    exit 0
+fi
+
+scan="$agents_home/.agents/scripts/scan-publication-leaks.sh"
 if [ -f "$scan" ]; then
     bash "$scan" || {
         echo "pre-commit: publication gate failed — nothing was committed." >&2
         exit 1
     }
+else
+    echo "pre-commit: publication gate not found at $scan — run: node scripts/install-global.mjs --write" >&2
 fi
 
-gate="$root/.agents/hooks/pre-commit-build-check.sh"
-[ -x "$gate" ] || exit 0
-exec "$gate"
+gate="$agents_home/.agents/hooks/pre-commit-build-check.sh"
+if [ ! -f "$gate" ]; then
+    echo "pre-commit: build gate not found at $gate — run: node scripts/install-global.mjs --write" >&2
+    exit 0
+fi
+
+# Run through bash rather than exec-ing the file: on Windows the executable bit is implied by the
+# filesystem, so a mode-based test would gate or skip by platform instead of by content.
+exec bash "$gate"

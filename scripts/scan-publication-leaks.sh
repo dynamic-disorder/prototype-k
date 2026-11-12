@@ -4,14 +4,19 @@
 # Every commit is public text. A home or profile path, an account, user, owner or host name, an
 # employer or ticket identifier — none of it may land in a file, a doc, a config, a path example or
 # a commit message. This script is the mechanical check behind that rule; the rule itself is stated
-# in the agent-skills repository's output-style/documentation-style.md and injected into every
-# session by output-style/managed-block.md.
+# in this repository's output-style/documentation-style.md and injected into every session by
+# output-style/managed-block.md.
 #
-# Usage, from the repository root:
-#   bash local_dev/scripts/scan-publication-leaks.sh            # staged changes (the pre-commit gate)
-#   bash local_dev/scripts/scan-publication-leaks.sh --diff     # unstaged working tree
-#   bash local_dev/scripts/scan-publication-leaks.sh --all      # every tracked file
-#   bash local_dev/scripts/scan-publication-leaks.sh --help
+# The canonical copy lives in this checkout and is installed as a machine-level link:
+#   ~/.agents/scripts/scan-publication-leaks.sh  ->  <this checkout>/scripts/scan-publication-leaks.sh
+# so it runs from any repository, and this file is the only copy.
+#
+# Usage, from any repository root:
+#   bash scripts/scan-publication-leaks.sh            # staged changes (the pre-commit gate)
+#   bash scripts/scan-publication-leaks.sh --diff     # unstaged working tree
+#   bash scripts/scan-publication-leaks.sh --all      # every tracked file
+#   bash scripts/scan-publication-leaks.sh --help
+# (through the machine-level link: bash ~/.agents/scripts/scan-publication-leaks.sh …)
 #
 # Two tiers, because the two classes differ in kind:
 #   FAIL  An identity or mount leak — a profile path, a home directory, a mounted drive tree.
@@ -29,7 +34,11 @@
 
 set -u
 
-readonly SELF='local_dev/scripts/scan-publication-leaks.sh'
+# The scanner's own path, relative to the repository being scanned. It carries the patterns it
+# searches for, so every mode exempts it. Derived from where this file actually is, so the one copy
+# works from the checkout and from the machine-level link alike; empty when the running file lives
+# outside the scanned repository, where there is nothing to exempt.
+SELF=''
 
 # FAIL — identity and mount leaks. No legitimate illustration uses these forms.
 #   [A-Za-z]:[\/]Users[\/]   a Windows profile directory
@@ -60,17 +69,17 @@ usage() {
     cat <<'USAGE'
 Publication gate — scan for machine-specific identifiers before committing.
 
-  bash local_dev/scripts/scan-publication-leaks.sh            staged changes (default)
-  bash local_dev/scripts/scan-publication-leaks.sh --diff     unstaged working tree
-  bash local_dev/scripts/scan-publication-leaks.sh --all      every tracked file
-  bash local_dev/scripts/scan-publication-leaks.sh --help
+  bash scripts/scan-publication-leaks.sh            staged changes (default)
+  bash scripts/scan-publication-leaks.sh --diff     unstaged working tree
+  bash scripts/scan-publication-leaks.sh --all      every tracked file
+  bash scripts/scan-publication-leaks.sh --help
 
 Exit 0 = no FAIL hits, 1 = FAIL hits found, 2 = usage or environment error.
 
 What to write instead of a machine path:
   %USERPROFILE%\...                      on Windows
   ~/...                                  on Linux and macOS
-  $REPO_ROOT / $RepoRoot / %REPO_ROOT%    the root variable, from local_dev/scripts/repo-env.sh
+  $REPO_ROOT / $RepoRoot / %REPO_ROOT%    the root variable the repository exports
 USAGE
 }
 
@@ -86,6 +95,31 @@ esac
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "error: not inside a git work tree" >&2
     exit 2
+fi
+
+# Resolve this file physically, then ask whether that lands inside the scanned repository. A
+# symlinked or junctioned invocation (~/.agents/scripts/...) resolves to the checkout; a file run
+# from somewhere else leaves SELF empty.
+top="$(git rev-parse --show-toplevel)"
+self_file="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/$(basename -- "${BASH_SOURCE[0]}")"
+top_real="$(cd -- "$top" && pwd -P)"
+case "$self_file" in
+    "$top_real"/*) SELF="${self_file#"$top_real"/}" ;;
+esac
+# Belt and braces for a link that does not resolve: when this very file is also the tracked one at
+# the conventional name, exempt that name.
+if [ -z "$SELF" ] && [ -f "$top/scripts/scan-publication-leaks.sh" ] \
+    && cmp -s "$self_file" "$top/scripts/scan-publication-leaks.sh"; then
+    SELF='scripts/scan-publication-leaks.sh'
+fi
+readonly SELF
+
+# The pathspec that leaves the scanner out of a diff stream; always non-empty, because an empty
+# array trips `set -u` on older bash.
+if [ -n "$SELF" ]; then
+    scan_path=('--' '.' ":(exclude)$SELF")
+else
+    scan_path=('--' '.')
 fi
 
 count() { printf '%s\n' "$1" | grep -c . || true; }
@@ -118,16 +152,16 @@ case "$mode" in
             echo 'nothing staged — pass --diff or --all to scan something else'
             exit 0
         fi
-        scanned=$(git diff --cached --name-only -- . ":(exclude)$SELF" | grep -c . || true)
-        scan_diff 'staged changes:' < <(git diff --cached -U0 -- . ":(exclude)$SELF")
+        scanned=$(git diff --cached --name-only "${scan_path[@]}" | grep -c . || true)
+        scan_diff 'staged changes:' < <(git diff --cached -U0 "${scan_path[@]}")
         ;;
     diff)
-        scanned=$(git diff --name-only -- . ":(exclude)$SELF" | grep -c . || true)
-        scan_diff 'working tree (unstaged):' < <(git diff -U0 -- . ":(exclude)$SELF")
+        scanned=$(git diff --name-only "${scan_path[@]}" | grep -c . || true)
+        scan_diff 'working tree (unstaged):' < <(git diff -U0 "${scan_path[@]}")
         ;;
     all)
         while IFS= read -r file; do
-            [ "$file" = "$SELF" ] && continue
+            [ -n "$SELF" ] && [ "$file" = "$SELF" ] && continue
             scanned=$((scanned + 1))
             failed="$(grep -nE "$FAIL_PATTERN" -- "$file" 2>/dev/null || true)"
             warned="$(grep -nE "$WARN_PATTERN" -- "$file" 2>/dev/null || true)"
@@ -146,7 +180,7 @@ if [ "$fails" -gt 0 ]; then
     printf '\nFAIL: %s identity/mount leak(s), %s drive path(s) to review, %s item(s) scanned.\n' \
         "$fails" "$warns" "$scanned"
     printf 'Rewrite each FAIL line as %%USERPROFILE%%\\..., ~/..., or the root variable\n'
-    printf '($REPO_ROOT, exported by local_dev/scripts/repo-env.sh). Do not commit.\n'
+    printf 'the repository exports. Do not commit.\n'
     exit 1
 fi
 

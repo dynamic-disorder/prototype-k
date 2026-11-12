@@ -77,34 +77,18 @@ if [ -n "$command_text" ]; then
 fi
 # Git-hook mode (no payload) falls through to the check below: git only runs it for a commit.
 
-# The vendored agent entries. .agents/ holds copies of the agent-skills source, and a copy that has
-# drifted teaches the old rule silently. Check this repository only, and skip when the source is not
-# beside it: a lone clone must not be blocked over an umbrella it does not have.
-sync_script="$project_dir/../agent-skills/scripts/sync-skills.mjs"
-if [ -f "$sync_script" ] && command -v node >/dev/null 2>&1; then
-  repo_name="$(basename "$project_dir")"
-  sync_output="$(node "$sync_script" --root "$(dirname "$project_dir")" --target "$repo_name" 2>&1)"
-  sync_status=$?
-  case "$sync_status" in
-    0) ;;
-    2) echo "[pre-commit] $repo_name is not managed by agent-skills — skipping the skill check" >&2 ;;
-    *)
-      echo "$sync_output" >&2
-      echo "[pre-commit] .agents drifted from agent-skills — run: node ../agent-skills/scripts/sync-skills.mjs --write --target $repo_name" >&2
-      exit 2
-      ;;
-  esac
-fi
+# Git-hook mode (no payload) falls through to the check below: git only runs it for a commit.
 
 # Only C#-relevant changes need a build.
-staged="$(git diff --staged --name-only 2>/dev/null | grep -E '\.(cs|csproj|props|targets)$')"
+staged="$(git diff --staged --name-only 2>/dev/null | grep -E '\.(cs|csproj|props|targets|sln|slnx)$')"
 [ -n "$staged" ] || exit 0
 
-# Nearest solution at or above the first staged file, else the repo root.
+# Nearest solution at or above the first staged file, else the repo root. Both solution formats are
+# searched: the umbrella repositories use `.sln`, while the newer ones use the `.slnx` form.
 sln=""
 search_dir="$(dirname "$(printf '%s\n' "$staged" | head -1)")"
 while [ -n "$search_dir" ] && [ "$search_dir" != "." ] && [ "$search_dir" != "/" ]; do
-  found="$(find "$search_dir" -maxdepth 1 -name '*.sln' -print -quit 2>/dev/null)"
+  found="$(find "$search_dir" -maxdepth 1 \( -name '*.sln' -o -name '*.slnx' \) -print -quit 2>/dev/null)"
   if [ -n "$found" ]; then
     sln="$found"
     break
@@ -112,7 +96,7 @@ while [ -n "$search_dir" ] && [ "$search_dir" != "." ] && [ "$search_dir" != "/"
   search_dir="$(dirname "$search_dir")"
 done
 if [ -z "$sln" ]; then
-  sln="$(find . -maxdepth 2 -name '*.sln' -not -path './local_user_files/*' -print -quit 2>/dev/null)"
+  sln="$(find . -maxdepth 2 \( -name '*.sln' -o -name '*.slnx' \) -not -path './local_user_files/*' -print -quit 2>/dev/null)"
 fi
 # A repository holding a single project has no solution. Gate that project rather than silently
 # doing nothing, which is what this script used to do there.
@@ -133,14 +117,16 @@ fi
 rm -f "$write_probe"
 
 echo "[pre-commit] staged C# — building $sln" >&2
-if dotnet build "$sln" --no-incremental --verbosity quiet >&2 2>&1; then
+# NuGet audit is disabled for the gate: the audit feed needs network access that a sandboxed or
+# offline checkout may not have, and its warnings say nothing about whether the code compiles.
+if dotnet build "$sln" --no-incremental --verbosity quiet -p:NuGetAudit=false >&2 2>&1; then
   echo "[pre-commit] build OK" >&2
   exit 0
 fi
 
 # One retry: a --no-incremental build can lose a race with the file lock on Windows.
 echo "[pre-commit] build failed — retrying once" >&2
-if dotnet build "$sln" --no-incremental --verbosity quiet >&2 2>&1; then
+if dotnet build "$sln" --no-incremental --verbosity quiet -p:NuGetAudit=false >&2 2>&1; then
   echo "[pre-commit] build OK on retry" >&2
   exit 0
 fi
