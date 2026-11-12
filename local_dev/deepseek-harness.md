@@ -27,6 +27,19 @@ Details worth knowing:
 - `dsh-base` already supplies the instruction loader (64 KB budget) and the filesystem skill provider
   with those roots, so no profile configuration is needed for instructions or skills.
 
+## Slash commands are plugin registrations, not files
+
+There is no command directory to drop a file into. `@deepseek-ai/dsh-commands` is a registry that plugins
+populate with `ctx.commands.register()`, and the built-in commands (`dsh-command-compact`,
+`dsh-command-feedback`, `dsh-command-goal`) are packages of their own; no package reads a commands folder
+from `.agents/` or `.dsh/`. A slash command such as `/code-review` therefore cannot be installed as a file.
+It needs a plugin, which would be DSH-only, and the configuration is deliberately not carried by a plugin
+(plan D8).
+
+The file-based surface is the skill catalog: skills are discovered from `~/.agents/skills` and selected by
+their description, so a skill whose description names `/code-review` answers to that phrase in a request,
+without a command registration.
+
 ## The build gate
 
 One script is the whole gate — [`.agents/hooks/pre-commit-build-check.sh`](../.agents/hooks/pre-commit-build-check.sh) —
@@ -46,7 +59,7 @@ gate — or anything else the machine installs. `ai-offline` holds no C# and the
 
 Two changes came out of the earlier distribution and stay in the shared script:
 
-- The script prefers the tracked `local_dev/scripts/sandbox-env.sh` and only falls back to the older
+- The script prefers the tracked `local_dev/scripts/sandbox-env.sh` a project repository carries, and only falls back to the older
   scratch `local_user_files/nuget/env.sh`, so a repository carrying the tracked script builds on a
   read-only `$HOME` without needing a scratch file.
 - A repository holding a single project and no solution is gated too: the script builds that project.
