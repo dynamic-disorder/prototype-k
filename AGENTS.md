@@ -36,7 +36,7 @@ repository's own `AGENTS.md`.
 | Project | Where the code is | What it is |
 | :--- | :--- | :--- |
 | **CliUtils** | [dynamic-disorder/cliutils](https://github.com/dynamic-disorder/cliutils) | Console output utilities — coloured output, Spectre.Console wrappers, an in-memory logger. Packaged as `DynamicDisorder.CliUtils` |
-| **CsvTranslations** | `csv-translations` — separate checkout, no remote yet | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management |
+| **CsvTranslations** | [dynamic-disorder/csv-translations](https://github.com/dynamic-disorder/csv-translations) (**private**) | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management |
 | **FilenameTools** | [dynamic-disorder/filenametools](https://github.com/dynamic-disorder/filenametools) | Filename sanitization — invalid characters, Unicode normalization, batch CLI |
 | **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata |
 | **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides |
