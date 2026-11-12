@@ -1,246 +1,44 @@
-> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
-> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
-> in the next pass; the gate, the skills and the export it also describes are current.
-This folder contains local development tools and helpers for this repository. It is not intended for production use or to be included in the main application. 
-Use it for scripts, utilities, or documentation that assist with local setup, testing, or development tasks.
+# local_dev — working notes about this repository
 
-## Organization Guidelines
+**TL;DR** — The tracked notes that are *about* this checkout rather than part of it: the plan records, the
+build audit, the harness details, the ignore reference and the open follow-ups. The runnable tooling left
+with the project on 2026-11-13.
 
-- **Plans & Documentation**: Store development plans, architectural documents, and implementation guides in the `plans/` subdirectory.
-- **Completed work leaves the tree**: finished plans and third-party reference documents are archived out (kept in the git-ignored `local_user_files/archive/`, and always recoverable from git history). In the tree they are only AI context.
-- **Analyses**: Store code analysis, performance evaluations, and technical assessments in the `analyses/` subdirectory.
-- **Sensitive or Raw Ideas**: For sensitive data, personal notes, or very raw brainstorming ideas, use the `local_user_files/` directory at the repository root instead.
-- **External References**: For CLI library recommendations, tool comparisons, and external resource documentation, store in the root of `local_dev/`.
-- **Development Scripts**: Store Python, PowerShell, or shell scripts for local development tasks in the `scripts/` subdirectory of `local_dev/`.
+## Organization guidelines
 
-Do not include secrets, credentials, or external network calls in this folder.
+- **Plans**: a dated record of a structural change goes in `plans/`. It stays after the work as the record
+  of what was decided and why.
+- **Analyses**: an audit, a measurement or a technical assessment goes in `analyses/`.
+- **Completed work leaves the tree**: a finished plan or a third-party reference is archived to the
+  git-ignored `local_user_files/archive/`; git history keeps it recoverable.
+- **Personal or raw material** goes to `local_user_files/` at the repository root, never here.
+- **No secrets, credentials or network calls** in this folder.
 
-## Available Development Scripts
+## What lives here
 
-### Repository & Environment Locations (`repo-env.sh`, `repo-env.ps1`, `repo_paths.py`)
+| Path | Holds |
+| :--- | :--- |
+| `plans/` | The consolidation and split plan |
+| [`analyses/linux-build-audit.md`](analyses/linux-build-audit.md) | The cross-platform build audit of 2026-10-10: per-solution results, the case-sensitive `ProjectReference` and `EnableWindowsTargeting` failures, the `core.ignorecase` rename trap |
+| [`deepseek-harness.md`](deepseek-harness.md) | How the harnesses consume this checkout: instruction and skill discovery, and the machine-level gate |
+| [`git-ignored-local-files.md`](git-ignored-local-files.md) | What `.gitignore` excludes, what is tracked-but-ignored, and what is deliberately disposable |
+| [`TODOS.md`](TODOS.md) | Open verification and release follow-ups, each naming what closes it and who acts |
+| `CLI_Library_Recommendation_Spectre.Console.md` | The CLI library comparison the console projects were built from |
 
-Nothing in this repository should hard-code a machine path. These resolve the repository root from
-their **own** location and report the environment, so scripts work from any working directory on any
-machine.
+## Where the tooling went
 
-```bash
-source local_dev/scripts/repo-env.sh      # REPO_ROOT, HOST_OS, DOTNET, HAS_NODE, SOLUTIONS, …
-./local_dev/scripts/repo-env.sh           # human-readable summary
-./local_dev/scripts/repo-env.sh --json    # machine-readable
-```
+The project's tooling left with it on 2026-11-13 and lives in the `csv-translations` checkout:
+`local_dev/scripts/` there holds the environment resolvers (`repo-env.sh`, `repo-env.ps1`, `repo_paths.py`),
+`sandbox-env.sh`, `build-all-linux.sh`, `publish-selfcontained.mjs`, `install-net10-runtime.ps1`, the
+AI-context token estimator and the VS Code cache cleaner; `local_dev/tools/ildump/` holds the assembly
+inspector.
 
-```powershell
-. .\local_dev\scripts\repo-env.ps1        # $RepoRoot, $HostOS, $Dotnet, $HasNode, $Solutions, …
-.\local_dev\scripts\repo-env.ps1 -Json
-```
-
-```python
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "local_dev" / "scripts"))
-from repo_paths import repo_root, solution, local_user_files
-```
-
-Provided: `REPO_ROOT` / `$RepoRoot`, `REPO_NAME`, `HOST_OS` (linux/macos/windows), `IS_WINDOWS`,
-`LOCAL_DEV`, `LOCAL_USER_FILES`, `DOTNET`, the capability flags `HAS_NODE`, `HAS_PWSH`,
-`HAS_PYTHON3`, `HAS_JQ`, and `SOLUTIONS` — which is **discovered**, not a maintained list.
-
-**Notes**:
-- `build-all-linux.sh` sources `repo-env.sh`; use `repo-env.sh` from any new script rather than
-  re-deriving the root.
-- Node scripts resolve the root themselves via `import.meta.url`, so they need no shell.
-- `repo-env.ps1` targets both Windows PowerShell 5.1 and PowerShell 7+; verified on PowerShell 7.6.6
-  (summary, `-Json` and dot-sourced). There is no `pwsh` on `PATH` here by default — install it
-  without root via `dotnet tool install PowerShell --tool-path local_user_files/dotnet-tools`; source
-  `sandbox-env.sh` first, which sets the `XDG_*` directories it needs.
-- The capability flags report what the **invoking** shell can resolve on `PATH`, so `HAS_PWSH` may be
-  `1` from PowerShell and `0` from bash in the same checkout.
-
-### Cross-Platform Build & Test (`build-all-linux.sh`)
-
-Builds every `.sln` in the repository on Linux/macOS and prints a per-solution summary.
-
-```bash
-./local_dev/scripts/build-all-linux.sh                 # Debug build, all solutions
-./local_dev/scripts/build-all-linux.sh -c Release      # Release build
-./local_dev/scripts/build-all-linux.sh --test          # build, then run tests
-```
-
-**Notes**:
-- Windows-only targets (WPF, `net*-windows`) still compile — `EnableWindowsTargeting=true`
-  is set in `Directory.Build.props`. They remain unrunnable on Linux.
-- Every project targets `net10.0` and the .NET 10 runtime is installed, so the test
-  hosts start directly — no `DOTNET_ROLL_FORWARD` fallback is needed.
-- It discovers `.sln` files by glob; in this umbrella that finds `CsvTranslations/CsvTranslations.sln`
-  and nothing else. It is also the template every project repository copies, where it builds and
-  tests that repository's solutions.
-
-### Sandbox builds (read-only `$HOME`)
-
-Where `$HOME` is not writable — the agent sandbox on this box, or any locked-down environment —
-the first `dotnet restore` fails with `Read-only file system: /home/<user>/.nuget/packages` and
-nothing builds. Source the cache redirection first:
-
-```bash
-source local_dev/scripts/sandbox-env.sh
-./local_dev/scripts/build-all-linux.sh --test
-```
-
-**Notes**:
-- It exports `NUGET_PACKAGES`, `NUGET_HTTP_CACHE_PATH`, `DOTNET_CLI_HOME` and `XDG_*`, all pointed
-  at the git-ignored `local_user_files/`, and creates them. Source it — executing it does nothing.
-- Paths are derived from the script's own location, so it works from any working directory and
-  hard-codes no machine path.
-- Harmless elsewhere: it only relocates caches, and a normal machine can ignore it entirely.
-
-### AI Context Token Estimate (`ai-context-token-estimate.mjs`)
-
-Estimates how much AI-context the committed instruction files cost (AGENTS.md files and per-project
-`.agents/rules/`), at a rough ~4 characters per token.
-
-```bash
-node local_dev/scripts/ai-context-token-estimate.mjs
-node local_dev/scripts/ai-context-token-estimate.mjs --json   # machine-readable
-```
-
-**Notes**:
-- Dependency-free Node (built-ins only); no `npm install`.
-- Node port of the former `ai_context_token_estimate.ps1`, which could not run on this box at the time because `pwsh` was not installed (it can be added as a local .NET tool — see the note above).
-- The git-ignored root `.agents/` tree is not counted: it now holds only skills, which load on demand rather than being injected at session start.
-
-### Self-contained publish & runtime install (`publish-selfcontained.mjs`, `install-net10-runtime.ps1`)
-
-Two wrappers with different audiences: the publisher is a developer tool, the installer runs on
-end-user machines.
-
-```bash
-node local_dev/scripts/publish-selfcontained.mjs                          # every supported app, win-x64 Release
-node local_dev/scripts/publish-selfcontained.mjs AddEntryApp              # one app
-node local_dev/scripts/publish-selfcontained.mjs --runtime linux-x64      # another target
-```
-
-```powershell
-.\local_dev\scripts\install-net10-runtime.ps1
-```
-
-**Notes**:
-- Output is `publish/<App>/<runtime>/<configuration>/` — git-ignored. The script only drives
-  `dotnet publish`, so cross-publishing `win-x64` from Linux works.
-- Node for the developer tool (no install step on either platform), PowerShell for the end-user
-  installer (5.1 is guaranteed there, Node is not).
-
-### Publication gate (`scan-publication-leaks.sh`)
-
-Every commit is public text, so no machine-specific identifier may reach one. This scans for the
-classes that actually leak: a profile or home path, an account or host name, a mounted drive tree.
-The canonical copy is now `scripts/scan-publication-leaks.sh` in this checkout, installed as a
-machine-level link (`~/.agents/scripts/scan-publication-leaks.sh`), so it runs in every repository
-rather than only here.
-
-```bash
-bash ~/.agents/scripts/scan-publication-leaks.sh            # staged changes — the pre-commit gate
-bash ~/.agents/scripts/scan-publication-leaks.sh --diff     # unstaged working tree
-bash ~/.agents/scripts/scan-publication-leaks.sh --all      # every tracked file
-```
-
-**Notes**:
-- Exit 0 = no identity or mount leak; exit 1 = the listed lines must be rewritten before committing.
-- `FAIL` lines are leaks and always block. `warn` lines are drive-letter paths — a documented
-  `C:\data\input.csv` example is fine, a path that exists on one machine only is not.
-- Write `%USERPROFILE%\…` on Windows, `~/…` on Linux and macOS, or the root variable the repository
-  exports (`$REPO_ROOT` / `$RepoRoot` in the project repositories).
-- The pattern list lives only in that script. It derives its own path at runtime and skips itself for
-  that reason, and no document keeps an inline copy: a hand-copied `grep` in the rules matched its own
-  prose.
-- `~/.agents/githooks/pre-commit` runs it before the build gate, wired once per machine by
-  `node scripts/install-global.mjs --write`.
-
-### Portable export (`export-agents.mjs`)
-
-Builds the `.agents-generic-<date>` tree a second machine copies into `~/.agents`: the rules as one
-`AGENTS.md`, every skill with its own scripts and tests, both git gates, the publication scanner, the shared
-libraries, the settings file and a project seed. The bundle is generated from this checkout and never edited.
-
-```bash
-node scripts/export-agents.mjs              # write dist/.agents-generic-<date>
-node scripts/export-agents.mjs --check      # compare the newest export with the checkout
-node scripts/export-agents.mjs --archive    # also write the matching .tar.gz
-```
-
-**Notes**:
-- `--check` compares the file list and every sha256 and writes nothing; exit 1 lists what drifted.
-- A refused file stops the run by name: the Windows credential helper, the placeholder map that names real
-  identities, the secret-scan allowlist and the environment lookups that read secret stores. The list is
-  `REFUSED_PATHS` in `scripts/lib/export-plan.mjs`.
-- The tree lands in `dist/`, which is git-ignored: it is regenerated, never committed.
-- The install proof is a copy into a throwaway home: `settings.json` parses, every script passes its syntax
-  check, and `hooks/pre-commit-build-check.sh` exits 0 with no payload.
-
-### VS Code Cache Cleaner (`vscode_cache_cleaner.py`)
-
-A cross-platform Python script to clear Visual Studio Code cache folders without deleting settings or extensions.
-
-**Purpose**: Cleans VS Code cache to resolve performance issues, free up disk space, or fix extension caching problems.
-
-**Features**:
-- Detects operating system (Windows, macOS, Linux)
-- Closes VS Code if running (to avoid file lock conflicts)
-- Removes cache-related folders (Cache, CachedData, Code Cache, GPUCache, logs, CachedExtensions)
-- Preserves your settings, keybindings, and installed extensions
-
-**Usage**:
-```bash
-cd local_dev/scripts
-python vscode_cache_cleaner.py
-```
-
-**Notes**:
-- Requires Python 3.6+ and appropriate permissions to delete system folders
-- Does NOT delete your settings or installed extensions
-- Restart VS Code after running to regenerate caches as needed
-
-**Source**: Based on community recommendations for VS Code cache management.
-
-## Tools
-
-Committed tooling that does not belong under `scripts/` because it is not a script. Anything wanted
-again later belongs here (or in `scripts/`), **not** in the git-ignored `local_user_files/` scratch.
-
-### .NET assembly inspector (`tools/ildump/`)
-
-Dumps an assembly's declared types — or one type's members — with their **accessibility**, straight
-from IL metadata via `System.Reflection.Metadata`. Written because this box has no
-`ildasm`/`monodis`/`ilspycmd`.
-
-```bash
-dotnet run --project local_dev/tools/ildump -- <assembly.dll> [typeFullName]
-```
-
-It produced the finding that reference assemblies keep the **public** members of internal types but
-strip the **internal** ones — the reason `InternalsVisibleTo` alone cannot let a test project call
-internal helpers. See [`analyses/linux-build-audit.md`](analyses/linux-build-audit.md).
-
-**Notes**:
-- Prints assembly attributes as `.ctor` (their constructor name) — cosmetic noise; the type and
-  member accessibility output is what it is for.
-- No package references: `System.Reflection.Metadata` is in the `net10.0` shared framework.
-
-## Analyses
-
-- [`analyses/linux-build-audit.md`](analyses/linux-build-audit.md) — cross-platform build audit of every
-  solution and project (2026-10-10): per-solution Debug/Release/test results, the case-sensitive
-  `ProjectReference` and `EnableWindowsTargeting` failures, the `git core.ignorecase` rename trap,
-  open issues, and a cross-platform checklist for future changes.
-- the TTS analysis, `local_dev/analyses/tts_analysis.md`, moved to the `csv-translations` checkout with the project.
+What stayed here is machine-level and sits at the repository root, not in `local_dev/`:
+[`scripts/install-global.mjs`](../scripts/install-global.mjs) (the links and `core.hooksPath`),
+[`scripts/export-agents.mjs`](../scripts/export-agents.mjs) (the portable bundle) and
+[`scripts/scan-publication-leaks.sh`](../scripts/scan-publication-leaks.sh) (the publication gate). Their
+usage is in `../AGENTS.md` and `../README.md`.
 
 ## Documentation
 
-- [`deepseek-harness.md`](deepseek-harness.md) — how DeepSeek Harness consumes this repository:
-  instruction and skill discovery, and the git hook that is the build gate.
-- [`git-ignored-local-files.md`](git-ignored-local-files.md) — index of working-tree files excluded by
-  `.gitignore` (root `.agents/`, `launchSettings.json`, the `local_user_files/` scratch dir): what
-  changed, what is tracked-but-ignored, what is deliberately disposable, and how to persist any of it.
-- [`TODOS.md`](TODOS.md) — open verification and release follow-ups: the Linux test figure that the
-  `CliUtils` 0.1.1 bump left unconfirmed, the leaky package still listed on nuget.org, and the duplicate
-  symbols push in the publish workflow. Each entry names what closes it and who acts.
+Written here: the files in the table above. `../AGENTS.md` is the entry point and links back to this folder.
