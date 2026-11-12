@@ -1,3 +1,6 @@
+> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
+> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
+> in the next pass; the gate, the skills and the export it also describes are current.
 This folder contains local development tools and helpers for this repository. It is not intended for production use or to be included in the main application. 
 Use it for scripts, utilities, or documentation that assist with local setup, testing, or development tasks.
 

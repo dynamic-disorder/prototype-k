@@ -1,5 +1,9 @@
 # AGENTS.md — umbrella repository
 
+> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
+> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
+> in the next pass; the gate, the skills and the export it also describes are current.
+
 **TL;DR** — This repository is an umbrella. One project lives here, `CsvTranslations/`; the other four
 are separate repositories. Beyond that it holds the cross-project documentation, the tooling templates
 they were created from, and the complete history.

@@ -1,5 +1,9 @@
 # prototype-k
 
+> **Moved 2026-11-13:** `CsvTranslations/` and the tooling that ran it left this repository for the
+> sibling `csv-translations` checkout. The text below still describes the older layout and is rewritten
+> in the next pass; the gate, the skills and the export it also describes are current.
+
 **TL;DR** — Umbrella repository: one project lives here (`CsvTranslations/`), the other four are
 separate repositories cloned beside this one. This repository holds the cross-project picture, the
 tooling templates every project was created from, and the complete pre-split history.
