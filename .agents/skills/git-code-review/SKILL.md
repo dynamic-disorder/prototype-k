@@ -1,6 +1,6 @@
 ---
 name: git-code-review
-description: 'Review a branch, PR or issue end-to-end: an independent pass first, then what it does not cover - requirements, verification of what the PR claims, and the per-type checks in references/code_review_living_lens.md. Ranks findings, can post inline PR comments, and learns from the run. Trigger on "review this PR or branch", "check my branch before I open a PR", a bare PR URL or number plus "review", or "give me a code review for <branch or PR>". Do NOT trigger for a raw diff with no target (use csharp-code-review), for replying to existing PR comments (use git-code-review-resolve-feedbacks), or for an HTML report from structured data (use output-html-review-generate).'
+description: 'Review a branch, PR or issue end-to-end: an independent pass first, then what it does not cover - requirements, verification of what the PR claims, and the per-type checks in references/code_review_living_lens.md. Ranks findings, can post inline PR comments, and learns from the run. Trigger on "review this PR or branch", "check my branch before I open a PR", a bare PR URL or number plus "review", or "give me a code review for <branch or PR>". The command forms /code-review and /git-code-review select it too. Do NOT trigger for a raw diff with no target (use csharp-code-review), for replying to existing PR comments (use git-code-review-resolve-feedbacks), or for an HTML report from structured data (use output-html-review-generate).'
 ---
 
 # git-code-review
@@ -14,6 +14,15 @@ REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"   # owner/name of 
 OWNER="${REPO%%/*}"
 NAME="${REPO##*/}"
 ```
+
+## Invocation
+
+- **Claude Code** lists each skill as a slash command under its own name: `/git-code-review <target>`. That
+  needs `~/.claude/skills` to resolve to the shared skills root; without the link, no shared skill is listed.
+- **DeepSeek Harness** has no skill slash commands. It selects this skill from the description, so both
+  "review this branch" and "/code-review <target>" reach it; a real `/code-review` command needs an entry in
+  the harness's command directory.
+- In both, the first token is the target and the rest are instructions (see Input below).
 
 An independent pass (a separate session, fresh context) covers the generic review of the diff against the project rules. This skill adds only: ticket requirements, verification of the claims the PR makes about itself, and the type-specific checks from `$HOME/.agents/skills/git-code-review/references/code_review_living_lens.md`. Do not hand-roll a generic bug hunt.
 
