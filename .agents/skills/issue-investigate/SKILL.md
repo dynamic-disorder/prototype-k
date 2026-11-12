@@ -3,7 +3,7 @@ name: issue-investigate
 description: Trace a bug to its root cause and write the analysis to local_user_files/.
 ---
 
-# Issue investigation
+# issue-investigate
 
 Investigate the bug or unexpected behaviour described in the request. If the request is empty,
 infer the area from `git diff` and `git log --oneline -10`, then ask.

@@ -3,7 +3,7 @@ name: spike
 description: Time-boxed technical research on a topic, written up in local_user_files/.
 ---
 
-# Spike
+# spike
 
 Time-boxed research into the topic the request names — architecture, a library, performance or
 an implementation approach. Ask if the topic is missing.

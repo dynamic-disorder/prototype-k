@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkSkill, checkText, parseFrontmatter, referencesIn, skillsIn } from './check-skills-lib.mjs';
+import { checkSkill, checkText, firstHeading, parseFrontmatter, referencesIn, skillsIn } from './check-skills-lib.mjs';
 
 // Patterns are assembled from parts so this file does not carry the strings it looks for.
 const placeholderProduct = `<${'PRODUCT_NAME'}>`;
@@ -64,6 +64,17 @@ test('checkSkill_HeadingDiffersFromName_IsSoft', () => {
   const text = validSkill.replace('# sample-skill', '# something else');
   const findings = checkSkill({ folder: 'sample-skill', text });
   assert.ok(findings.some((finding) => finding.rule === 'heading:not-the-name'));
+});
+
+test('firstHeading_HashInsideACodeFence_IsIgnored', () => {
+  const text = [validSkill, '', '```html', '# <Title>', '```', ''].join('\n');
+  assert.equal(firstHeading(text), 'sample-skill');
+});
+
+test('checkSkill_NoHeading_IsSoft', () => {
+  const text = '---\nname: sample-skill\ndescription: x\n---\n\nBody only.\n';
+  const findings = checkSkill({ folder: 'sample-skill', text });
+  assert.deepEqual(findings, [{ kind: 'soft', rule: 'heading:missing', detail: 'sample-skill' }]);
 });
 
 test('checkText_EachLeftover_IsHard', () => {

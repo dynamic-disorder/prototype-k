@@ -3,6 +3,8 @@ name: git-pr-fetch
 description: 'Fetches GitHub PR review comments, filtered to unresolved threads only (resolved discussions dropped). Shows file:line references. Trigger on "check PR comments/threads/conversations", "what feedback is open on this PR", "find open review threads", "does this PR have unresolved comments", a PR URL/number plus "comments"/"threads"/"feedback"/"review status", or as the lookup step before resolving/replying to PR feedback (pairs with git-code-review-resolve-feedbacks).'
 ---
 
+# git-pr-fetch
+
 Run the fetch script and return its output:
 
 ```bash

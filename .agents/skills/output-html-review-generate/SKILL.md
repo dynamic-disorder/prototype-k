@@ -3,6 +3,8 @@ name: output-html-review-generate
 description: Generate professional HTML review reports from structured data (JSON). Use when - "create HTML report", "generate review report", "export findings to HTML".
 ---
 
+# output-html-review-generate
+
 Generate professional HTML report from JSON data.
 
 **Usage:** `<input.json> <title>`

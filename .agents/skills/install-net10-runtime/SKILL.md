@@ -4,7 +4,7 @@ description: Install the .NET 10 runtime on an end-user Windows machine that wil
 disable-model-invocation: true
 ---
 
-# Install the .NET 10 runtime
+# install-net10-runtime
 
 Run `local_dev/scripts/install-net10-runtime.ps1` on the end-user Windows machine:
 

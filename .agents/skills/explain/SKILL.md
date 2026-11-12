@@ -4,6 +4,8 @@ description: Explain code — what it does, what's non-obvious, where to be care
 disable-model-invocation: true
 ---
 
+# explain
+
 Explain what the request names.
 
 Assume .NET/C# familiarity. Skip what's obvious from the code. Lead with a single sentence: what it does and why it exists.

@@ -4,7 +4,7 @@ description: Refactor C# code without changing behaviour — structure, naming a
 disable-model-invocation: true
 ---
 
-# Refactor
+# csharp-refactor
 
 Refactor what the request names.
 

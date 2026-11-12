@@ -3,6 +3,8 @@ name: output-markdown-to-html
 description: Convert markdown documentation to professional standalone HTML files. Use when "convert md to html", "export markdown as html", "generate html from markdown".
 ---
 
+# output-markdown-to-html
+
 Convert markdown files to standalone HTML with professional styling, GitHub-style alerts, syntax highlighting, responsive layout, and dark mode support.
 
 ```bash

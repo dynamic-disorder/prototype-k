@@ -4,7 +4,7 @@ description: Publish supported apps as self-contained Windows bundles for end-us
 disable-model-invocation: true
 ---
 
-# Publish self-contained bundles
+# publish
 
 Run the repository's wrapper:
 

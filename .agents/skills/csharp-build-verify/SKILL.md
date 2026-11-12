@@ -3,7 +3,7 @@ name: csharp-build-verify
 description: Build the affected .NET solution and recover from the build failures these repositories actually hit.
 ---
 
-# Build verification
+# csharp-build-verify
 
 Once `.cs`, `.csproj` or `.sln` files change, the affected solution must build before the work
 counts as done.

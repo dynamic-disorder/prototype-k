@@ -3,7 +3,7 @@ name: git-pr-description-write
 description: Write or update a GitHub PR description - covers both drafting a brand-new one and refreshing/appending to an already-open PR's existing body (e.g. after a follow-up commit lands), even when the change looks small or mechanical. Produces a lightweight, reviewer-skimmable body (Ticket link, Issue/Why/Changes/Verification, or a Lean Summary for cherry-picks/backports) instead of a hand-written `gh pr edit --body`. Use when - "write PR description", "create pull request description", "update PR", "update the PR description", "update the PR body", "add this to the PR description", "reflect this commit in the PR description", "summarize changes for PR", "refresh the PR description".
 ---
 
-# pr-description-writer
+# git-pr-description-write
 
 Generate lightweight, easy-to-skim PR descriptions. The diff already holds the technical detail - the description orients the reviewer (what's wrong, why, what changed, what to expect), it doesn't restate the code.
 

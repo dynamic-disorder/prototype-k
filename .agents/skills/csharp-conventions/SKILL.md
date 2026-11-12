@@ -3,7 +3,7 @@ name: csharp-conventions
 description: Non-obvious C# style rules these repositories follow that .editorconfig and the analyzers do not catch.
 ---
 
-# C# conventions
+# csharp-conventions
 
 `.editorconfig` is the source of truth for formatting, spacing, `var`, modifier order and
 analyzer severities — read it instead of restating it here. Only these rules are convention-only,

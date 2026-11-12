@@ -42,6 +42,21 @@ export function parseFrontmatter(text) {
   };
 }
 
+/** The document's H1: the first `# ` line outside a fenced code block, or null when there is none. */
+export function firstHeading(text) {
+  let inFence = false;
+  for (const line of text.split('\n')) {
+    if (/^```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    const match = line.match(/^# (.+)$/);
+    if (match) return match[1].trim();
+  }
+  return null;
+}
+
 /** Findings for one `SKILL.md`: `hard` blocks a run, `soft` is reported for judgement. */
 export function checkSkill({ folder, text }) {
   const findings = [];
@@ -59,8 +74,9 @@ export function checkSkill({ folder, text }) {
   for (const key of FORBIDDEN_FRONTMATTER_KEYS) {
     if (new RegExp(`^${key}:`, 'm').test(frontmatter.raw)) add('hard', `frontmatter:claude-key:${key}`);
   }
-  const h1 = text.match(/^# (.+)$/m)?.[1]?.trim();
-  if (h1 && frontmatter.name && h1 !== frontmatter.name) add('soft', 'heading:not-the-name');
+  const h1 = firstHeading(text);
+  if (!h1) add('soft', 'heading:missing');
+  else if (frontmatter.name && h1 !== frontmatter.name) add('soft', 'heading:not-the-name');
   return findings;
 }
 

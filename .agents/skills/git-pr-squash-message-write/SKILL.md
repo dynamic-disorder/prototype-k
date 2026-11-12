@@ -3,7 +3,7 @@ name: git-pr-squash-message-write
 description: Generate squash & merge commit messages for git history (imperative, outcome-focused, 1 title + short body)
 ---
 
-# pr-squash-and-merge-message-writer
+# git-pr-squash-message-write
 
 Generates squash & merge commit messages that read well in `git log` - what changed and why, not every step.
 

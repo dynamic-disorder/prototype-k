@@ -3,6 +3,8 @@ name: output-html-brief-generate
 description: Turn a long/detailed document into a short, plain-language HTML brief - short paragraphs, bullets, sparing icons. Use when a document is "too long", "too detailed", "hard to read", or the user asks for a "simple version", "TL;DR", "reader-friendly", or "brief" as HTML.
 ---
 
+# output-html-brief-generate
+
 Turn a detailed document (plan, report, analysis) into a short, plain-language brief. This is a **rewrite** step you do with judgment about what to cut vs keep - not a mechanical script.
 
 ## Input
