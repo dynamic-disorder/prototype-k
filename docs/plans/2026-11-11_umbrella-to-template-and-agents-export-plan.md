@@ -5,7 +5,7 @@
 | **Need** | `prototype-k` still holds the project, its scratch and its tooling, and the agent configuration exists as six vendoried copies that drift. Neither can serve as the one configuration you install on an empty machine. |
 | **Why** | One canonical home, installed by links, is the only arrangement where a rule learned once is the rule every repository runs, and where the hackathon bundle is the same bytes as the machine you work on. |
 | **What** | Merge `agent-skills` into `prototype-k`, delete every vendored copy, move the project out as `csv-translations` with only what it owns, and build an export from the single home. |
-| **DoD** | No repository carries a shared skill, hook or style copy; every repository's commits run the same machine-level hook; `~/.agents/skills` points at one checkout; the export installs into a throwaway home and passes `--check`. |
+| **DoD** | No repository carries a shared skill, hook or style copy; every repository's commits run the same machine-level hook; `~/.agents/skills` points at one checkout; the export's tree passes `--check`, and a copy of it installs into a throwaway home with its hooks and scripts green. |
 | **Top risk** | A vendored copy survives in a directory nobody checked, and the next rule edit silently skips that repository. Fixed by the deletion inventory, verified with `git ls-files`. |
 
 **TL;DR** — Stop copying. One checkout owns the skills, hooks and style; every repository gets them through links installed once per machine; the project leaves with only its own files.
@@ -30,18 +30,26 @@ $DYNAMIC_DISORDER_ROOT/
                            # project files only; no .agents/skills, no .githooks
 ```
 
-Machine-level, installed once and identical on Windows and Omarchy:
+Machine-level. The working machine reads the checkout through links; the portable machine runs the export,
+which is the same tree copied to the same root:
 
 ```
+# working machine (links into the checkout)
 ~/.agents/AGENTS.md          shared rules + style blocks
 ~/.agents/skills/<name>   -> prototype-k/.agents/skills/<name>
 ~/.agents/hooks           -> prototype-k/.agents/hooks
 ~/.agents/scripts         -> prototype-k/scripts
 ~/.agents/githooks        -> prototype-k/.githooks
 git config --global core.hooksPath  ->  ~/.agents/githooks
-~/.claude/CLAUDE.md          one import line: @~/.agents/AGENTS.md
-~/.claude/skills          -> ~/.agents/skills
+
+# portable machine (the export, as its setup guide installs it)
+%USERPROFILE%\.agents\
+  AGENTS.md  settings.json  rules/  skills/  scripts/  hooks/  lib/  reference/
 ```
+
+The export inspected for this plan carries no `CLAUDE.md`: its `settings.json` addresses `$HOME/.agents/...`
+directly, and its setup guide copies the tree into `%USERPROFILE%\.agents\`. The plan follows that shape;
+a `~/.claude/CLAUDE.md` pointer is legacy, not part of the target.
 
 ## The rule
 
@@ -64,7 +72,7 @@ git config --global core.hooksPath  ->  ~/.agents/githooks
 | D2 | Delete the vendoring machinery: `sync.json`, `sync-lock.json`, `scripts/sync-skills.mjs`, and the hook's drift check. | They exist to keep copies identical. With no copies, they are the mechanism of the problem. |
 | D3 | Hooks and scripts become machine-level links under `~/.agents`, wired by one global `core.hooksPath`. | A repository should not need a hook file to be gated; a new clone is gated by being on the machine. |
 | D4 | Project-specific entries are kept; shared ones are deleted. | `snaerf`'s standards skill and `filenametools`' rule are not copies; the seven-skill sets in three repositories are. |
-| D5 | The export builds from the single home and installs by link, never by copy. | The bundle on the USB stick is the same bytes the working machine runs, not a snapshot that diverges. |
+| D5 | The working machine reads the canonical files through links; the portable export is that tree copied to `~/.agents`, regenerated, never edited. | One set of files, two views: the live checkout and the snapshot that travels. |
 | D6 | `local_dev/` and `local_user_files/` are classified before moving: project parts go with the project, machine and umbrella notes stay. | `local_dev/TODOS.md` is CliUtils follow-ups, and the mount notes carry literal mount paths; moving them into a project repository misplaces both. |
 | D7 | The export never contains credentials or harness logins. | A USB stick with keys cannot be rotated in time. |
 | D8 | A DSH plugin is an optional adapter, never the source of the configuration. | The configuration must load in any harness that reads `AGENTS.md`; a plugin is DSH-only and would be the only copy on a machine without it. |
@@ -117,7 +125,6 @@ Run from `$DYNAMIC_DISORDER_ROOT/prototype-k`. Start when the tree is clean.
    | `~/.agents/hooks` | `<repo>/.agents/hooks` |
    | `~/.agents/scripts` | `<repo>/scripts` |
    | `~/.agents/githooks` | `<repo>/.githooks` |
-   | `~/.claude/skills` | `~/.agents/skills` (only when `~/.claude` exists) |
 
    Then write `git config --global core.hooksPath <absolute ~/.agents/githooks>` and verify it in
    `--check`. Compute the absolute path; do not rely on `~` expansion in git config.
@@ -168,52 +175,62 @@ Run from `$DYNAMIC_DISORDER_ROOT/prototype-k`. Start when the tree is clean.
 8. **Archive `agent-skills`** once the links and the export are green: archive the GitHub repository and
    remove the checkout. Nothing reads it after step 4. This is a separate, final action.
 
-## Phase 2 — the export
+## Phase 2 — the portable export
+
+The reference artifact is the `.agents-generic-<date>` folder the export process writes; the 2026-11-12
+copy was inspected for this plan:
+
+```
+.agents-generic-<date>/
+  AGENTS.md                    # the global rules, one file
+  settings.json                # Claude Code settings; hooks and statusline point at $HOME/.agents
+  rules/                       # 6 rules
+  skills/                      # 16 skills with their scripts and references
+  scripts/  hooks/  lib/       # what the skills and hooks call
+  reference/                   # 7 references
+  agent_model_strategy.md  claude_environment_variables.md  setup_agent_guide.md
+  claude_placeholder_values.txt
+```
+
+There is no `CLAUDE.md` and no `~/.claude` layer. The bundle keeps this shape; `README.md` and
+`MANIFEST.json` are the only additions, plus `project-seed/` for a new repository.
 
 1. **Add `scripts/export-agents.mjs`** and a pure `scripts/lib/export-plan.mjs` (file list, exclusions,
    leak check) with `node:test` coverage.
 
    | Mode | Behaviour |
    | :--- | :--- |
-   | `--out <dir>` | Write the bundle, default `dist/agents-export` |
+   | `--out <dir>` | Write the tree, default `dist/.agents-generic-<date>` |
    | `--check` | Rebuild and compare file lists and hashes; report drift, never write |
-   | `--archive` | Also write `dist/agents-export-<date>.tar.gz` |
+   | `--archive` | Also write the matching `.tar.gz` |
 
-2. **Bundle layout.** One install part, one project seed:
+2. **Generate the tree from the canonical home.** `AGENTS.md` is the canonical rules without the machine
+   notes; `rules/`, `scripts/`, `hooks/`, `lib/` come from the checkout; `settings.json` is the export's,
+   which holds model names and hook wiring, never credentials; `project-seed/` holds `AGENTS.md`,
+   `.editorconfig`, `Directory.Build.props`, `.gitattributes` and `.gitignore`. The import skill must have
+   run first: the export's 16 skills and 6 rules are its output, not `agent-skills`'s.
 
-   ```
-   agents-export/
-     README.md              # prerequisites, install commands, new-project steps
-     MANIFEST.json          # relative path + sha256
-     global/                # AGENTS.shared.md, install.mjs, README.md
-     output-style/          # managed-block.md, documentation-style.md, install.mjs, README.md
-     scripts/               # install-global.mjs, scan-publication-leaks.sh, lib/managed-block.mjs, lib/install-block.mjs
-     githooks/pre-commit
-     .agents/skills/        # the canonical skills
-     .agents/hooks/         # pre-commit-build-check.sh
-     docs/agents/           # skill-authoring specs
-     claude/CLAUDE.md       # @~/.agents/AGENTS.md
-     project-seed/          # AGENTS.md, .editorconfig, Directory.Build.props, .gitattributes, .gitignore
-   ```
+3. **Refuse the files the export carries and the configuration must not**: `claude_placeholder_values.txt`,
+   `lib/repo-env-db.{sh,md}`, `lib/repo-env-github.{sh,md}`, `reference/git_commit_secret_scan_allowlist.txt`,
+   `scripts/windows-credential-store.ps1` and its `-lib.mjs` / `.mjs` siblings.
 
-   Excluded: `sync.json`-era files, `deck-card-video-generate` (its `node_modules/` is untracked), every
-   `node_modules/` and `test-results/`, `dist/`, `.git/`, `local_user_files/`, and any harness state.
-
-3. **Prove the install path**, not just the files:
+4. **Prove the install path**, not just the files:
 
    ```bash
-   cp -R agents-export ~/agent-config
-   cd ~/agent-config
-   node global/install.mjs && node output-style/install.mjs
-   node scripts/install-global.mjs --write
-   node global/install.mjs --check && node output-style/install.mjs --check && node scripts/install-global.mjs
+   tmp="$(mktemp -d)"
+   cp -R dist/.agents-generic-<date> "$tmp/.agents"
+   node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$tmp/.agents/settings.json"
+   find "$tmp/.agents" -name '*.mjs' -exec node --check {} \;
+   find "$tmp/.agents" -name '*.sh'  -exec bash -n {} \;
+   HOME="$tmp" bash "$tmp/.agents/hooks/pre-commit-build-check.sh" </dev/null
    ```
 
-   Then repeat it in a clean Linux container with Node, so case, junction and permission problems surface
-   here and not on the hackathon laptop.
+   Expected: the JSON parses, every script passes its syntax check, the hook exits 0 with no payload, and
+   the export's own leak scan reports no profile path, mount root or home directory. Repeat in a clean
+   Linux container with Node, so case and permission problems surface here.
 
-4. **Leak check and archive.** The export scans its text files for profile paths, mount roots and home
-   directories, skipping the scanner itself. `tar -czf dist/agents-export-<date>.tar.gz -C dist agents-export`.
+5. **Archive.** `tar -czf dist/.agents-generic-<date>.tar.gz -C dist .agents-generic-<date>`; `tar` ships
+   with Windows 10 and every Linux.
 
 ## Phase 3 — move the project out
 
@@ -238,13 +255,24 @@ Run from `$DYNAMIC_DISORDER_ROOT/prototype-k`. Start when the tree is clean.
    `CsvTranslations/` segment; the four data scripts use `parents[1]`; `publish-selfcontained.mjs` drops
    the prefix from its four project paths; the `repo-env.ps1` example follows.
 
-4. **Move in one pass, one umbrella commit.**
+4. **Move in one pass, one umbrella commit.** `prototype-k` is still the repository; `../csv-translations`
+   is outside its worktree, so git records only what leaves the umbrella.
 
    ```bash
    mv CsvTranslations ../csv-translations
-   mv local_dev/scripts ../csv-translations/local_dev/scripts   # after the classification above
-   git add -A -- CsvTranslations local_dev local_user_files
+   mkdir -p ../csv-translations/local_dev/analyses
+   mv local_dev/scripts  ../csv-translations/local_dev/scripts
+   mv local_dev/tools    ../csv-translations/local_dev/tools
+   mv local_dev/analyses/tts_analysis.md ../csv-translations/local_dev/analyses/
+
+   # stages the removals from prototype-k; the moved files are not added anywhere here
+   git add -A -- CsvTranslations local_dev
    ```
+
+   `git add -A -- CsvTranslations local_dev` stages the deletions of the tracked files under those
+   pathspecs. A pathspec of `csv-translations` would match nothing: the folder is not inside this
+   repository. It becomes tracked when it is initialised as its own repository. `local_user_files` is not
+   in the list because only untracked analyses leave it; its one tracked file, the README, stays.
 
 5. **Rehearse the standalone checkout** in a filtered copy: build, test, publish `AddEntryApp`, print
    `repo_paths.py`, and confirm no machine path or ignored asset is tracked. Expected: green, with the
@@ -263,9 +291,9 @@ Rewrite `AGENTS.md` and `README.md` for a template with no product code; update 
 | A repository keeps a local `core.hooksPath` and skips the new gate | The local `--unset` step, verified with `git config --local --get` |
 | Global hooks fire in unrelated repositories | The gate exits 0 when nothing is staged, and the build gate needs staged C#; the machine-level choice is documented |
 | Machine notes move into a project repository | The Phase 3 classification table; mount-path notes stay in the umbrella |
-| `~/.claude/skills` link missing, so Claude Code sees no skills | The installer creates it and `--check` reports it |
+| `~/.claude` left in place while the export installs to `~/.agents` | The export's `settings.json` and `AGENTS.md` are read from `~/.agents`; confirm the config root there and leave the old `~/.claude` data untouched |
 | The merge leaves `agent-skills` referenced somewhere | `readlink` of every link, plus the global hooks path, checked before archiving |
-| Export drifts from the working install | The bundle is built from the same files and installed by link; `--check` recomputes hashes |
+| Export drifts from the working install | The tree is regenerated from the canonical home; `--check` recomputes file lists and hashes |
 
 ## Out of scope
 
