@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Machine-level pre-push hook — the one hooks directory git runs.
+#
+# Git honours exactly one hooks directory, so a repository cannot keep a second pre-push of its
+# own: this hook forwards to the repository's own gate when it carries one, and exits 0
+# immediately otherwise. The project's rule stays in the project; the machine owns the wiring.
+#
+# A repository's own gate lives at `git_tools/pre-push`. Git calls a pre-push hook with the remote
+# name and URL as arguments and the refs on stdin; both are forwarded unchanged, and the gate's
+# exit code is git's: non-zero refuses the push.
+set -u
+
+top="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -n "$top" ] || exit 0
+
+local_gate="$top/git_tools/pre-push"
+if [ -f "$local_gate" ]; then
+    exec bash "$local_gate" "$@"
+fi
+
+exit 0

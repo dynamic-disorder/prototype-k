@@ -97,7 +97,7 @@ One directory, `.agents/`, holds everything the harnesses read; `.claude/` no lo
 | `AGENTS.md`, `CsvTranslations/AGENTS.md` | Instructions, chained from the repository root down to the working directory |
 | `.agents/skills/` | The canonical, tracked, tool-neutral skills — one copy, linked into `~/.agents/skills/<name>` on each machine |
 | `.agents/hooks/` | The build gate |
-| `.githooks/pre-commit` | The git gate — installed machine-wide as `~/.agents/githooks`, wired by `core.hooksPath` |
+| `.githooks/pre-commit`, `pre-push` | The git gates — installed machine-wide as `~/.agents/githooks`, wired by `core.hooksPath`; `pre-push` forwards to a repository's own `git_tools/pre-push` when it carries one |
 | `scripts/` | `install-global.mjs` (the machine-level links and `core.hooksPath`), `scan-publication-leaks.sh`, and the block installers' libraries |
 | `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
 | `.agents/commands/`, `.agents/rules/` | Slash commands and path-scoped rules, when a tree carries them |
