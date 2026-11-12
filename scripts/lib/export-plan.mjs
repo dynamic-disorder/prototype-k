@@ -57,6 +57,8 @@ export const NOT_BUNDLED_SCRIPTS = [
   'install-global.mjs',
   'export-agents.mjs',
   'export-plan.mjs',
+  'check-skills.mjs',
+  'check-skills-lib.mjs',
 ];
 
 /**

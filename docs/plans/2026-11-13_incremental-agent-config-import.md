@@ -96,10 +96,10 @@ guide's unique details only.
 
 | Source form | House form |
 | :--- | :--- |
-| `<PRODUCT_NAME>`, `<COMPANY_OR_ORGANIZATION_NAME>` | the repository resolved from the remote (`gh repo view --json nameWithOwner`), or `$REPO`/`$OWNER`/`$NAME` with a setup block |
-| `<PROJECT_TICKET_PREFIX>`, "ticket key", "ticket-prefix" | an issue id such as `ABC-1234`; commit wording is Conventional Commits |
-| `NSubstitute` | `FakeItEasy` |
-| `temp_user_files`, `local_dev/local_user_files` | `local_user_files` |
+| the `<PRODUCT_…>` and `<COMPANY_…>` placeholders | the repository resolved from the remote (`gh repo view --json nameWithOwner`), or `$REPO`/`$OWNER`/`$NAME` with a setup block |
+| a `<PROJECT_…>` ticket placeholder | an issue id such as `ABC-1234`; commit wording is Conventional Commits |
+| the `NSub…` mocking library the source names | `FakeItEasy` |
+| a temporary scratch path such as `local_dev/local_user_files` | `local_user_files` |
 | `~/.claude`, `.claude/` | **absent** from every neutral file; name the directory in words if the text must refer to it |
 | `$ARGUMENTS` | an explicit `## Input` paragraph |
 | `model:`, `allowed-tools:`, `user-invocable:`, `context:`, `agent:` in frontmatter | removed; `name` and `description` stay |
@@ -156,9 +156,10 @@ node scripts/export-agents.mjs --check
 # settings parse, every manifest path resolves, scripts pass, the gate exits 0
 ```
 
-`scripts/check-skills.mjs` does not exist yet: add it in the first run of this plan, carrying the checks
-listed above, because the importer's verifier does not cover frontmatter names, references, `Skill()`
-targets or the naming rules.
+`scripts/check-skills.mjs` exists as of this plan: it reports frontmatter names and descriptions, leftover
+source text, machine identifiers, references that do not resolve, `Skill()` names with no folder, and the
+naming rule. It skips the importer skill, whose files define the patterns it looks for, and it is not
+bundled — it checks this checkout, like the installer and the exporter do.
 
 ## Step 9 — publish the change
 

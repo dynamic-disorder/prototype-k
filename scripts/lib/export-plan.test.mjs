@@ -67,14 +67,18 @@ test('bundlePathFor_LibraryTest_ReturnsNull', () => {
 });
 
 test('bundlePathFor_ExporterAndInstaller_ReturnNull', () => {
-  // Given: the exporter, its planner and the link installer
+  // Given: the exporter, its planner, the link installer and the skill checker
   // When: each is mapped
-  const mapped = ['scripts/export-agents.mjs', 'scripts/lib/export-plan.mjs', 'scripts/install-global.mjs'].map(
-    bundlePathFor,
-  );
+  const mapped = [
+    'scripts/export-agents.mjs',
+    'scripts/lib/export-plan.mjs',
+    'scripts/install-global.mjs',
+    'scripts/check-skills.mjs',
+    'scripts/lib/check-skills-lib.mjs',
+  ].map(bundlePathFor);
 
   // Then: none enters the bundle
-  assert.deepEqual(mapped, [null, null, null]);
+  assert.deepEqual(mapped, [null, null, null, null, null]);
 });
 
 test('bundlePathFor_ProjectFile_ReturnsNull', () => {

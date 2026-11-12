@@ -86,6 +86,7 @@ node scripts/install-global.mjs            # every link and the hooks path; exit
 node global/install.mjs --check            # shared rules block current
 node output-style/install.mjs --check      # style block current
 node scripts/export-agents.mjs --check     # the newest export matches the checkout
+node scripts/check-skills.mjs              # skill frontmatter, references, names and leftovers
 node --test scripts/lib/*.test.mjs         # the planner and block libraries
 ```
 
