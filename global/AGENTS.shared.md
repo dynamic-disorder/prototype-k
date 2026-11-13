@@ -158,6 +158,10 @@ review into an archaeology exercise, and one that never commits leaves a working
   a finished task is not permission, and neither is approval of a different commit.
 - **Before any commit**, check for machine-specific paths and identities in what is staged; a commit message
   and the files in it are public text.
+- **An executable script needs its mode in the commit.** Set it with `git update-index --chmod=+x <path>`, then
+  commit **without a pathspec**: a pathspec commit re-adds the file from the working tree, and where the
+  filesystem reports no executable bit (Windows), that writes 100644 back over it. Confirm with
+  `git ls-tree HEAD <path>` showing `100755`.
 - **Another session may be editing the same tree.** Stage the paths you changed by name, never `git add -A` or
   `git commit -a`: a working tree holding someone else's modified files is normal, and those files are neither
   yours to commit nor yours to revert. Name the strays you left alone when reporting the commit. Two further
