@@ -87,6 +87,7 @@ node global/install.mjs --check            # shared rules block current
 node output-style/install.mjs --check      # style block current
 node scripts/export-agents.mjs --check     # the newest export matches the checkout
 node scripts/check-skills.mjs              # skill frontmatter, references, names and leftovers
+bash scripts/rehearse-linux-install.sh     # the whole install path against a throwaway HOME (Linux or WSL)
 node --test scripts/lib/*.test.mjs         # the planner and block libraries
 ```
 

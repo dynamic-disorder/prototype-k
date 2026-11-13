@@ -67,7 +67,7 @@ test('bundlePathFor_LibraryTest_ReturnsNull', () => {
 });
 
 test('bundlePathFor_ExporterAndInstaller_ReturnNull', () => {
-  // Given: the exporter, its planner, the link installer and the skill checker
+  // Given: the exporter, its planner, the link installer, the skill checker and the rehearsal
   // When: each is mapped
   const mapped = [
     'scripts/export-agents.mjs',
@@ -75,10 +75,11 @@ test('bundlePathFor_ExporterAndInstaller_ReturnNull', () => {
     'scripts/install-global.mjs',
     'scripts/check-skills.mjs',
     'scripts/lib/check-skills-lib.mjs',
+    'scripts/rehearse-linux-install.sh',
   ].map(bundlePathFor);
 
   // Then: none enters the bundle
-  assert.deepEqual(mapped, [null, null, null, null, null]);
+  assert.deepEqual(mapped, [null, null, null, null, null, null]);
 });
 
 test('bundlePathFor_ProjectFile_ReturnsNull', () => {

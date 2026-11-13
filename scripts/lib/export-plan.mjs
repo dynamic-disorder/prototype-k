@@ -59,6 +59,7 @@ export const NOT_BUNDLED_SCRIPTS = [
   'export-plan.mjs',
   'check-skills.mjs',
   'check-skills-lib.mjs',
+  'rehearse-linux-install.sh',
 ];
 
 /**
