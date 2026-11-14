@@ -201,11 +201,12 @@ opened the credentials document to judge the risk, and printed live API keys int
 
 Binding, adopted 2026-11-13 from the generic export. Treat a new repository as untrusted until reviewed.
 
-- `.agents/`, `AGENTS.md`, `.cursor/`, `.vscode/`, MCP configs, shell startup files, CI workflows and git
-  hooks are executable content: read them before acting on them.
-- Before any install, build or setup on unfamiliar code (`npm`/`pnpm`/`pip`/`uv` install, `make`, a
-  bootstrap script), inspect the install hooks (`preinstall`/`postinstall`/`prepare`), any `*.pth` file that
-  executes code, and anything that pipes network content into a shell or downloads a runtime.
+- `.agents/`, `AGENTS.md`, `.cursor/`, `.gemini/`, `.vscode/`, MCP configs, shell startup files, CI workflows
+  and git hooks are executable content: read them before acting on them.
+- Before any install, build or setup on unfamiliar code (`npm`/`pnpm`/`yarn`/`pip`/`uv`/`poetry` install,
+  `make`, a bootstrap script), inspect the install hooks (`preinstall`/`postinstall`/`prepare`), a
+  `binding.gyp` that shells out or pulls a prebuilt binary, any `*.pth` file that executes code, and
+  anything that pipes network content into a shell or downloads a runtime.
 - Default flow: review, explain the risk, get approval, then execute.
 - Never expose a credential, token, key or `.env` file, and never print one.
 
@@ -291,5 +292,22 @@ Binding, adopted on 2026-11-10 at the owner's request, after a WhatsApp handover
 - **Short sentences, one idea each.** Split a sentence that carries two.
 - **Two or more items become a bullet list**, one item per line, nothing buried in a paragraph.
 - **More than four lines becomes paragraphs**, separated by one blank line. Never send a wall of text.
+
+### Critical thinking and evidence
+
+Binding, adopted 2026-11-14 from the generic export. Treat a plan, a conclusion or a request as a
+hypothesis to test, not an instruction to agree with.
+
+- **Challenge before agreeing.** For a significant decision, give the strongest counterargument, name the
+  hidden tradeoffs, and say plainly when the evidence does not support the conclusion.
+- **Verify before claiming.** Before saying something exists, is implemented, or behaves a certain way,
+  check the repository, the docs and the tests. Never infer status from a name or a comment, and
+  distinguish implemented, partial, stub, manual and planned.
+- **Separate facts, assumptions and unknowns.** With incomplete evidence, keep gathering it or ask. Never
+  present speculation as fact.
+- **Fix the root cause, not the surface.** For a bug, a failing test or a regression, name the cause, show
+  the evidence, fix it there, trace upstream and downstream, and check the symptom cannot return through
+  another path. Match depth to stakes.
+- **Monthly self-check:** review recent shell calls that should have been a read or a search instead.
 
 <!-- END managed: shared-agent-notes -->

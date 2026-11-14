@@ -39,6 +39,11 @@ It is git-ignored on purpose: it is working state, and the tree is one shared di
 machines read it at the same path. A fresh clone has none; then every file is **added** and the whole
 mapping applies — say so in the report instead of pretending it is a delta.
 
+**Keep the export folder until the next import is verified.** The manifest records hashes only, so once
+the folder is deleted a changed file's previous text is unrecoverable and its delta cannot be quoted — only
+"the hash changed" survives. That cost the 2026-11-14 run its line-level `AGENTS.md` and
+`engineering_patterns.md` diffs.
+
 A run starts by writing the new manifest to a temporary path and diffing it against this one. The diff is
 the only source of work.
 
@@ -63,6 +68,12 @@ deleted, refused — and one count for unchanged. Print them before touching any
 reviewable unit of the run.
 
 ## Step 3 — map
+
+**Map only what is present.** Every row below is a lookup keyed by a source path, not a checklist. A row
+whose source path is absent from this export is `absent`: it creates no destination, no empty file and no
+placeholder, and it is never satisfied by converting the other generation's spelling into the missing one.
+Two spellings exist — the 2026-11-12 export ships `CLAUDE.md`, `lib/env-*` and `scripts/*.sh`; the
+2026-11-14 export ships `AGENTS.md`, `rules/`, `lib/repo-env-*` and `.mjs` — so match the path that is there.
 
 | Source | Destination | Notes |
 | :--- | :--- | :--- |
@@ -188,8 +199,9 @@ describes them. Name the files by folder. Report the hashes; push only what was 
 
 ```
 Read docs/plans/2026-11-13_incremental-agent-config-import.md in prototype-k. The new export is at
-<path>. Run it: refuse first, diff against local_user_files/imports/generic_export_2026-11-12.json, and
-touch only added, changed and deleted paths. Follow the commit rule in ~/.agents/AGENTS.md.
+<path>. Run it: refuse first, diff against the newest file in local_user_files/imports/generic_export_*.json,
+and touch only added, changed and deleted paths. Map only paths that exist in the export; normalise CRLF to
+LF; keep the previous export folder until this run is verified. Follow the commit rule in ~/.agents/AGENTS.md.
 ```
 
 ## State inherited
@@ -198,4 +210,8 @@ touch only added, changed and deleted paths. Follow the commit rule in ~/.agents
   rules, 7 references, 8 scripts, 4 rule sections, the style details.
 - **Repaired the same day**: the review skill's Claude-only path, the verifier's `dist/` walk, two
   naming violations, and a case-only rename that left both spellings tracked.
-- **Manifest**: `local_user_files/imports/generic_export_2026-11-12.json`.
+- **Imported 2026-11-14** from `.agents-generic-2026-11-14_18-17`: 113 of 127 files unchanged, 3 changed,
+  2 added, 9 refused. Applied: the generalised section-comment rule and the IoC/DI clause in
+  `engineering-patterns`, the `Critical thinking and evidence` section and the install-safety additions in
+  the shared rules, and the new `test-linux-wsl-run` skill. `TEMPLATES.md` differed by line endings only.
+- **Manifests**: `local_user_files/imports/generic_export_2026-11-12.json`, `generic_export_2026-11-14.json`.

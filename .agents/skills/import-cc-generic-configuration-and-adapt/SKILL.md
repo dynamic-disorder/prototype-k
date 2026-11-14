@@ -49,7 +49,8 @@ repository-specific ones); `.githooks/pre-commit` and
 | Path | Why |
 | :--- | :--- |
 | `claude_placeholder_values.txt` | Maps placeholders to real identities |
-| `lib/env-db.sh`, `lib/env-db.md`, `lib/env-github.sh`, `lib/env-github.md` | Read credentials from stores |
+| `lib/env-db.*`, `lib/env-github.*` (2026-11-12 spelling) | Read credentials from stores |
+| `lib/repo-env-db.*`, `lib/repo-env-github.*` (2026-11-14 spelling) | The same credential readers, renamed |
 | `scripts/windows-credential-store.ps1` | Windows Credential Manager helper |
 | `reference/git_commit_secret_scan_allowlist.txt` | Repo-local secret-scan exceptions; not shared |
 | `.credentials*`, `.claude.json`, `history.jsonl`, `projects/`, `sessions/`, `*.key`, `*.pem` | Live state or secrets |
@@ -57,6 +58,16 @@ repository-specific ones); `.githooks/pre-commit` and
 Any file matching a secret pattern stops the import. Name the file and the rule; never print the match.
 
 ### Mapping
+
+**Convert only what is present.** The tables below are a lookup keyed by a source path, not a checklist.
+A row whose source path is absent from this export is `absent`: it creates no destination folder, no
+empty file and no placeholder, and it is never satisfied by converting the other generation's spelling
+into the missing one. A source path present but absent from these tables is classified from its folder
+(`skills/`, `rules/`, `reference/`, `scripts/`, `lib/`, `hooks/`) and reported `unmapped` for a decision.
+
+**Two generations exist.** The 2026-11-12 export ships `CLAUDE.md`, `lib/env-*`, `scripts/*.sh` and
+`claude_model_strategy.md`; the 2026-11-14 export ships `AGENTS.md`, `rules/`, `lib/repo-env-*`,
+`agent_model_strategy.md` and `.mjs` scripts. Match the path that is there.
 
 **Skills**
 
@@ -88,7 +99,7 @@ Any file matching a secret pattern stops the import. Name the file and the rule;
 | `bash_patterns_windows.md` | new `.agents/skills/windows-bash/` |
 | `git_handoff_commands.md` | `global/AGENTS.shared.md`; shell table, no OS copy |
 | `writing_style_for_markdown.md` | `agent-skills/output-style/`; merge only unique details |
-| `claude_code_configuration_file_naming_conventions.md` | `global/AGENTS.shared.md`; apply to `.agents` too |
+| `agent_configuration_file_naming_conventions.md` (2026-11-12: `claude_code_…`) | `global/AGENTS.shared.md`; apply to `.agents` too |
 
 **References**
 
@@ -107,26 +118,26 @@ Any file matching a secret pattern stops the import. Name the file and the rule;
 | :--- | :--- |
 | `hooks/pre-commit-build-check.sh` | `.githooks/pre-commit`; merge with the existing gate |
 | `hooks/pre-push-build-check.sh` | `.githooks/pre-push` |
-| `hooks/post-edit-dispatcher.sh` | `claude/hooks/` |
+| `hooks/post-edit-dispatcher.sh` | `claude/hooks/`; skip when the target has no `claude/` layer |
 | `scripts/cache-ttl-kv.sh` (+README) | `scripts/`; cache under `~/.agents/cache` |
-| `scripts/claude-work-folder-create.sh` | `scripts/work-folder-create.sh`; writes `local_user_files/` |
-| `scripts/csharp-build-verifier.sh`, `csharp-sln-find-nearest.sh` | `skills/csharp-build-verify/scripts/` |
-| `scripts/git-commit-context-fetch.sh` | `skills/git-commit/scripts/`; merge with `collect-context.mjs` |
-| `scripts/git-commit-secrets-scan.sh` | `scripts/` publication gate; drop the export's allowlist dependency |
-| `scripts/git-fetch-context.sh` | `skills/git-pr-fetch/scripts/` |
-| `scripts/setup-gh-cli-check.js` | `scripts/setup/` |
-| `scripts/statusline.js` | `claude/` |
+| `scripts/claude-work-folder-create.mjs` (`.sh` in 2026-11-12) | `scripts/work-folder-create.mjs`; writes `local_user_files/` |
+| `scripts/csharp-build-verifier{,-lib}.mjs` (`.sh` in 2026-11-12), `csharp-sln-find-nearest.sh` | `skills/csharp-build-verify/scripts/` |
+| `scripts/git-commit-context-fetch{,-lib}.mjs` (`.sh` in 2026-11-12) | `skills/git-commit/scripts/`; merge with `collect-context.mjs` |
+| `scripts/git-commit-secrets-scan{,-lib}.mjs` (`.sh` in 2026-11-12) | `scripts/` publication gate; drop the export's allowlist dependency |
+| `scripts/git-fetch-context{,-lib}.mjs` (`.sh` in 2026-11-12) | `skills/git-pr-fetch/` |
+| `scripts/setup-gh-cli-check.js` | `scripts/setup-gh-cli-check.js`; no `setup/` folder exists |
+| `scripts/statusline.js` | `claude/`; skip when the target has no `claude/` layer |
 | `scripts/skill_script_delegation.README.md` | `docs/agents/` |
-| `lib/env-paths.sh`, `lib/env-paths.md` | `scripts/lib/`; parameterise the product name |
+| `lib/repo-env-paths.sh`, `lib/repo-env-paths.md` (2026-11-12: `lib/env-paths.*`) | `scripts/lib/`; parameterise the product name |
 
 **Root files**
 
 | Export | Destination |
 | :--- | :--- |
-| `CLAUDE.md` | `global/AGENTS.shared.md` (installed to `~/.agents/AGENTS.md`) | Merge; global edits need approval |
-| `setup_claude_code_guide.md` | `claude/SETUP.md` |
-| `claude_model_strategy.md` | `claude/MODEL_STRATEGY.md` |
-| `claude_environment_variables.md` | `claude/ENV.md` |
+| `AGENTS.md` (2026-11-12: `CLAUDE.md`) | `global/AGENTS.shared.md` (installed to `~/.agents/AGENTS.md`) | Merge; global edits need approval |
+| `setup_agent_guide.md` (2026-11-12: `setup_claude_code_guide.md`) | `claude/SETUP.md`; skip without a `claude/` layer |
+| `agent_model_strategy.md` (2026-11-12: `claude_model_strategy.md`) | `claude/MODEL_STRATEGY.md`; skip without a `claude/` layer |
+| `claude_environment_variables.md` | `claude/ENV.md`; skip without a `claude/` layer |
 | `settings.json` | `claude/settings.json`; sanitise `env`, keep no secrets |
 | `claude_placeholder_values.txt` | **refused** |
 
@@ -159,11 +170,14 @@ Any file matching a secret pattern stops the import. Name the file and the rule;
 | Every skill valid | frontmatter `name` + `description`; name matches `^[a-z0-9]+(-[a-z0-9]+)*$` | Fail |
 | Scripts parse | `bash -n`, `node --check` | Fail |
 | Verifier unit suite is green | `node --test .agents/skills/import-cc-generic-configuration-and-adapt/scripts/verify-import-lib.test.mjs .agents/skills/import-cc-generic-configuration-and-adapt/scripts/verify-import-rules.test.mjs` | Fail |
+| No destination without its source | the plan lists a destination whose source path is absent from the export | Fail; drop the row and report `absent` |
+| No invented conversion | a row is satisfied by renaming the other generation's spelling into the missing one | Fail; `absent` stays absent |
 | Existing skills preserved | `git diff` review before commit | Fail unless merged deliberately |
 
 **Escape hatch:** the default is a dry run. `--write` applies only after `IMPORT-PLAN.md` is approved;
 `--only <path>` limits the run to one item. **Tolerated losses:** statusline, permissions, model routing and
-hook wiring stay Claude-only in `claude/`; neutral skills lose Claude-specific invocation metadata.
+hook wiring stay Claude-only in `claude/`; neutral skills lose Claude-specific invocation metadata; a table
+row whose source the export no longer ships is `absent`, and the skill converts nothing on its behalf.
 
 ## Execution Workflow
 
@@ -172,8 +186,9 @@ hook wiring stay Claude-only in `claude/`; neutral skills lose Claude-specific i
    only the outer tree and record the inner one as skipped. Do not read the refused files.
 2. **Refuse.** Remove the refused set from the plan. Run the verifier's secret scan on the remaining source
    files; a hit stops the import.
-3. **Plan.** Write `IMPORT-PLAN.md` with one row per source file: action (merge, port, shim, skip), target
-   path, and the adaptation needed. Include a diff summary for every existing skill that would change.
+3. **Plan.** Write `IMPORT-PLAN.md` with one row per source path **that exists in the export**: action
+   (merge, port, shim, skip, `absent`), target path, and the adaptation needed. A table row whose source
+   is absent gets no destination row. Include a diff summary for every existing skill that would change.
 4. **Skills.** For each new skill, copy the folder to `.agents/skills/<name>/`, strip Claude-only
    frontmatter, rewrite paths, and keep `scripts/` and `references/` inside it. For an existing skill,
    merge only the unique content; the repository's current standard wins on conflicts.

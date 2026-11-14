@@ -8,6 +8,10 @@ export const REFUSED = [
   'env-db.md',
   'env-github.sh',
   'env-github.md',
+  'repo-env-db.sh',
+  'repo-env-db.md',
+  'repo-env-github.sh',
+  'repo-env-github.md',
   'windows-credential-store.ps1',
   'git_commit_secret_scan_allowlist.txt',
 ];
