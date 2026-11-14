@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 
 import { rasterise, toolLabel } from "./rasterise.mjs";
 import { engineLabel, ocrImages, pageImagesIn } from "./ocr.mjs";
-import { equationBoxes, figureBoxes, tableBoxes } from "../tests/embedded-pdf.mjs";
-import { cropFigure } from "../tests/figures.mjs";
+import { equationBoxes, figureBoxes, tableBoxes } from "../lib/pdf-extract.mjs";
+import { cropFigure } from "../lib/figures.mjs";
 
 export const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -156,7 +156,15 @@ export function rasteriseFixtures(
 
       writeFileSync(
         path.join(assetsDir, "raster.json"),
-        `${JSON.stringify({ fixture, ...outcome }, null, 2)}\n`,
+        `${JSON.stringify(
+          {
+            fixture,
+            ...outcome,
+            pages: outcome.pages.map((page) => path.basename(page)),
+          },
+          null,
+          2,
+        )}\n`,
         "utf8",
       );
 

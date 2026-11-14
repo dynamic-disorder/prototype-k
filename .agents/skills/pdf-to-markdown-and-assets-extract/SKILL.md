@@ -22,7 +22,7 @@ Turn a project's PDFs into page-marked Markdown, a `.metadata.json` sidecar and 
 
 - **Do not use to read a PDF.** If the task is "what does this PDF say", use the PDF reading tool. This skill is for a project document set with a documented extractor.
 - **Do not use to rebuild an index, retag citations or re-verify an index.** Hand off; those belong to the follow-up skill.
-- **Do not use to invent an extractor.** When the project has none, stop and ask which command is canonical.
+- **Never invent an extractor.** When the project documents none, say so in the report and use the bundled one (`scripts/extract-pdf.mjs`), described in step 4; never present it as the project's own.
 - **Do not extract the whole document set** because the request named one document.
 
 ## Prerequisites & Setup
@@ -67,7 +67,7 @@ Judge the extracted Markdown against the page, never against itself. A PDF store
 
 **Accepted input.** One PDF, or a folder searched recursively; `.PDF` in any case. A path that names no PDF is refused by the guard with exit `1`.
 
-**Required per document.** `<name>.md` carrying one `<!-- page: N -->` marker per page in page order, a sidecar, `summary.json` for the set, and `<name>.assets/` only when the extractor emits images. When page images were rendered, the Markdown references each one in a `<!-- page images -->` block, so no asset sits on disk unlinked. Every display formula is a `$$ … $$` block with its printed number as `\tag{n}`, every table is a fenced `text` block, and each is followed by its `equation-<n>.png` or `table-<n>.png` crop when pages were rendered.
+**Required per document.** `<name>.md` carrying one `<!-- page: N -->` marker per page in page order, a sidecar, one `<name>.extraction-summary.json`, and `<name>.assets/` only when the extractor emits images. When page images were rendered, the Markdown references each one in a `<!-- page images -->` block, so no asset sits on disk unlinked. Every display formula is a `$$ … $$` block with its printed number as `\tag{n}`, every table is a fenced `text` block, and each is followed by its `equation-<n>.png` or `table-<n>.png` crop when pages were rendered. A crop exists only for a block the Markdown emits: a detected formula swallowed by a wider table is cropped by nobody, and `equation-<n>` numbers the emitted blocks, not the detected ones.
 
 | Requirement | Check | Failure looks like |
 | :--- | :--- | :--- |
@@ -155,11 +155,19 @@ Run the project's canonical command with its documented flags. Where the project
 - A targeted run must preserve the rest of the manifest. Use the project's documented merge option rather than overwriting the summary.
 - Never run extraction from an index build, a watcher or CI unless the project's decision record says to.
 
+**When the project documents no extractor, this skill's own is the fallback** — not an invented command. Say in the report that the project carries none, and name the run:
+
+```bash
+node scripts/extract-pdf.mjs "<pdf or folder>" "<output dir>" --name <name> --dpi 150
+```
+
+It renders the pages, crops every figure, emitted equation and table, and writes `<name>.md`, the sidecar and `<name>.extraction-summary.json`; `--no-raster` skips the renders and their crops. The library behind it is `lib/pdf-extract.mjs`, which the tests exercise; the CLI exists so a project PDF needs no bespoke runner.
+
 Write to the project's documented folder — normally `<source input path>/extracted/`, otherwise `<extracted files path>`. Keep extracted images under `<name>.assets/` and reference each from the `.md`.
 
 ### 5. Inspect the run
 
-Read the extractor's stdout plus `summary.json` or the manifest.
+Read the extractor's stdout plus `<name>.extraction-summary.json` or the manifest.
 
 - **Errors:** every document must report no error. One failure stops the run; never index a partial set.
 - **Counts:** pages, text pages, characters and the OCR, retry, fallback and column counts must be plausible against the previous run. A sudden drop is a regression, not a formatting quirk.
@@ -210,7 +218,7 @@ If you came from a follow-up skill, return to it: its next step is the edition d
 | OCR fails with a Tesseract error, or `ocr.json` names `windows-ocr` | Tesseract is absent, or only the Windows fallback was found | Install it — `winget install UB-Mannheim.TesseractOCR`, `apt-get install tesseract-ocr tesseract-ocr-eng`, `brew install tesseract` — and rerun in the same shell: the install-folder scan finds it without a `PATH` change. Point `PDF_OCR_CMD` at an engine outside those folders. Only rerun without OCR when the project documents non-OCR output as acceptable — and record it as a different configuration. |
 | `ocr: skipped` reading `no OCR engine` | No Tesseract on `PATH`, none in a standard install folder, and the Windows fallback is disabled | Install Tesseract or set `PDF_OCR_CMD`. The skip is recorded, not a failure; text extraction is unaffected. |
 | Unchanged `.md` differs | Extractor version or flag drift | Stop, diff versions and flags, report the drift. Do not re-baseline the hash without the owner's decision. |
-| `summary.json` document count is below the guard count | Partial run or a dropped file | Stop and re-run; report which document is missing. |
+| A document the guard counted has no `<name>.extraction-summary.json` | Partial run or a dropped file | Stop and re-run; report which document is missing. |
 | Text is a different edition under the old id | Edition change, not extraction | Leave the id alone and hand the edition decision to the follow-up skill. |
 | `npm run e2e` or `npm run test:python` exits non-zero | Unit, extraction or marker-verification failure | Read `test-results/<timestamp>/unit.txt` and the per-fixture `extraction-<fixture>.txt` logs; fix the cause before using the guard in a project. |
 | Output is one run-on paragraph per page | Extractor concatenated content-stream literals and ignored text matrices | Re-extract with a layout walker that keeps `Tm`/`Td` line breaks; do not ship the flattened text. |
@@ -235,13 +243,13 @@ If you came from a follow-up skill, return to it: its next step is the edition d
 | `<name>.md` | Page-marked Markdown: one `<!-- page: N -->` marker per page, opening with page 1; each display formula as a `$$ … $$` block. |
 | `<name>.metadata.json` | The document sidecar: id, faces counted, page and text-page counts, image and equation counts. |
 | `<name>.assets/` | Extracted images, when the extractor emits them; referenced from the `.md`. |
-| `summary.json` | The run manifest for every document in the set. |
-| `<name>.assets/equation-<n>.png` | One crop per display formula, in document order, referenced below its block; `equations.json` records each LaTeX, tag and box. |
+| `<name>.extraction-summary.json` | One per document: its page, image, equation and table counts. |
+| `<name>.assets/equation-<n>.png` | One crop per emitted display formula, numbered in emission order, referenced below its block; `equations.json` records each LaTeX, tag and box. |
 | `<name>.assets/table-<n>.png` | One crop per table, in document order, referenced below its fenced block; `tables.json` records each box. |
 
 **Exit criteria — all must hold before hand-off:**
 
-- Guard exited `0`, and its `N PDF(s)` equals the document count in `summary.json`.
+- Guard exited `0`, and each of its `N PDF(s)` has a `<name>.extraction-summary.json`.
 - `0` documents report an error.
 - `0` unchanged `.md` files differ from the snapshot by hash.
 - Every `<name>.md` starts with a page marker, and every referenced asset path exists on disk.
@@ -261,7 +269,7 @@ The end-to-end run writes the timestamped artifacts and verifies them:
 npm run e2e
 ```
 
-It exits `0`, prints `run: <folder>`, one `verify: <fixture> — N page marker(s) ok` line per fixture, and one `raster:`, `figures:`, `equations:`, `tables:` and `ocr:` line per fixture. Under `test-results/<YYYY-MM-DD_HH-mm.sss>/` it writes `unit.txt`, `extraction-<fixture>.txt` per fixture, `run.json` and `extracted/<fixture>/` (page-marked `.md` with page-image, figure, equation and table references, sidecar, `summary.json`, and `<fixture>.assets/` holding extracted images, `page-<n>.png` with `raster.json`, `figure-<n>.png` with `figures.json`, `equation-<n>.png` with `equations.json`, `table-<n>.png` with `tables.json`, and `ocr/<image>.txt` with `ocr.json`). `run.json` must show `status: 0` and `verifyStatus: 0`; `rasterStatus`, `figuresStatus`, `equationsStatus`, `tablesStatus` and `ocrStatus` stay `0` for both a completed step and a recorded skip, while `raster`, `figures`, `equations`, `tables` and `ocr` name each fixture's outcome. A marker count, figure count, equation count, table count, rendered page count or empty OCR page that disagrees with the expectations fails the run.
+It exits `0`, prints `run: <folder>`, one `verify: <fixture> — N page marker(s) ok` line per fixture, and one `raster:`, `figures:`, `equations:`, `tables:` and `ocr:` line per fixture. Under `test-results/<YYYY-MM-DD_HH-mm.sss>/` it writes `unit.txt`, `extraction-<fixture>.txt` per fixture, `run.json` and `extracted/<fixture>/` (page-marked `.md` with page-image, figure, equation and table references, sidecar, `<fixture>.extraction-summary.json`, and `<fixture>.assets/` holding extracted images, `page-<n>.png` with `raster.json`, `figure-<n>.png` with `figures.json`, `equation-<n>.png` with `equations.json`, `table-<n>.png` with `tables.json`, and `ocr/<image>.txt` with `ocr.json`). `run.json` must show `status: 0` and `verifyStatus: 0`; `rasterStatus`, `figuresStatus`, `equationsStatus`, `tablesStatus` and `ocrStatus` stay `0` for both a completed step and a recorded skip, while `raster`, `figures`, `equations`, `tables` and `ocr` name each fixture's outcome. A marker count, figure count, equation count, table count, rendered page count or empty OCR page that disagrees with the expectations fails the run.
 
 The Python suite is optional and kept for parity:
 

@@ -20,7 +20,13 @@ import { checkSkill, checkText, referencesIn, skillsIn } from './lib/check-skill
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const skillsDir = path.join(root, '.agents', 'skills');
-const skipped = new Set(['node_modules', 'import-cc-generic-configuration-and-adapt']);
+// Generated run folders are git-ignored, so a leftover end-to-end run must not
+// become a finding: `test-results/` holds extracted documents, not skill text.
+const skipped = new Set([
+  'node_modules',
+  'import-cc-generic-configuration-and-adapt',
+  'test-results',
+]);
 const textExtensions = new Set(['.md', '.mjs', '.js', '.sh', '.json', '.txt']);
 const target = process.argv[2] ? path.resolve(root, process.argv[2]) : skillsDir;
 

@@ -11,7 +11,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { FIXTURE_NAME, resourcePath, writeExtraction } from "./embedded-pdf.mjs";
+import { FIXTURE_NAME, resourcePath, writeExtraction } from "../lib/pdf-extract.mjs";
 
 /**
  * @param {string[]} argv

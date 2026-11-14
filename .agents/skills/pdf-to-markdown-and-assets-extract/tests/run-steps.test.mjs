@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { encodePng } from "./png.mjs";
+import { encodePng } from "../lib/png.mjs";
 import {
   createRunDir,
   cropEquationFixtures,

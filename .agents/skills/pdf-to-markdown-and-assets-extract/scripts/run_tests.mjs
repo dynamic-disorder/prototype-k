@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { invokedDirectly } from "../lib/invoked.mjs";
 
 import {
   SKILL_ROOT,
@@ -109,10 +110,6 @@ function main() {
   process.exit(status);
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
-
-if (invokedDirectly) {
+if (invokedDirectly(import.meta.url)) {
   main();
 }

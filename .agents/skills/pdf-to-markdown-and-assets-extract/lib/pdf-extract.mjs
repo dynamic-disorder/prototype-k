@@ -37,7 +37,7 @@ import {
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-export const RESOURCE_DIR = path.join(HERE, "resources");
+export const RESOURCE_DIR = path.join(HERE, "..", "tests", "resources");
 
 export const PDF_PATH = path.join(RESOURCE_DIR, "embedded-images-tables.pdf");
 
@@ -877,6 +877,17 @@ function isMathLine(line) {
 
 /** Whether a rule lies between two lines — the fraction bar of one formula.
  */
+/**
+ * Whether a run of glyphs names a quantity, and so can be a formula.
+ *
+ * A dimension list set in a math face — `11.1 4096 57.2 46.5×34.0×28.5` — has no
+ * letter in it, so there is nothing to read as an equation and it stays prose.
+ * @param {{ text: string }[]} runs
+ */
+export function namesAFormula(runs) {
+  return runs.some((run) => /\p{L}/u.test(run.text));
+}
+
 function ruleBetween(rules, above, below) {
   const top = Math.max(above.y, below.y);
   const bottom = Math.min(above.y, below.y);
@@ -943,6 +954,8 @@ function findEquations(lines, rules, size) {
   const block = (from, to) => {
     const runs = lines.slice(from, to + 1).flatMap((line) => line.parts);
     if (runs.length < 2) return;
+    // A dimension list set in a math face is not a formula: nothing names a quantity.
+    if (!namesAFormula(runs)) return;
     const built = buildEquation(runs, rules);
     if (!built?.latex) return;
     const left = Math.min(...runs.map((run) => run.x));
@@ -1168,17 +1181,17 @@ export function findTables(lines, size, equations = [], rules = [], verticals = 
  */
 export function tableBoxes(data) {
   return listPages(data).flatMap((page) =>
-    page.tables.map((table) => ({ page: page.number, ...table.box })),
+    emittedBlocks(page).tables.map((table) => ({ page: page.number, ...table.box })),
   );}
 
 /**
- * Boxes of the display equations, one per equation in document order.
+ * Boxes of the display equations the Markdown will emit, in document order.
  * @returns {{ page: number, x: number, y: number, width: number, height: number,
  *   pageWidth: number, pageHeight: number, latex: string, tag: string | null }[]}
  */
 export function equationBoxes(data) {
   return listPages(data).flatMap((page) =>
-    page.equations.map((equation) => ({
+    emittedBlocks(page).equations.map((equation) => ({
       page: page.number,
       ...equation.box,
       latex: equation.latex,
@@ -1570,6 +1583,40 @@ export function renderLine(line) {
   return pieces.join("").replace(/\s+/g, " ").trim();}
 
 /**
+ * The equations and tables the page body actually emits, in emission order.
+ *
+ * A detected block can be swallowed by a wider one: a table's rows may hold a
+ * formula, so `page.equations` carries an entry the body never reaches. Cropping
+ * from the detection list would leave that formula on disk with nothing linking
+ * it, so the cropper and the writer both read this list instead.
+ * @returns {{ equations: object[], tables: object[] }} blocks carrying `position`
+ */
+export function emittedBlocks(page) {
+  const equations = (page.equations ?? []).map((equation, index) => ({ ...equation, index }));
+  const tables = (page.tables ?? []).map((table, index) => ({ ...table, index }));
+  const emitted = { equations: [], tables: [] };
+
+  let index = 0;
+  while (index < page.lines.length) {
+    const equation = equations.find((candidate) => candidate.start === index);
+    if (equation) {
+      emitted.equations.push({ ...equation, position: emitted.equations.length });
+      index = equation.end + 1;
+      continue;
+    }
+    const table = tables.find((candidate) => candidate.start === index);
+    if (table) {
+      emitted.tables.push({ ...table, position: emitted.tables.length });
+      index = table.end + 1;
+      continue;
+    }
+    index += 1;
+  }
+
+  return emitted;
+}
+
+/**
  * Page body: horizontal lines in layout order, paragraphs separated by a blank
  * line, display equations as `$$…$$`, aligned cell rows rendered as a fenced
  * text table, and vertical text quoted at the end instead of polluting the flow.
@@ -1584,8 +1631,9 @@ export function pageBody(page, { equationImages = [], tableImages = [], tableSta
   let previous = null;
   const vertical = [];
   const lines = page.lines;
-  const equations = (page.equations ?? []).map((equation, index) => ({ ...equation, index }));
-  const tables = (page.tables ?? []).map((table, index) => ({ ...table, index }));
+  const emitted = emittedBlocks(page);
+  const equationAt = new Map(emitted.equations.map((equation) => [equation.start, equation]));
+  const tableAt = new Map(emitted.tables.map((table) => [table.start, table]));
   let index = 0;
   const flush = () => {
     if (paragraph.length) blocks.push(paragraph.join("\n"));
@@ -1594,14 +1642,14 @@ export function pageBody(page, { equationImages = [], tableImages = [], tableSta
   };
   while (index < lines.length) {
     const line = lines[index];
-    const equation = equations.find((candidate) => candidate.start === index);
+    const equation = equationAt.get(index);
     if (equation) {
       flush();
       const tag = equation.tag ? ` \\tag{${equation.tag.slice(1, -1)}}` : "";
       blocks.push(`$$ ${equation.latex}${tag} $$`);
-      const image = equationImages[equation.index];
+      const image = equationImages[equation.position];
       if (image) {
-        const label = equation.tag ? `Equation ${equation.tag}` : `Equation ${equation.index + 1}`;
+        const label = equation.tag ? `Equation ${equation.tag}` : `Equation ${equation.position + 1}`;
         blocks.push(`![${label}](${image})`);
       }
       index = equation.end + 1;
@@ -1612,7 +1660,7 @@ export function pageBody(page, { equationImages = [], tableImages = [], tableSta
       index += 1;
       continue;
     }
-    const table = tables.find((candidate) => candidate.start === index);
+    const table = tableAt.get(index);
     if (table) {
       const blockLines = lines.slice(table.start, table.end + 1);
       flush();
@@ -1623,8 +1671,8 @@ export function pageBody(page, { equationImages = [], tableImages = [], tableSta
             ? pipeTable(blockLines)
             : layoutTable(blockLines),
       );
-      const image = tableImages[table.index];
-      if (image) blocks.push(`![Table ${tableStart + table.index + 1}](${image})`);
+      const image = tableImages[table.position];
+      if (image) blocks.push(`![Table ${tableStart + table.position + 1}](${image})`);
       index = table.end + 1;
       continue;
     }
@@ -1660,10 +1708,11 @@ export function pageMarkedMarkdown(
   let offset = 0;
   let tableOffset = 0;
   const blocks = pages.map((page) => {
-    const count = page.equations?.length ?? 0;
+    const emitted = emittedBlocks(page);
+    const count = emitted.equations.length;
     const files = equationImages.slice(offset, offset + count).map((file) => `${name}.assets/${file}`);
     offset += count;
-    const tableCount = page.tables?.length ?? 0;
+    const tableCount = emitted.tables.length;
     const tableFiles = tableImages
       .slice(tableOffset, tableOffset + tableCount)
       .map((file) => `${name}.assets/${file}`);
@@ -1729,15 +1778,16 @@ export function writeExtraction(data, outDir, name = FIXTURE_NAME) {
     "utf8",
   );
   const images = image ? 1 : 0;
-  const equations = pages.reduce((total, page) => total + (page.equations?.length ?? 0), 0);
-  const tables = pages.reduce((total, page) => total + (page.tables?.length ?? 0), 0);
+  const emitted = pages.map((page) => emittedBlocks(page));
+  const equations = emitted.reduce((total, page) => total + page.equations.length, 0);
+  const tables = emitted.reduce((total, page) => total + page.tables.length, 0);
   const meta = path.join(outDir, `${name}.metadata.json`);
   writeFileSync(
     meta,
     JSON.stringify({ docId: name, pages: pages.length, images, equations, tables }),
     "utf8",
   );
-  const summary = path.join(outDir, "summary.json");
+  const summary = path.join(outDir, `${name}.extraction-summary.json`);
   writeFileSync(
     summary,
     JSON.stringify({ documents: [{ name, pages: pages.length, images, equations, tables }] }, null, 2),

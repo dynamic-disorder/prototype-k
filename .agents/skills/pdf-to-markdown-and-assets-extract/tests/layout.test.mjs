@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { csvTable, findTables, layoutTable, lineCells, pipeTable } from "./embedded-pdf.mjs";
+import { csvTable, findTables, layoutTable, lineCells, pipeTable } from "../lib/pdf-extract.mjs";
 
 /**
  * One line with words at their printed x positions. A word's x is what says

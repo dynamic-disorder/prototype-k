@@ -12,6 +12,7 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { invokedDirectly } from "../lib/invoked.mjs";
 
 const USAGE = "usage: check_input.mjs <source input path>";
 
@@ -97,10 +98,6 @@ export function main(argv) {
   return 0;
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
-
-if (invokedDirectly) {
+if (invokedDirectly(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

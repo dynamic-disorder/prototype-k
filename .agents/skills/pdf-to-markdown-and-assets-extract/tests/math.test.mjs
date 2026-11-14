@@ -16,15 +16,16 @@ import {
   latexRows,
   latexSequence,
   mathSlot,
-} from "./math.mjs";
+} from "../lib/math.mjs";
 import {
   fontFamily,
   groupLines,
+  namesAFormula,
   needsSpace,
   renderLine,
   showText,
   TJ_GAP,
-} from "./embedded-pdf.mjs";
+} from "../lib/pdf-extract.mjs";
 
 /** One run, with the fields the math code reads. */
 function run(x, y, size, text, family, width = text.length * size * 0.5) {
@@ -324,5 +325,33 @@ describe("font families", () => {
     assert.equal(fontFamily("CMBX10"), "cmbold");
     assert.equal(fontFamily("CMR10"), "cmtext");
     assert.equal(fontFamily("NimbusRomNo9L-Regu"), "other");
+  });
+});
+
+describe("a display equation names a quantity", () => {
+  test("a dimension list in a math face is not a formula", () => {
+    // Given: the robot's dimensions, set in a math face
+    const runs = [
+      run(10, 100, 10, "11.1", "CMSY"),
+      run(40, 100, 10, "4096", "CMSY"),
+      run(80, 100, 10, "46.5×34.0×28.5", "CMSY"),
+    ];
+
+    // When: the run of glyphs is tested for a named quantity
+    const names = namesAFormula(runs);
+
+    // Then: it is refused, so the line stays prose
+    assert.equal(names, false);
+  });
+
+  test("a formula naming a variable is kept", () => {
+    // Given: a formula that names a quantity
+    const runs = [run(10, 100, 10, "tau", "CMMI"), run(40, 100, 10, "=", "CMSY")];
+
+    // When: the run of glyphs is tested for a named quantity
+    const names = namesAFormula(runs);
+
+    // Then: it is accepted
+    assert.equal(names, true);
   });
 });

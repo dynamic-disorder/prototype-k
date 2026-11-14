@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { cropPixels, decodePng, encodePng } from "./png.mjs";
+import { cropPixels, decodePng, encodePng } from "../lib/png.mjs";
 
 /** A small RGBA image whose pixels encode their own coordinates. */
 function sample(width, height) {

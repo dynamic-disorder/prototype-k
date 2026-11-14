@@ -26,7 +26,7 @@ import {
   PDF_PATH,
   resourcePath,
   writeExtraction,
-} from "./embedded-pdf.mjs";
+} from "../lib/pdf-extract.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GUARD = path.join(HERE, "..", "scripts", "check_input.mjs");
@@ -121,7 +121,7 @@ function writeGeneratedExtraction(pdfPath, outDir) {
     "utf8",
   );
 
-  const summary = path.join(outDir, "summary.json");
+  const summary = path.join(outDir, `${name}.extraction-summary.json`);
   writeFileSync(summary, JSON.stringify({ documents: [{ name, pages: 1 }] }, null, 2), "utf8");
 
   return { md, meta, summary };

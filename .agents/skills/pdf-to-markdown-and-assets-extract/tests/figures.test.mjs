@@ -9,9 +9,9 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { figureBoxes } from "./embedded-pdf.mjs";
-import { boxToPixels, cropFigure } from "./figures.mjs";
-import { cropPixels, decodePng, encodePng } from "./png.mjs";
+import { figureBoxes } from "../lib/pdf-extract.mjs";
+import { boxToPixels, cropFigure } from "../lib/figures.mjs";
+import { cropPixels, decodePng, encodePng } from "../lib/png.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const RESOURCE = (name) => path.join(HERE, "resources", `${name}.pdf`);

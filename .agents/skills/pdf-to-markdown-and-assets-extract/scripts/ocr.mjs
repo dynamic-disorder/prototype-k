@@ -22,6 +22,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { invokedDirectly } from "../lib/invoked.mjs";
 
 import { splitCommand } from "./rasterise.mjs";
 
@@ -320,10 +321,6 @@ function main(argv) {
 }
 
 const argv = process.argv.slice(2);
-const invokedDirectly =
-  process.argv[1] !== undefined &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
-
-if (invokedDirectly) {
+if (invokedDirectly(import.meta.url)) {
   process.exit(main(argv));
 }

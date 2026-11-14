@@ -128,7 +128,7 @@ It exits `0` and prints `run: <folder>`, one `verify: <fixture> — N page marke
 - `unit.txt` — the unit suite output.
 - `extraction-<fixture>.txt` — one log per fixture named in `tests/fixture-expectations.json`.
 - `run.json` — `kind`, `startedAt`, `tests`, `unitStatus`, `extractionStatus`, `rasterStatus`, `figuresStatus`, `equationsStatus`, `tablesStatus`, `ocrStatus`, `verifyStatus`, `raster`, `figures`, `equations`, `tables` and `ocr` (each fixture's outcome) and the combined `status`; `status` must be `0`.
-- `extracted/<fixture>/` — the page-marked `.md` referencing its page images, figures, equations and tables, metadata sidecar, `summary.json`, and `<name>.assets/` holding extracted images, `page-<n>.png` with `raster.json`, `figure-<n>.png` with `figures.json`, `equation-<n>.png` with `equations.json`, `table-<n>.png` with `tables.json`, and `ocr/<image>.txt` with `ocr.json` when an engine ran.
+- `extracted/<fixture>/` — the page-marked `.md` referencing its page images, figures, equations and tables, metadata sidecar, `<name>.extraction-summary.json`, and `<name>.assets/` holding extracted images, `page-<n>.png` with `raster.json`, `figure-<n>.png` with `figures.json`, `equation-<n>.png` with `equations.json`, `table-<n>.png` with `tables.json`, and `ocr/<image>.txt` with `ocr.json` when an engine ran.
 
 The verification step fails the run when the Markdown's `<!-- page: N -->` markers disagree with the expected page count, or when the cropped figure, equation or table count disagrees with `figures`, `equations` and `tables` in the expectations — the end-to-end proof of the multi-page, figure and equation paths on `multi-column.pdf`.
 
@@ -210,8 +210,9 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | :--- | :--- |
 | `SKILL.md` | The agent workflow: triggers, prerequisites, functional requirements (fidelity table, raster escape hatch, tolerated losses), numbered protocol, error playbook, verification. |
 | `README.md` | This import, rules and test guide. |
-| `package.json` | `npm test` (unit suite), `npm run e2e` (artifacts, marker, figure and equation verification, raster, crop and OCR steps), `npm run raster` (page rendering), `npm run ocr` (page and figure reading), `npm run test:python` (optional reference); no dependencies. |
+| `package.json` | `npm test` (unit suite), `npm run e2e` (artifacts, marker, figure and equation verification, raster, crop and OCR steps), `npm run extract` (one PDF or a folder to Markdown), `npm run raster` (page rendering), `npm run ocr` (page and figure reading), `npm run test:python` (optional reference); no dependencies. |
 | `scripts/check_input.mjs` | The input guard, primary runtime — exits `0` with `input ok: N PDF(s)`, exits `1` with `ERROR: ... names no PDF; extraction not started.` |
+| `scripts/extract-pdf.mjs` | The document CLI: renders, crops and writes <name>.md, the sidecar and <name>.extraction-summary.json for one PDF or a folder; --no-raster, --dpi, --name and --table-format. |
 | `scripts/check_input.py` | The same guard in Python, for hosts without Node 20+; identical output and exit codes. |
 | `scripts/run_tests.mjs` | Thin end-to-end CLI: runs the steps, writes `unit.txt`, `extraction-<fixture>.txt` and `run.json`, prints the run folder, exits with the combined status. |
 | `scripts/run-steps.mjs` | The steps as testable functions: run-folder creation, stamp and count parsing, page-render lookup, figure, equation and table cropping, raster, OCR and marker verification. |
@@ -222,10 +223,11 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `scripts/run_tests.py` | The Python equivalent, kept for parity. |
 | `tests/check_input.test.mjs` | Node guard tests: single PDF, uppercase `.PDF`, recursive folder, non-PDF, missing path, empty folder, usage, CLI run, Python parity. |
 | `tests/extraction.test.mjs` | Output-contract tests for every fixture: page counts, page order, one marker per page, line counts, sidecar and manifest, page-image references; layout assertions (kerning, paragraph breaks, isolated vertical text); the generated multi-page case and the no-image case. |
-| `tests/embedded-pdf.mjs` | Fixture-only extractor shared by the contract tests and the fixture writer: page tree, text layout, font-encoding decode, script and word-gap handling, display-equation detection, fenced tables, image and figure boxes, Markdown writer. |
-| `tests/math.mjs` | The TeX math-font slot tables (CMSY, CMMI, CMEX, MSAM), the Unicode-to-LaTeX mapping, and the reconstruction of scripts, accents and fractions from run positions. |
-| `tests/png.mjs` | Minimal PNG decode/encode/crop used by the figure step; 8-bit RGB and RGBA, no external library. |
-| `tests/figures.mjs` | Maps a PDF-point box onto a page render and crops it — the same call writes `figure-<n>.png` and `equation-<n>.png`. |
+| `lib/pdf-extract.mjs` | The extractor: page tree, text layout, font-encoding decode, script and word-gap handling, display-equation detection and emission, fenced tables, image and figure boxes, Markdown writer. |
+| `lib/math.mjs` | The TeX math-font slot tables (CMSY, CMMI, CMEX, MSAM), the Unicode-to-LaTeX mapping, and the reconstruction of scripts, accents and fractions from run positions. |
+| `lib/png.mjs` | Minimal PNG decode/encode/crop used by the figure step; 8-bit RGB and RGBA, no external library. |
+| `lib/figures.mjs` | Maps a PDF-point box onto a page render and crops it — the same call writes `figure-<n>.png` and `equation-<n>.png`. |
+| `lib/invoked.mjs` | Decides whether a script was started directly, by real path — a link such as `~/.agents/skills/<name>` otherwise makes every CLI exit `0` having done nothing. |
 | `tests/write_fixture_extraction.mjs` | Writes one named fixture's extraction to a directory. |
 | `tests/fixture-expectations.json` | The expected page, figure, equation and table counts and the Markdown line count for each fixture — the only place those numbers live; `markdownLines` pins the layout, so a layout change updates this file. |
 | `tests/resources/embedded-images-tables.pdf` | Real one-page PDF with an embedded JPEG. |
