@@ -1,10 +1,12 @@
 /**
- * Fixture-only extractor for the bundled test PDFs.
+ * The bundled extractor and the module the tests exercise.
  *
- * The skill delegates real extraction to the project's extractor, so this module
- * proves the output contract instead: pages are read from the PDF's page tree,
- * each page's text is laid out line by line from its text matrices, vertical
- * text is kept out of the body flow, and the embedded JPEG becomes an asset.
+ * A project with its own documented extractor wins, so this module is the
+ * fallback `scripts/extract-pdf.mjs` runs when the project documents none.
+ * Pages are read from the PDF's page tree, each page's text is laid out line by
+ * line from its text matrices, vertical text is kept out of the body flow, and
+ * the embedded JPEG becomes an asset. It is not fixture-only: the fixtures in
+ * `tests/resources/` are its regression input, not its only accepted input.
  *
  * Pages are read from the PDF itself — nested `/Pages` nodes and compressed
  * object streams included — so a multi-page fixture needs no code change.

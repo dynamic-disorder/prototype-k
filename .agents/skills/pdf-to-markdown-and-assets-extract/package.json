@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/check_input.test.mjs tests/extraction.test.mjs tests/math.test.mjs tests/raster.test.mjs tests/ocr.test.mjs tests/figures.test.mjs tests/run-steps.test.mjs tests/png.test.mjs tests/layout.test.mjs",
+    "test": "node --test tests/check_input.test.mjs tests/extraction.test.mjs tests/folder-name.test.mjs tests/move-source.test.mjs tests/math.test.mjs tests/raster.test.mjs tests/ocr.test.mjs tests/figures.test.mjs tests/run-steps.test.mjs tests/png.test.mjs tests/layout.test.mjs",
     "e2e": "node scripts/run_tests.mjs",
     "extract": "node scripts/extract-pdf.mjs",
     "raster": "node scripts/rasterise.mjs",

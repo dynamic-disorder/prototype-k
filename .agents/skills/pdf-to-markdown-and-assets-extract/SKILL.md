@@ -31,7 +31,7 @@ Turn a project's PDFs into page-marked Markdown, a `.metadata.json` sidecar and 
 | :--- | :--- | :--- |
 | **Node.js 20 or newer** | Runs the guard, the fixture extractor, the raster and OCR steps, and `npm test`. No dependencies, no `npm install`. | Stop: nothing runs. Verified on Node 25.8.2 on 2026-11-10. |
 | **Project input** | The project's `AGENTS.md`, README and extraction script carry the command, paths and flags. The workflow is this skill; those details are project data. | Stop and ask which command is canonical; never invent an extractor. |
-| **Write access** | To `<source input path>/extracted/` or the documented output folder, its `<name>.assets/` folder for `page-<n>.png`, `figure-<n>.png` and `equation-<n>.png`, and to a scratch directory for the previous output. | Stop: extraction cannot write; do not redirect to an invented folder. |
+| **Write access** | To `<source input path>/<name>/` — one folder per document — its `<name>.assets/` folder for `page-<n>.png`, `figure-<n>.png` and `equation-<n>.png`, and to a scratch directory for the previous output. | Stop: extraction cannot write; do not redirect to an invented folder. |
 | **Raster engine (optional)** | Renders pages and feeds figure, equation and table cropping: `pdftoppm`, `mutool` or `magick`, on `PATH` or in a standard install folder (`%ProgramFiles%\poppler*\Library\bin`, `%ProgramFiles%\ImageMagick*`, the Chocolatey, Scoop and WinGet links on Windows; `/opt/homebrew/bin`, `/usr/local/bin` on macOS; `/usr/bin`, `/usr/local/bin` on Linux — the full list is in `README.md` under **Raster path**), or the Windows built-in `Windows.Data.Pdf` engine, which needs no install. Verified on 2026-11-10 with the Windows engine, with `pdftoppm` 24.02 found in `/usr/bin` while `PATH` was empty, and with `pdftoppm` 24.02 on Ubuntu 24.04. | Recorded skip: `raster: skipped`, no `page-<n>.png`, no figure or equation crops. Override `PDF_RASTER_CMD`; disable the Windows fallback with `PDF_NO_WINDOWS_RASTER=1`; disable the install-folder scan with `PDF_NO_RASTER_INSTALL=1`. Renderers pad page numbers differently (`page-5.png` vs `page-05.png`), so cropping matches by page number, not file name. |
 | **OCR engine and language data (optional)** | Reads rendered pages and cropped figures: Tesseract 5 with `eng.traineddata` for `-l eng`, or the Windows OCR engine with an installed language pack (BCP-47 tag such as `en-US` — the engines do not share language codes). Found in this order: `PDF_OCR_CMD`, `tesseract` on `PATH`, then the standard install folders — `%ProgramFiles%\Tesseract-OCR` and the other installer locations on Windows, `/opt/homebrew/bin` and `/usr/local/bin` on macOS, `/usr/bin` and `/usr/local/bin` on Linux; the full list is in `README.md` under **OCR path** — so a shell that started before the install still finds an engine that is on disk. Verified on 2026-11-10 with Tesseract 5.4.0.20240606 found in `%ProgramFiles%\Tesseract-OCR` while `PATH` did not carry it (14 images), with the Windows engine, and with Tesseract 5.3.4 on Ubuntu 24.04. | Recorded skip: `ocr: skipped`; text extraction is unaffected. Override with `PDF_OCR_CMD`; disable the Windows fallback with `PDF_NO_WINDOWS_OCR=1`; disable the install-folder scan with `PDF_NO_OCR_INSTALL=1`. |
 | **Python 3.9 or newer (optional)** | Backs the identical guard fallback `scripts/check_input.py` and the parity suite; standard library only. | No effect on the Node path; `npm run test:python` is unavailable. |
@@ -67,7 +67,9 @@ Judge the extracted Markdown against the page, never against itself. A PDF store
 
 **Accepted input.** One PDF, or a folder searched recursively; `.PDF` in any case. A path that names no PDF is refused by the guard with exit `1`.
 
-**Required per document.** `<name>.md` carrying one `<!-- page: N -->` marker per page in page order, a sidecar, one `<name>.extraction-summary.json`, and `<name>.assets/` only when the extractor emits images. When page images were rendered, the Markdown references each one in a `<!-- page images -->` block, so no asset sits on disk unlinked. Every display formula is a `$$ … $$` block with its printed number as `\tag{n}`, every table is a fenced `text` block, and each is followed by its `equation-<n>.png` or `table-<n>.png` crop when pages were rendered. A crop exists only for a block the Markdown emits: a detected formula swallowed by a wider table is cropped by nobody, and `equation-<n>` numbers the emitted blocks, not the detected ones.
+**Required per document.** A folder `<name>/` of its own beside the source PDF — never a shared `extracted/` folder — holding `<name>.md` with one `<!-- page: N -->` marker per page in page order, a sidecar, one `<name>.extraction-summary.json`, and `<name>.assets/` only when the extractor emits images. When page images were rendered, the Markdown references each one in a `<!-- page images -->` block, so no asset sits on disk unlinked. Every display formula is a `$$ … $$` block with its printed number as `\tag{n}`, every table is a fenced `text` block, and each is followed by its `equation-<n>.png` or `table-<n>.png` crop when pages were rendered. A crop exists only for a block the Markdown emits: a detected formula swallowed by a wider table is cropped by nobody, and `equation-<n>` numbers the emitted blocks, not the detected ones.
+
+**Portable folder name.** `<name>` is the document id, normally the PDF's basename and `--name` when the project uses another id. It must survive a copy between Windows, Linux and macOS, so it carries only lowercase `a-z`, `0-9`, `.`, `_` and `-`, never starts or ends with a dot, dash or space, is never a Windows device name (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`), and is at most 100 characters: a longer name keeps its first 91 characters and gains `-` plus 8 hex digits, which keeps two long titles apart while `<name>.extraction-summary.json` stays 124 characters. Two documents whose names map to the same folder are refused before anything is written; rename one or pass `--name`. An output directory given explicitly overrides the layout and writes every document into that one folder.
 
 | Requirement | Check | Failure looks like |
 | :--- | :--- | :--- |
@@ -158,12 +160,14 @@ Run the project's canonical command with its documented flags. Where the project
 **When the project documents no extractor, this skill's own is the fallback** — not an invented command. Say in the report that the project carries none, and name the run:
 
 ```bash
-node scripts/extract-pdf.mjs "<pdf or folder>" "<output dir>" --name <name> --dpi 150
+node scripts/extract-pdf.mjs "<pdf or folder>" --name <name> --dpi 150
 ```
 
-It renders the pages, crops every figure, emitted equation and table, and writes `<name>.md`, the sidecar and `<name>.extraction-summary.json`; `--no-raster` skips the renders and their crops. The library behind it is `lib/pdf-extract.mjs`, which the tests exercise; the CLI exists so a project PDF needs no bespoke runner.
+It renders the pages, crops every figure, emitted equation and table, and writes `<name>/<name>.md`, the sidecar and `<name>/<name>.extraction-summary.json`; `--no-raster` skips the renders and their crops. The library behind it is `lib/pdf-extract.mjs` and the folder name comes from `lib/folder-name.mjs`; the CLI exists so a project PDF needs no bespoke runner.
 
-Write to the project's documented folder — normally `<source input path>/extracted/`, otherwise `<extracted files path>`. Keep extracted images under `<name>.assets/` and reference each from the `.md`.
+Write one folder per document — `<source input path>/<name>/` — or the project's documented per-document folder when it names one. Never put two documents in one folder; an output directory passed as the second argument overrides the layout and does exactly that, so use it only for a single document. Keep extracted images under `<name>.assets/` and reference each from the `.md`.
+
+**Moving the original files — ask first.** `--move-source` moves the source PDF and its companions into the document folder, so the folder holds the paper it was extracted from. It is off by default because it changes where the user's own files live. Before passing it, list the exact files that would move and get an explicit yes; never move a source file on your own initiative, and never treat the flag as permission for a later run. A companion is a regular file in the PDF's own folder whose name starts with the PDF's stem followed by a non-alphanumeric character — `… - abstract.txt`, `….notes.md` — while another PDF, a lookalike such as `paper2.txt` and anything inside a subfolder stay where they are. The move runs after the Markdown is written, refuses to overwrite an existing file, and the run reports how many files moved.
 
 ### 5. Inspect the run
 
@@ -181,13 +185,13 @@ On a refresh a snapshot exists. For every PDF whose source hash did not change, 
 Linux or macOS:
 
 ```bash
-sha256sum "<snapshot>/<name>.md" "extracted/<name>.md"
+sha256sum "<snapshot>/<name>.md" "<source input path>/<name>/<name>.md"
 ```
 
 Windows PowerShell:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 "<snapshot>\<name>.md", "extracted\<name>.md"
+Get-FileHash -Algorithm SHA256 "<snapshot>\<name>.md", "<source input path>\<name>\<name>.md"
 ```
 
 - **Identical hashes:** the rerun is repeatable; continue.
@@ -196,7 +200,7 @@ Get-FileHash -Algorithm SHA256 "<snapshot>\<name>.md", "extracted\<name>.md"
 For the document that actually changed, diff the snapshot against the new `.md` and report which sections and pages moved:
 
 ```bash
-git diff --no-index -- "<snapshot>/<name>.md" "extracted/<name>.md"
+git diff --no-index -- "<snapshot>/<name>.md" "<source input path>/<name>/<name>.md"
 ```
 
 ### 7. Report and hand off
@@ -233,13 +237,18 @@ If you came from a follow-up skill, return to it: its next step is the edition d
 | `npm test` fails on the guard parity case | The Node and Python guards drifted apart | Fix both guards to the same messages and exit codes; never change one alone. |
 | `node: command not found` | Node 20+ is not installed | Install Node 20 or newer, or run the Python fallback guard for this session and record which one ran. |
 | Output folder missing | No `mkdir`, or the wrong documented path | Create the documented folder, never a new one you invented. |
+| Two documents map to one folder | Their names differ only in case, accents, spaces or punctuation, so the portable name is the same | Rename one, or extract them one at a time with `--name`. The bundled CLI refuses before writing; never merge two documents into one folder. |
+| `refusing to overwrite <file> in <folder>` | The document folder already holds a file of that name, often from an earlier run | Compare the two files, move the old one aside, then rerun. Never delete a user's file to make room. |
+| A source file stayed where it was although `--move-source` was passed | The file is not a companion (another PDF, a lookalike name, or inside a subfolder), or the destination existed | Report which file did not move and why; move it only with the user's explicit agreement. |
+| A document's folder has an unexpected name | The PDF's basename was used as the id, and the portable rule lowercased, folded or truncated it | Pass `--name` with the exact id the project uses; never rename the folder after extraction without updating the references in the `.md`. |
 
 ## Verification & Outputs
 
-**Expected outputs** in the documented folder:
+**Expected outputs** in the documented folder, one folder per document:
 
 | File | Holds |
 | :--- | :--- |
+| `<name>/` | The document's own folder beside the source PDF. Its name is the portable document id (`lib/folder-name.mjs`), shared by every file below. |
 | `<name>.md` | Page-marked Markdown: one `<!-- page: N -->` marker per page, opening with page 1; each display formula as a `$$ … $$` block. |
 | `<name>.metadata.json` | The document sidecar: id, faces counted, page and text-page counts, image and equation counts. |
 | `<name>.assets/` | Extracted images, when the extractor emits them; referenced from the `.md`. |
@@ -250,6 +259,8 @@ If you came from a follow-up skill, return to it: its next step is the edition d
 **Exit criteria — all must hold before hand-off:**
 
 - Guard exited `0`, and each of its `N PDF(s)` has a `<name>.extraction-summary.json`.
+- Each document sits in its own `<name>/` folder, and no two documents share one.
+- When the user approved moving the originals, the source PDF and its companions sit in `<name>/` and the run reported how many moved.
 - `0` documents report an error.
 - `0` unchanged `.md` files differ from the snapshot by hash.
 - Every `<name>.md` starts with a page marker, and every referenced asset path exists on disk.
@@ -261,7 +272,7 @@ If you came from a follow-up skill, return to it: its next step is the edition d
 npm test
 ```
 
-It exits `0` and reports `fail 0`. The suite covers the guard's return values, its three output shapes and its command-line run, plus the output contract on four fixtures: two generated PDFs (one page and three pages, proving one marker per page with no writer change) and two real PDFs — one page with an embedded 1001×673 JPEG, and a 13-page two-column paper with no image. Expected page, equation, table and line counts live in `tests/fixture-expectations.json`; `markdownLines` pins the laid-out output, so a layout change updates that file. `tests/math.test.mjs` holds one named case per math defect — a slot read as ASCII, a script on its own line, a justified run losing its trailing space, a word gap decoded as an arrow, a fraction and its trailing full stop, an accent drawn as a separate glyph. When a Python interpreter is on `PATH`, it also runs the Python guard over the same inputs and requires identical output.
+It exits `0` and reports `fail 0`. The suite covers the guard's return values, its three output shapes and its command-line run, the per-document folder rule and its collision refusal, plus the output contract on four fixtures: two generated PDFs (one page and three pages, proving one marker per page with no writer change) and two real PDFs — one page with an embedded 1001×673 JPEG, and a 13-page two-column paper with no image. Expected page, equation, table and line counts live in `tests/fixture-expectations.json`; `markdownLines` pins the laid-out output, so a layout change updates that file. `tests/math.test.mjs` holds one named case per math defect — a slot read as ASCII, a script on its own line, a justified run losing its trailing space, a word gap decoded as an arrow, a fraction and its trailing full stop, an accent drawn as a separate glyph. When a Python interpreter is on `PATH`, it also runs the Python guard over the same inputs and requires identical output.
 
 The end-to-end run writes the timestamped artifacts and verifies them:
 

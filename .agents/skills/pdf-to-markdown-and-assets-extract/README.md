@@ -10,7 +10,7 @@ Turn a project's PDFs into page-marked Markdown, a metadata sidecar and extracte
 | :--- | :--- |
 | **Problem** | PDFs must become page-marked Markdown for review and indexing. Ad-hoc conversion hides page boundaries, loses the sidecars, and cannot show what changed between runs, so toolchain drift is indistinguishable from a real document change. |
 | **Why** | One documented extractor keeps text, page marks and sidecars consistent; a hash comparison separates a document change from extractor drift; a failed or partial run is refused before the index is touched. |
-| **What** | Validate the input, run the project's extractor, inspect the output, check repeatability, hand off. Deliberately out of scope: index rebuild, edition decision, citation gates, and reading an arbitrary PDF. |
+| **What** | Validate the input, run the project's extractor into one folder per document, inspect the output, check repeatability, hand off. Deliberately out of scope: index rebuild, edition decision, citation gates, and reading an arbitrary PDF. |
 | **Verification** | The guard exits `0` with `input ok: N PDF(s)`; `0` documents report an error; `0` unchanged `.md` files differ by SHA-256; the extractor version, flags and OCR engine version are recorded; `npm test` reports `fail 0` and `npm run e2e` writes `status: 0`. |
 
 ## Import for AI
@@ -73,11 +73,40 @@ Display equations need no engine: the LaTeX is rebuilt from the text layer, so a
 
 OCR in a project's own extractor is a separate requirement: Tesseract on `PATH` only when that project documents an OCR flag. A project copy takes precedence over the global copy; start a new session after copying so the skill is discovered.
 
+## Output Layout
+
+One folder per document, beside the source PDF. The folder and every artifact in it carry the same document name:
+
+```
+docs/
+  phonebot-2610.08737v1/
+    phonebot-2610.08737v1.md
+    phonebot-2610.08737v1.metadata.json
+    phonebot-2610.08737v1.extraction-summary.json
+    phonebot-2610.08737v1.assets/
+```
+
+The bundled CLI derives the name from the PDF's basename, or from `--name` when the file name is not the id you want. It makes that name portable before using it as a folder name (`lib/folder-name.mjs`):
+
+| Rule | Why | Example |
+| :--- | :--- | :--- |
+| Lowercase ASCII `a-z0-9._-` only; every other run becomes one `-` | Windows rejects `<>:"/\|?*`, macOS normalizes Unicode differently, and a case-insensitive filesystem would merge `Paper` and `paper` | `PhoneBot - A Low-Cost …` → `phonebot-a-low-cost-…` |
+| No leading or trailing dot, dash or space | Windows silently strips a trailing dot or space, so the folder that lands on disk differs from the one reported | `.report name. ` → `report-name` |
+| Accents folded to ASCII | `Résumé` and `Resume` would otherwise be two folders on Linux and one on Windows | `Résumé` → `resume` |
+| Reserved device names renamed | `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9` and `LPT1`–`LPT9` cannot be created on Windows | `CON` → `con-doc` |
+| Capped at 100 characters; a longer name keeps 91 and gains `-` plus 8 hex digits | `<name>.extraction-summary.json` stays 124 characters, under the 260-character Windows path with 135 characters to spare for the source folder; the digest keeps two long names apart | a 150-character title → 100 characters, ending `-1a2b3c4d` |
+
+Two documents whose names map to the same folder — `A B.pdf` and `A-B.pdf` — are refused before anything is written, because the second would overwrite the first. `--name` resolves it. An explicit output-directory argument overrides the layout and writes every document straight into that one folder.
+
+**The original files.** `--move-source` moves the source PDF and its companions into the document folder, so `phonebot-2610.08737v1/` holds the paper it was extracted from beside the Markdown. It is off by default and must be confirmed with the user first, because it changes where their files live. A companion is a regular file in the PDF's own folder whose name continues the PDF's stem with a separator — `… - abstract.txt`, `….notes.md`; another PDF, a lookalike (`paper2.txt`) and anything in a subfolder stay put. The move runs after the Markdown is written, refuses to overwrite an existing file, and reports how many files moved.
+
 ## Agent Execution Rules
 
 - **Copy the folder, not individual files.** `SKILL.md` must stay at the folder root beside `scripts/` and `tests/`.
 - **Read the project first.** Its `AGENTS.md`, README and extraction script define the command, the paths and the flags. This skill supplies the workflow and the guard only.
 - **Never fall back to the project's full document set** when the input path names no PDF. Fix the path or stop.
+- **One folder per document.** Never write one document's Markdown, sidecar and assets into a folder another document owns; pass `--name` when the PDF's own basename is not the id the project uses.
+- **Ask before moving a source file.** `--move-source` is opt-in; list the exact files that would move and get the user's explicit yes. It is never implied by a previous approval.
 - **Never run extraction from an index build, a watcher or CI** unless the project's decision record says to.
 - **Keep task data outside the skill folder.** Scratch copies of previous output belong beside the project documents, not inside the installed skill.
 - **Never commit `node_modules/`, `test-results/`, `__pycache__/` or `*.pyc`.** Test runs are regenerable output and the skill has no dependencies to vendor.
@@ -105,7 +134,7 @@ The unit suite is the default and needs no dependencies:
 npm test
 ```
 
-It exits `0` and reports `fail 0`. It covers the guard's return values, its three output shapes and its command-line run, then the output contract on four fixtures: a generated one-page PDF, a generated three-page PDF that proves one marker per page with no writer change, and two real PDFs in `tests/resources/` — `embedded-images-tables.pdf` (one page, embedded 1001×673 JPEG) and `multi-column.pdf` (13 pages of two-column paper text, one vector figure, five display equations). Every fixture's expected page count, figure, equation and table counts and Markdown line count come from `tests/fixture-expectations.json`, not from the tests. The math suite names one case per defect: a slot read as ASCII, a script on its own line, a justified run losing its trailing space, a word gap decoded as an arrow, a fraction with its trailing full stop, an accent drawn as a separate glyph. The raster suite covers command splitting, page ordering, the no-tool skip, a stubbed render, a failing renderer, the install-folder discovery that a stale `PATH` needs, the per-platform folder lists and the versioned-folder rule; the OCR suite covers the same skip, stub and failure cases plus the install-folder discovery a stale `PATH` needs, the per-platform folder lists and the Windows engine fallback; the figure suite covers PNG round-trip and crop, box-to-pixel mapping, the fixture's actual figure box, and the equation and table crops beside their blocks.
+It exits `0` and reports `fail 0`. It covers the guard's return values, its three output shapes and its command-line run, the per-document folder rule and the collision refusal, the opt-in move of the source PDF and its companions with its overwrite refusal, then the output contract on four fixtures: a generated one-page PDF, a generated three-page PDF that proves one marker per page with no writer change, and two real PDFs in `tests/resources/` — `embedded-images-tables.pdf` (one page, embedded 1001×673 JPEG) and `multi-column.pdf` (13 pages of two-column paper text, one vector figure, five display equations). Every fixture's expected page count, figure, equation and table counts and Markdown line count come from `tests/fixture-expectations.json`, not from the tests. The math suite names one case per defect: a slot read as ASCII, a script on its own line, a justified run losing its trailing space, a word gap decoded as an arrow, a fraction with its trailing full stop, an accent drawn as a separate glyph. The raster suite covers command splitting, page ordering, the no-tool skip, a stubbed render, a failing renderer, the install-folder discovery that a stale `PATH` needs, the per-platform folder lists and the versioned-folder rule; the OCR suite covers the same skip, stub and failure cases plus the install-folder discovery a stale `PATH` needs, the per-platform folder lists and the Windows engine fallback; the figure suite covers PNG round-trip and crop, box-to-pixel mapping, the fixture's actual figure box, and the equation and table crops beside their blocks.
 
 The Node extractor lays text out from each page's text matrices: lines keep their breaks, kerning no longer splits words, paragraphs stay separate, and rotated sidebar text is quoted at the end of its page instead of being mixed into the body. When a Python interpreter is on `PATH`, a parity case also runs `scripts/check_input.py` and requires identical output; it is skipped, not failed, when Python is absent.
 
@@ -212,7 +241,7 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `README.md` | This import, rules and test guide. |
 | `package.json` | `npm test` (unit suite), `npm run e2e` (artifacts, marker, figure and equation verification, raster, crop and OCR steps), `npm run extract` (one PDF or a folder to Markdown), `npm run raster` (page rendering), `npm run ocr` (page and figure reading), `npm run test:python` (optional reference); no dependencies. |
 | `scripts/check_input.mjs` | The input guard, primary runtime — exits `0` with `input ok: N PDF(s)`, exits `1` with `ERROR: ... names no PDF; extraction not started.` |
-| `scripts/extract-pdf.mjs` | The document CLI: renders, crops and writes <name>.md, the sidecar and <name>.extraction-summary.json for one PDF or a folder; --no-raster, --dpi, --name and --table-format. |
+| `scripts/extract-pdf.mjs` | The document CLI: renders, crops and writes <name>.md, the sidecar and <name>.extraction-summary.json into one folder per document (`<pdf dir>/<name>/`); --no-raster, --dpi, --name, --move-source and --table-format; refuses two documents that would share a folder. |
 | `scripts/check_input.py` | The same guard in Python, for hosts without Node 20+; identical output and exit codes. |
 | `scripts/run_tests.mjs` | Thin end-to-end CLI: runs the steps, writes `unit.txt`, `extraction-<fixture>.txt` and `run.json`, prints the run folder, exits with the combined status. |
 | `scripts/run-steps.mjs` | The steps as testable functions: run-folder creation, stamp and count parsing, page-render lookup, figure, equation and table cropping, raster, OCR and marker verification. |
@@ -223,7 +252,10 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `scripts/run_tests.py` | The Python equivalent, kept for parity. |
 | `tests/check_input.test.mjs` | Node guard tests: single PDF, uppercase `.PDF`, recursive folder, non-PDF, missing path, empty folder, usage, CLI run, Python parity. |
 | `tests/extraction.test.mjs` | Output-contract tests for every fixture: page counts, page order, one marker per page, line counts, sidecar and manifest, page-image references; layout assertions (kerning, paragraph breaks, isolated vertical text); the generated multi-page case and the no-image case. |
+| `tests/folder-name.test.mjs` | Per-document folder tests: the portable-name rules (case, accents, Windows-forbidden characters, reserved names, length cap and digest), the CLI's `<pdf dir>/<name>/` layout, the explicit-output override, and the collision refusal. |
+| `tests/move-source.test.mjs` | Move-source tests: companion matching (separator, lookalike, another PDF, subfolder), opt-in parsing, the move into the document folder, the overwrite refusal, the same-folder no-op, and the command-line run. |
 | `lib/pdf-extract.mjs` | The extractor: page tree, text layout, font-encoding decode, script and word-gap handling, display-equation detection and emission, fenced tables, image and figure boxes, Markdown writer. |
+| `lib/folder-name.mjs` | The portable per-document folder name: lowercase ASCII, Windows-legal, no reserved device name, capped at 100 characters with a digest suffix past the cap. |
 | `lib/math.mjs` | The TeX math-font slot tables (CMSY, CMMI, CMEX, MSAM), the Unicode-to-LaTeX mapping, and the reconstruction of scripts, accents and fractions from run positions. |
 | `lib/png.mjs` | Minimal PNG decode/encode/crop used by the figure step; 8-bit RGB and RGBA, no external library. |
 | `lib/figures.mjs` | Maps a PDF-point box onto a page render and crops it — the same call writes `figure-<n>.png` and `equation-<n>.png`. |
@@ -246,4 +278,4 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `.gitignore` | Ignores `__pycache__/`, `*.pyc`, `test-results/` and `node_modules/`. |
 | `test-results/` | Ignored per-run output. |
 
-There is no `lib/` folder: each guard is a single file in `scripts/`, and the shared fixture extractor is one file in `tests/`, so the tests import them directly.
+Each guard stays one file per language under `scripts/`. The shared extractor, math tables, PNG codec, figure crop, folder-name rule and direct-invocation check live in `lib/`, so the CLIs and the tests import one implementation rather than a copy.
