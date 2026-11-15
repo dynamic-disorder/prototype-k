@@ -7,11 +7,15 @@
  * useful to the checkout (the installers, this exporter, project code, credentials).
  *
  * Usage (from this repository):
- *   node scripts/export-agents.mjs                     # write dist/.agents-generic-<date>
+ *   node scripts/export-agents.mjs                     # write the stable dist/.agents-bundle
  *   node scripts/export-agents.mjs --out <dir>         # write elsewhere
- *   node scripts/export-agents.mjs --check             # compare the newest export; never write
+ *   node scripts/export-agents.mjs --check             # compare the stable bundle; never write
  *   node scripts/export-agents.mjs --check --out <dir> # compare one export
- *   node scripts/export-agents.mjs --archive           # also write the matching .tar.gz
+ *   node scripts/export-agents.mjs --archive           # also write a dated .tar.gz snapshot
+ *
+ * The stable path is the one the installer and the receiving agent read: two runs from one checkout
+ * produce the same bytes at the same path. `--archive` adds `.agents-generic-<date>` and its
+ * `.tar.gz` under dist/ for a hand-over snapshot.
  *
  * Exit codes: 0 ok, 1 refused file, leak or drift, 2 usage or environment error.
  */
@@ -22,7 +26,6 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   BUNDLED_ROOTS,
-  BUNDLE_PREFIX,
   MANIFEST_NAME,
   SCANNER_BUNDLE_PATH,
   STATIC_ENTRIES,
@@ -50,10 +53,10 @@ try {
 if (options.help) {
   process.stdout.write(
     'Usage: node scripts/export-agents.mjs [--out <dir>] [--check] [--archive]\n' +
-      '  (no option)  write dist/.agents-generic-<date>\n' +
+      '  (no option)  write the stable dist/.agents-bundle\n' +
       '  --out <dir>  write to that directory\n' +
       '  --check      compare a written export with a fresh plan; never write\n' +
-      '  --archive    also write the matching .tar.gz\n',
+      '  --archive    also write dist/.agents-generic-<date> and its .tar.gz\n',
   );
   process.exit(0);
 }
@@ -148,17 +151,14 @@ for (const entry of entries) {
   hashes[entry.bundle] = crypto.createHash('sha256').update(contentFor(entry)).digest('hex');
 }
 
+/** The one path the installer and the receiving agent read; stable across runs. */
+function stableDir() {
+  return path.join(home, 'dist', '.agents-bundle');
+}
+
 function targetForCheck() {
   if (options.out) return path.resolve(options.out);
-  const dist = path.join(home, 'dist');
-  if (!fs.existsSync(dist)) return null;
-  const names = fs
-    .readdirSync(dist, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith(BUNDLE_PREFIX))
-    .map((entry) => entry.name)
-    .sort();
-  const newest = names[names.length - 1];
-  return newest ? path.join(dist, newest) : null;
+  return fs.existsSync(stableDir()) ? stableDir() : null;
 }
 
 function listFiles(root, relative = '') {
@@ -203,20 +203,12 @@ if (options.mode === 'check') {
   process.exit(0);
 }
 
-const target = path.resolve(options.out ?? path.join(home, 'dist', bundleDirName()));
-if (fs.existsSync(target)) {
-  if (!fs.existsSync(path.join(target, MANIFEST_NAME))) {
-    process.stderr.write(
-      `export-agents: refusing to replace ${target} — no ${MANIFEST_NAME}, so it is not an export\n`,
-    );
-    process.exit(2);
-  }
-  process.stdout.write(`export-agents: replacing the previous export at ${target}\n`);
-  fs.rmSync(target, { recursive: true, force: true });
-}
+const target = path.resolve(options.out ?? stableDir());
+const staging = `${target}.staging-${process.pid}`;
+fs.rmSync(staging, { recursive: true, force: true });
 
 for (const entry of entries) {
-  const destination = path.join(target, entry.bundle);
+  const destination = path.join(staging, entry.bundle);
   fs.mkdirSync(path.dirname(destination), { recursive: true });
   fs.writeFileSync(destination, contentFor(entry));
   if (entry.bundle.endsWith('.sh') || /^githooks\/pre-/.test(entry.bundle)) {
@@ -227,18 +219,47 @@ for (const entry of entries) {
     }
   }
 }
-fs.writeFileSync(path.join(target, MANIFEST_NAME), manifestText(hashes));
+fs.mkdirSync(staging, { recursive: true });
+fs.writeFileSync(path.join(staging, MANIFEST_NAME), manifestText(hashes));
+
+// Swap the finished tree into place. The old tree is moved aside first, so a failure cannot leave
+// a half-written bundle at the path the installer reads.
+if (fs.existsSync(target)) {
+  if (!fs.existsSync(path.join(target, MANIFEST_NAME))) {
+    fs.rmSync(staging, { recursive: true, force: true });
+    process.stderr.write(
+      `export-agents: refusing to replace ${target} — no ${MANIFEST_NAME}, so it is not an export\n`,
+    );
+    process.exit(2);
+  }
+}
+const retired = `${target}.retired-${process.pid}`;
+const hadTarget = fs.existsSync(target);
+if (hadTarget) fs.renameSync(target, retired);
+try {
+  fs.renameSync(staging, target);
+} catch (error) {
+  if (hadTarget) fs.renameSync(retired, target);
+  throw error;
+}
+if (hadTarget) fs.rmSync(retired, { recursive: true, force: true });
 
 process.stdout.write(`export-agents: wrote ${entries.length} files to ${target}\n`);
 
 if (options.archive) {
-  const archive = `${target}.tar.gz`;
-  execFileSync('tar', ['-czf', archive, '-C', path.dirname(target), path.basename(target)], {
+  const snapshot = path.join(home, 'dist', bundleDirName());
+  if (fs.existsSync(snapshot) && !fs.existsSync(path.join(snapshot, MANIFEST_NAME))) {
+    process.stderr.write(
+      `export-agents: refusing to replace ${snapshot} — no ${MANIFEST_NAME}, so it is not an export\n`,
+    );
+    process.exit(2);
+  }
+  fs.rmSync(snapshot, { recursive: true, force: true });
+  fs.cpSync(target, snapshot, { recursive: true });
+  const archive = `${snapshot}.tar.gz`;
+  execFileSync('tar', ['-czf', archive, '-C', path.dirname(snapshot), path.basename(snapshot)], {
     stdio: 'inherit',
   });
+  process.stdout.write(`export-agents: wrote ${snapshot}\n`);
   process.stdout.write(`export-agents: wrote ${archive}\n`);
-}
-
-if (fs.existsSync(path.join(home, 'dist')) && !target.startsWith(path.join(home, 'dist'))) {
-  process.stdout.write(`export-agents: note — ${target} is outside dist/\n`);
 }

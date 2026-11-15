@@ -52,15 +52,18 @@ export const EXCLUDED_BASENAMES = ['.DS_Store', 'Thumbs.db', '.env'];
 /** Extensions that hold a secret or a key rather than configuration. */
 export const EXCLUDED_EXTENSIONS = ['.key', '.pem', '.pfx', '.p12', '.log'];
 
-/** Home scripts that are not part of the bundle: one links into the checkout, one is this tool. */
+/** Home scripts that are not part of the bundle: installers that point at the checkout, and tools. */
 export const NOT_BUNDLED_SCRIPTS = [
   'install-global.mjs',
+  'install-bundle.mjs',
   'export-agents.mjs',
-  'export-plan.mjs',
   'check-skills.mjs',
-  'check-skills-lib.mjs',
   'rehearse-linux-install.sh',
+  'rehearse-bundle-install.sh',
 ];
+
+/** Shared libraries the bundle does not need: the exporter's rules and the checkout's skill checker. */
+export const NOT_BUNDLED_LIBS = ['export-plan.mjs', 'check-skills-lib.mjs'];
 
 /**
  * Entries that do not come from a walk: composed or renamed files. `kind` is `compose` for the
@@ -72,6 +75,10 @@ export const STATIC_ENTRIES = [
     kind: 'compose',
     sources: ['global/AGENTS.shared.md', 'output-style/managed-block.md'],
   },
+  { bundle: 'install.mjs', kind: 'copy', source: 'scripts/install-bundle.mjs' },
+  { bundle: 'INSTALL.md', kind: 'copy', source: 'export/INSTALL.md' },
+  { bundle: 'blocks/AGENTS.shared.md', kind: 'copy', source: 'global/AGENTS.shared.md' },
+  { bundle: 'blocks/documentation-style.md', kind: 'copy', source: 'output-style/managed-block.md' },
   { bundle: 'settings.json', kind: 'copy', source: 'export/settings.json' },
   { bundle: 'README.md', kind: 'copy', source: 'export/README.md' },
   { bundle: 'project-seed/AGENTS.md', kind: 'copy', source: 'export/project-seed/AGENTS.md' },
@@ -123,7 +130,7 @@ export function bundlePathFor(homePath) {
     const rest = path.slice('scripts/lib/'.length);
     if (rest.includes('/')) return null;
     if (rest.endsWith('.test.mjs')) return null;
-    if (NOT_BUNDLED_SCRIPTS.includes(rest)) return null;
+    if (NOT_BUNDLED_LIBS.includes(rest)) return null;
     return `lib/${rest}`;
   }
   if (path.startsWith('scripts/')) {

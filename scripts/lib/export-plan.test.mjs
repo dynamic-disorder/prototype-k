@@ -73,13 +73,15 @@ test('bundlePathFor_ExporterAndInstaller_ReturnNull', () => {
     'scripts/export-agents.mjs',
     'scripts/lib/export-plan.mjs',
     'scripts/install-global.mjs',
+    'scripts/install-bundle.mjs',
     'scripts/check-skills.mjs',
     'scripts/lib/check-skills-lib.mjs',
     'scripts/rehearse-linux-install.sh',
+    'scripts/rehearse-bundle-install.sh',
   ].map(bundlePathFor);
 
   // Then: none enters the bundle
-  assert.deepEqual(mapped, [null, null, null, null, null, null]);
+  assert.deepEqual(mapped, [null, null, null, null, null, null, null, null]);
 });
 
 test('bundlePathFor_ProjectFile_ReturnsNull', () => {
