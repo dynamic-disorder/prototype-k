@@ -64,7 +64,7 @@ ignore list and `AGENTS.md`.
 | **CsvTranslations** | [dynamic-disorder/csv-translations](https://github.com/dynamic-disorder/csv-translations) (**private**) | English–Finnish dictionary tooling — Ollama translation, cross-platform Piper TTS, CSV management |
 | **FilenameTools** | [dynamic-disorder/filenametools](https://github.com/dynamic-disorder/filenametools) | Filename sanitization — invalid characters, Unicode normalization, batch CLI |
 | **MediaRenamer** | [dynamic-disorder/mediarenamer](https://github.com/dynamic-disorder/mediarenamer) | WPF tool that renames media files from their EXIF metadata |
-| **ai_offline** | [dynamic-disorder/ai-offline](https://github.com/dynamic-disorder/ai-offline) (**private**) | Locally-hosted AI stack — Ollama, Open WebUI, proxy and harness compose setups, GPU tuning guides |
+| **local-llm-stack** | [dynamic-disorder/local-llm-stack](https://github.com/dynamic-disorder/local-llm-stack) (**private**) | Locally hosted LLM stacks — Ollama, Open WebUI and an OpenAI-compatible proxy, with compose files and GPU tuning guides |
 
 ## Umbrella environment variable
 
