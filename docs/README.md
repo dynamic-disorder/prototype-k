@@ -13,6 +13,11 @@ document applies to them, and a session that needs to know what is already writt
 A folder joins this table when it carries a `README.md` of its own; the row says who reads it rather than
 restating its contents.
 
+Loose files sit below the map:
+
+- [`dsh-quick-reference.md`](dsh-quick-reference.md) — the routine `dsh` commands and the failures this
+  install has produced. Read it when a command fails or before editing a profile.
+
 ## What belongs here
 
 Public text: no machine path, no account or host name, nothing that only one clone can resolve. Material that
