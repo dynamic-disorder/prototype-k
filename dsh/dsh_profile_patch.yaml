@@ -13,8 +13,9 @@
 # app rewrites this file through a comment-preserving YAML AST and owns only the entry it edits.
 #
 # Nothing machine-specific belongs in this file. The Ollama endpoint is loopback on both machines;
-# the model store path and the local context length are per-machine service settings, documented in
-# the machine notes, not here.
+# the model store path is a per-machine service setting, documented in the machine notes. The
+# context window the harness may assume is declared here, because the harness has no other way to
+# learn it and would otherwise budget a prompt far past what the server can hold.
 
 # The local tier the model picker offers, in the order it should be tried. A model listed here but
 # not installed is simply not declared — declaring it would put a row in the picker that answers 404.
@@ -22,6 +23,12 @@ localModels:
   - qwen3.8:27b
   - gemma4:12b
   - qwen3.5:9b
+
+# The window stamped on every local model above. It is a bound, not the service setting: it must not
+# exceed the machine's OLLAMA_CONTEXT_LENGTH, or the harness sends a prompt the server truncates and
+# the loss is silent. Under-stating costs budget; over-stating loses text. A machine that runs a
+# different bound sets DSH_LOCAL_CONTEXT_WINDOW, and the renderer uses it instead.
+localContextWindow: 16384
 
 # Vision fallback for the vision-toolkit, in preference order.
 visionModels:
@@ -50,14 +57,18 @@ patches:
           baseURL: http://127.0.0.1:11434/v1
           models: "{{localModels}}"
 
-  # The default tier. Flash at high effort is the general workhorse; the Pro tier is a deliberate
-  # per-session switch, not a default, because it costs more per turn than this one.
+  # The session default. On 2026-11-15 the owner made the local 27B the default and this template
+  # mirrors it, so a fresh session starts on the machine at no per-turn cost. The trade is on
+  # record: that model did not hold its task in a long-preamble first turn (see the subagent gate
+  # note below), so a session that needs close reading should switch to a cloud tier first.
+  # `reasoningEffort` is left out because it is a cloud-tier knob and the app writes none for a
+  # local route. The model must be pulled on any machine that renders this; the installer stops
+  # instead of writing a default that answers 404.
   - id: agent-default-model
     name: "@deepseek-ai/dsh-agent-default-model"
     config:
-      provider: deepseek-official
-      model: deepseek-flash
-      reasoningEffort: high
+      provider: ollama
+      model: qwen3.8:27b
 
   # Subagent delegation is refused until this entry authorizes a route: with no policy recorded, a
   # child may only reuse the parent's own route. The shipped default is `enabled: false`, which is

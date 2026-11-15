@@ -17,8 +17,15 @@
  *     pulled would put a row in the picker that answers 404)
  *   - the vision model, the first installed entry of `visionModels`
  *
+ * The context window is not probed — the server does not report it — so it is declared in the
+ * template as `localContextWindow` and stamped on every local model, because the harness would
+ * otherwise assume a default far larger than the server can hold. `DSH_LOCAL_CONTEXT_WINDOW`
+ * overrides it on a machine that runs a different `OLLAMA_CONTEXT_LENGTH`.
+ *
  * A machine with no Ollama gets the DeepSeek tiers only: the provider and vision entries are left
- * alone and reported as skipped, never written half-configured.
+ * alone and reported as skipped, never written half-configured. That stops holding once the default
+ * route is local — the installer then refuses, because a default that is not pulled answers 404 on
+ * the first turn, and a silent switch of the default is worse than a stopped render.
  *
  * Usage (from this repository):
  *   node scripts/install-dsh.mjs             # check; exit 1 when the profile drifted from the template
@@ -28,6 +35,7 @@
  * Environment:
  *   DSH_HOME      overrides ~/.dsh
  *   DSH_PROFILE   overrides the profile id (default: desktop)
+ *   DSH_LOCAL_CONTEXT_WINDOW  overrides the template's local context bound
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -47,7 +55,10 @@ function usage() {
       '  --check      the same check, named explicitly so the rule and the script agree\n' +
       '  --write      render the template into the profile patch\n' +
       '  --profile    profile id to render (default: $DSH_PROFILE or desktop)\n' +
-      '  --dsh-home   DSH home to use (default: $DSH_HOME or ~/.dsh)\n',
+      '  --dsh-home   DSH home to use (default: $DSH_HOME or ~/.dsh)\n' +
+      '\n' +
+      'Environment:\n' +
+      '  DSH_LOCAL_CONTEXT_WINDOW  overrides the template\'s local context bound\n',
   );
 }
 
@@ -145,9 +156,17 @@ if (!template || !Array.isArray(template.patches)) {
 }
 
 const ollama = probeOllama();
+const windowSource = process.env.DSH_LOCAL_CONTEXT_WINDOW ?? template.localContextWindow ?? 16384;
+const localContextWindow = Number(windowSource);
+if (!Number.isInteger(localContextWindow) || localContextWindow <= 0) {
+  process.stderr.write(
+    `localContextWindow must be a positive integer, got "${windowSource}"\n`,
+  );
+  process.exit(2);
+}
 const localModels = (template.localModels ?? [])
   .filter((id) => ollama.names.has(id))
-  .map((id) => ({ id, name: id }));
+  .map((id) => ({ id, name: id, contextWindow: localContextWindow }));
 const visionModel = (template.visionModels ?? []).find((id) => ollama.names.has(id)) ?? null;
 
 const skipped = [];
@@ -163,6 +182,16 @@ for (const patch of template.patches) {
     continue;
   }
   wanted.push(entry);
+}
+
+// A local default that is not pulled answers 404 on the first turn of every session, so refuse it
+// here rather than write a route the app will discover the hard way.
+const defaultRoute = wanted.find((entry) => entry.id === 'agent-default-model')?.config;
+if (defaultRoute?.provider === 'ollama' && !ollama.names.has(defaultRoute.model)) {
+  process.stderr.write(
+    `default model "${defaultRoute.model}" is not installed — pull it, or change the default in dsh/dsh_profile_patch.yaml\n`,
+  );
+  process.exit(2);
 }
 
 let current = fs.existsSync(patchPath) ? fs.readFileSync(patchPath, 'utf8') : '';
@@ -200,6 +229,7 @@ process.stdout.write(`profile: ${profile}\n`);
 process.stdout.write(
   `ollama : ${ollama.available ? `${ollama.names.size} models installed, ${localModels.length} in the local tier` : 'not reachable'}\n`,
 );
+process.stdout.write(`window : ${localContextWindow} tokens per local model\n`);
 process.stdout.write(`mode   : ${mode}\n\n`);
 
 for (const [id, status] of statuses) process.stdout.write(`  ${status.padEnd(10)} ${id}\n`);
