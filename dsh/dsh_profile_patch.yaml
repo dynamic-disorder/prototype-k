@@ -6,7 +6,6 @@
 #
 # Tokens the installer resolves before merging:
 #   {{localModels}}   `localModels` below, filtered to what `ollama list` actually reports
-#   {{visionModel}}   the first of `visionModels` present, or the entry is left alone
 #
 # Ownership: entries are matched and replaced by `id`. Every other entry in the patch file — the
 # `ui-*` rows the desktop app writes when a setting changes — is left byte-identical, because the
@@ -29,10 +28,6 @@ localModels:
 # the loss is silent. Under-stating costs budget; over-stating loses text. A machine that runs a
 # different bound sets DSH_LOCAL_CONTEXT_WINDOW, and the renderer uses it instead.
 localContextWindow: 16384
-
-# Vision fallback for the vision-toolkit, in preference order.
-visionModels:
-  - qwen3.5:9b
 
 patches:
   # The providers map is declared in FULL, so the entry is a complete statement of what the picker
@@ -88,13 +83,3 @@ patches:
           model: deepseek-flash
         - provider: deepseek-official
           model: deepseek-v4-pro
-
-  # Vision and OCR ride the local store; the credential reference matches the provider above.
-  - id: vision-toolkit
-    config:
-      provider:
-        protocol: openai
-        baseUrl: http://127.0.0.1:11434/v1
-        model: "{{visionModel}}"
-        credential: OLLAMA_LOCAL_KEY
-      timeoutMs: 120000
