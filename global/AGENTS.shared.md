@@ -123,6 +123,22 @@ owed went missing.
 - **Past DSH sessions are zstd-compressed** (`~/.dsh/sessions/*/session.jsonl.zstd`, one frame per message) and
   cannot be grepped as text; decompress frame by frame (node 25 `zlib.zstdDecompressSync`) to search history.
 
+### Plans: summary, accept, then execute
+
+Binding, adopted 2026-11-15 at the owner's request.
+
+- **A non-trivial request gets an executive summary of the plan before anything runs.** One sentence on the
+  goal, the steps in order, every file, repository or machine it touches, what it deliberately leaves out,
+  the main risk, and how the result is verified. Enough context that the reader can accept it or ask for a
+  fine-tuning without reading the plan itself.
+- **Wait for the decision.** Acceptance starts the work; a fine-tuning is answered with the changed summary,
+  never with a start, so a plan does not change shape halfway through execution.
+- **Trivial requests skip it** and go straight to the result. Trivial means a question with a known answer, a
+  read, one file or one command with no side effect. A commit, a push, an install, a delete, or a change to
+  more than one file is never trivial.
+- **The summary is a chat answer, not a document.** Short sections, the risk named flatly; the plan itself
+  stays with the work it describes.
+
 ### Commits: draft, approve, then push what was approved
 
 Binding, learned on 2026-11-01: a session that commits whenever it feels finished turns the developer's
