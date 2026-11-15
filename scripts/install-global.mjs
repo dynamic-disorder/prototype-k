@@ -127,8 +127,12 @@ function gitConfigValue(key) {
 }
 
 const hooksPath = path.join(agentsHome, 'githooks');
+const hookFile = path.join(hooksPath, 'pre-commit');
 const hooksPathValue = hooksPath.split(path.sep).join('/');
 
+// A hooks path is only useful when git can find a hook through it. A dangling link or a missing
+// `.githooks` makes git skip the gate silently, and a hand-run `bash <path>` fails with
+// "No such file or directory"; so the setting is written only when the file it names exists.
 function applyHooksPath() {
   const current = gitConfigValue('core.hooksPath');
   if (mode === 'remove') {
@@ -137,6 +141,7 @@ function applyHooksPath() {
     execFileSync('git', ['config', '--global', '--unset', 'core.hooksPath'], { stdio: 'ignore' });
     return { status: 'removed' };
   }
+  if (!fs.existsSync(hookFile)) return { status: 'incomplete', current };
   if (current === hooksPathValue) return { status: 'ok' };
   if (mode === 'check') return { status: current === '' ? 'missing' : 'stale', current };
   execFileSync('git', ['config', '--global', 'core.hooksPath', hooksPathValue], { stdio: 'ignore' });
@@ -158,7 +163,11 @@ const counts = {};
 const problems = [];
 function record(status, subject) {
   counts[status] = (counts[status] ?? 0) + 1;
-  if (status === 'conflict' || (mode === 'check' && (status === 'missing' || status === 'stale'))) {
+  if (
+    status === 'conflict' ||
+    status === 'incomplete' ||
+    (mode === 'check' && (status === 'missing' || status === 'stale'))
+  ) {
     problems.push(`${status} ${subject}`);
   }
 }
@@ -189,6 +198,14 @@ if (hooksPathState.current && hooksPathState.current !== hooksPathValue) {
 if (problems.length > 0) {
   process.stdout.write('\n');
   for (const problem of problems) process.stdout.write(`${problem}\n`);
+}
+
+if ((counts.incomplete ?? 0) > 0) {
+  process.stdout.write(
+    `\ncore.hooksPath was not written: ${hookFile} does not exist.\n` +
+      'The gate would be skipped on every commit. Repair the githooks link, then run this with --write.\n',
+  );
+  process.exit(1);
 }
 
 if (mode === 'check') {

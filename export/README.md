@@ -12,23 +12,31 @@
 
 ## Install on a new machine
 
-Copy this tree to the agents root, keeping the directory name `agents` under `.agents`:
+Copy this tree's **contents** into the agents root. Do not copy the folder itself when `~/.agents`
+already exists, or the tree lands at `~/.agents/.agents-generic-<date>` and the hooks path below points
+at nothing:
 
 ```bash
-cp -R .agents-generic-<date> ~/.agents
+mkdir -p ~/.agents
+cp -R .agents-generic-<date>/. ~/.agents/
+test -f ~/.agents/githooks/pre-commit   # the file git will run; a miss means a broken hooks path
 ```
 
-On Windows, copy the folder to `%USERPROFILE%\\.agents`.
+On Windows, copy the contents of the folder into `%USERPROFILE%\.agents`, then confirm
+`%USERPROFILE%\.agents\githooks\pre-commit` exists.
 
 Then wire the gates once:
 
 ```bash
 git config --global core.hooksPath "$HOME/.agents/githooks"
 git config --global --get core.hooksPath      # prints the path above
+test -f "$HOME/.agents/githooks/pre-commit"   # must exist before the first commit
 ```
 
-Every repository on the machine now runs the publication scan and the build gate on commit. Change
-the hooks path back to nothing with `git config --global --unset core.hooksPath`.
+Every repository on the machine now runs the publication scan and the build gate on commit; the gate
+prints `PASS`, or `nothing staged` when the index is clean. No gate line at all means the hooks path is
+wrong: a missing hook is skipped silently, so the two `test -f` lines above are the check, not the commit.
+Change the hooks path back to nothing with `git config --global --unset core.hooksPath`.
 
 ## What it holds
 

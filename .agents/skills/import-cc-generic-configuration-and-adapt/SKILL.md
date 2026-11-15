@@ -1,6 +1,6 @@
 ---
 name: import-cc-generic-configuration-and-adapt
-description: Import a sanitized Claude Code claude-generic export into the neutral .agents layout, rewriting placeholders and current standards. Use when given a .claude-generic-* folder to port into agent-skills or a project; refuses credentials and secrets.
+description: Import a sanitized Claude Code claude-generic export into the neutral .agents layout, rewriting placeholders and current standards. Use when given a .claude-generic-* folder to port into the canonical agents checkout or a project; refuses credentials and secrets.
 ---
 
 # import-cc-generic-configuration-and-adapt
@@ -30,19 +30,25 @@ a Claude-shaped bundle; the neutral layout is a classification, not a rename.
 | Git target checkout | Merge and commit need history and status | `git -C <target> rev-parse` succeeds | Stop; clone or initialise first. |
 | Clean target worktree | Imported files must not mix with unrelated work | `git -C <target> status --porcelain` prints nothing | Commit or stash; the skill refuses to mix. |
 | Read access to the export | Source of the port | `test -d <source>` / `Test-Path <source>` | Stop. |
-| Bash (Git Bash on Windows) | Shell scripts and hooks | `bash --version` | Stop hook and script work; the rest may proceed. |
+| Bash (Git Bash on Windows) | Shell scripts and hooks | `bash --version`, and `echo "$MSYSTEM"` prints `MINGW64` on Windows | Stop hook and script work; the rest may proceed. A `bash` that prints a Linux `HOME` is WSL and cannot open a drive-letter path. |
+| The machine gate resolves | A dangling hooks path disables every commit gate on the machine | `git config --global --get core.hooksPath` is unset, or its `pre-commit` exists | Run `node scripts/install-global.mjs --write` before any commit; never set the path by hand. |
 
 ## Functional Requirements
 
-**Inputs:** `SOURCE` (the `.claude-generic-*` folder), `TARGET` (repository root; `agent-skills`
-recommended), `--repo-name <name>`, `--company <name>` (optional), `--write` (default is plan only),
-`--only <path>` for one item.
+**Inputs:** `SOURCE` (the `.claude-generic-*` folder), `TARGET` (repository root; the canonical agents
+checkout recommended), `--repo-name <name>`, `--company <name>` (optional), `--write` (default is plan
+only), `--only <path>` for one item.
 
 **Outputs:** new or merged `.agents/skills/<name>/`; `global/AGENTS.shared.md` for cross-project rules,
 installed into each machine's `~/.agents/AGENTS.md` (or a repository's own `AGENTS.md` for
-repository-specific ones); `.githooks/pre-commit` and
-`.githooks/pre-push`; `scripts/` and skill-local `scripts/`; `claude/` shim; `IMPORT-PLAN.md` (dry run) or
+repository-specific ones); `.agents/hooks/pre-commit-build-check.sh` merged into the build gate;
+`scripts/` and skill-local `scripts/`; `claude/` shim; `IMPORT-PLAN.md` (dry run) or
 `local_user_files/imports/<date>-claude-generic.md` (applied manifest).
+
+**The git gate is machine-level, never per repository.** `.githooks/` stays in the canonical checkout;
+`~/.agents/githooks` links to it and the global `core.hooksPath` points at that link. A consumer
+repository receives no `.githooks/` and no `core.hooksPath` of its own, so a new clone is gated by being
+on the machine. A per-repository hook or local setting is a defect: it drifts and it overrides the gate.
 
 ### Refusals — never imported
 
@@ -98,7 +104,7 @@ into the missing one. A source path present but absent from these tables is clas
 | `engineering_patterns.md` | new `.agents/skills/engineering-patterns/` |
 | `bash_patterns_windows.md` | new `.agents/skills/windows-bash/` |
 | `git_handoff_commands.md` | `global/AGENTS.shared.md`; shell table, no OS copy |
-| `writing_style_for_markdown.md` | `agent-skills/output-style/`; merge only unique details |
+| `writing_style_for_markdown.md` | `output-style/`; merge only unique details |
 | `agent_configuration_file_naming_conventions.md` (2026-11-12: `claude_code_…`) | `global/AGENTS.shared.md`; apply to `.agents` too |
 
 **References**
@@ -116,8 +122,8 @@ into the missing one. A source path present but absent from these tables is clas
 
 | Export | Destination |
 | :--- | :--- |
-| `hooks/pre-commit-build-check.sh` | `.githooks/pre-commit`; merge with the existing gate |
-| `hooks/pre-push-build-check.sh` | `.githooks/pre-push` |
+| `hooks/pre-commit-build-check.sh` | `.agents/hooks/pre-commit-build-check.sh`; merge into the build gate, which the machine-level `.githooks/pre-commit` calls |
+| `hooks/pre-push-build-check.sh` | **not imported**; the machine-level `.githooks/pre-push` already forwards to a repository's own `git_tools/pre-push`, and a second copy would drift |
 | `hooks/post-edit-dispatcher.sh` | `claude/hooks/`; skip when the target has no `claude/` layer |
 | `scripts/cache-ttl-kv.sh` (+README) | `scripts/`; cache under `~/.agents/cache` |
 | `scripts/claude-work-folder-create.mjs` (`.sh` in 2026-11-12) | `scripts/work-folder-create.mjs`; writes `local_user_files/` |
@@ -173,11 +179,14 @@ into the missing one. A source path present but absent from these tables is clas
 | No destination without its source | the plan lists a destination whose source path is absent from the export | Fail; drop the row and report `absent` |
 | No invented conversion | a row is satisfied by renaming the other generation's spelling into the missing one | Fail; `absent` stays absent |
 | Existing skills preserved | `git diff` review before commit | Fail unless merged deliberately |
+| No repository-local hook wiring | `git -C <repo> config --local --get core.hooksPath` prints nothing in every consumer repository | Fail; remove the local setting and its hook copy |
+| The machine hooks path resolves | `git config --global --get core.hooksPath` names a `pre-commit` that exists | Fail; run `node scripts/install-global.mjs --write` |
 
 **Escape hatch:** the default is a dry run. `--write` applies only after `IMPORT-PLAN.md` is approved;
 `--only <path>` limits the run to one item. **Tolerated losses:** statusline, permissions, model routing and
-hook wiring stay Claude-only in `claude/`; neutral skills lose Claude-specific invocation metadata; a table
-row whose source the export no longer ships is `absent`, and the skill converts nothing on its behalf.
+harness-hook wiring stay Claude-only in `claude/`; neutral skills lose Claude-specific invocation metadata;
+a table row whose source the export no longer ships is `absent`, and the skill converts nothing on its
+behalf.
 
 ## Execution Workflow
 
@@ -197,8 +206,12 @@ row whose source the export no longer ships is `absent`, and the skill converts 
    `AGENTS.md` only for repository-specific instructions. Never duplicate `output-style`; merge
    only markdown details it does not already cover.
 6. **References.** Move each reference into the owning skill's `references/` directory.
-7. **Hooks.** Copy `pre-commit` and `pre-push` into `.githooks/`, keep them executable (`100755`), and keep
-   `post-edit-dispatcher.sh` under `claude/hooks/`.
+7. **Hooks.** Keep the pair in the canonical checkout's `.githooks/`, executable (`100755`), and keep
+   `post-edit-dispatcher.sh` under `claude/hooks/`. Merge the export's build check into
+   `.agents/hooks/pre-commit-build-check.sh`; import no second `pre-push`. Wire the machine once with
+   `node scripts/install-global.mjs --write`: it links `~/.agents/githooks` and writes the global
+   `core.hooksPath`. Never copy a hook into a consumer repository and never set a repository-local
+   `core.hooksPath` — the copy drifts and the local setting overrides the machine gate.
 8. **Scripts and libraries.** Move them to `scripts/` or the skill's `scripts/`; rewrite `~/.claude` and
    `temp_user_files`; keep credentials out.
 9. **Claude shim.** Put `settings.json`, `MODEL_STRATEGY.md`, `ENV.md`, `SETUP.md`, `statusline.js` and the
@@ -225,6 +238,8 @@ row whose source the export no longer ships is `absent`, and the skill converts 
 | `node --check` fails | ESM/CJS mismatch | Match the file extension and module type |
 | Frontmatter invalid | Missing `name`/`description` | Add them; match the folder name |
 | CRLF appears | Copied from a Windows tree | Normalise to LF before commit |
+| `/bin/bash: <windows-path>/.agents/githooks/pre-commit: No such file or directory` | The global `core.hooksPath` names a missing path (a dangling `~/.agents/githooks` after a moved checkout, or a copy that nested itself as `~/.agents/.agents-generic-*`), or a bare `bash` resolved to WSL and cannot open a drive-letter path | Run `node scripts/install-global.mjs --write` and confirm its `pre-commit` exists. Run hook files through Git Bash; the `bash` on `PATH` (`%SystemRoot%\System32\bash.exe`) is WSL and rejects a drive-letter path. |
+| `git commit` prints no gate line | `core.hooksPath` points at an empty or missing directory, and git skips a missing hook silently | Treat a missing `PASS` line as a failed gate: run the installer's check and fix the link before committing again. |
 
 ## Verification & Outputs
 
@@ -236,20 +251,24 @@ node --test .agents/skills/import-cc-generic-configuration-and-adapt/scripts/ver
 node .agents/skills/import-cc-generic-configuration-and-adapt/scripts/verify-import.mjs \
   --source <source> --target <target>
 node global/install.mjs --check
-bash -n .githooks/pre-commit .githooks/pre-push
+node scripts/install-global.mjs
+bash -n .githooks/pre-commit .githooks/pre-push   # Git Bash, in the canonical checkout only
 node --check scripts/*.mjs
+git -C <target> config --local --get core.hooksPath   # prints nothing
 git -C <target> diff --check
 git -C <target> status --short
 ```
 
 Expected: the unit suite is green; the verifier exits 0 and prints `0 issues`; a nested export is reported
-as a `note`, not an issue; every ported script passes its syntax check; the diff is additions and deliberate
-merges only.
+as a `note`, not an issue; the installer exits 0 and names the hooks path; the gate runs on a commit
+(`PASS`, or `nothing staged` when the index is clean); every ported script passes its syntax check; the diff
+is additions and deliberate merges only.
 
-**Outputs:** the ported and merged skills, `global/AGENTS.shared.md` and its installed block, the two git
-hooks, `scripts/` and the
+**Outputs:** the ported and merged skills, `global/AGENTS.shared.md` and its installed block, the merged
+build gate, `scripts/` and the
 `claude/` shim, plus the manifest. **Exit criteria:** no refused file, no secret, no placeholder, no
-NSubstitute, no ticket prefix, no `temp_user_files`, no `~/.claude` outside `claude/`, and all skills valid.
+NSubstitute, no ticket prefix, no `temp_user_files`, no `~/.claude` outside `claude/`, no consumer
+repository with a hook file or a local `core.hooksPath`, and all skills valid.
 
 **Files:** `SKILL.md`; `scripts/verify-import.mjs` is the CLI entry point, `scripts/verify-import-lib.mjs`
 holds the filesystem checks, `scripts/verify-import-rules.mjs` holds the pure rules,

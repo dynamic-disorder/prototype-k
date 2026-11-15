@@ -107,8 +107,8 @@ version and a Linux-only version.
 
 | Export item | Destination | Mode |
 | :--- | :--- | :--- |
-| `hooks/pre-commit-build-check.sh` | `.githooks/pre-commit` | Import; merge with the existing gate |
-| `hooks/pre-push-build-check.sh` | `.githooks/pre-push` | Import |
+| `hooks/pre-commit-build-check.sh` | `.agents/hooks/pre-commit-build-check.sh` | Import; merge into the build gate |
+| `hooks/pre-push-build-check.sh` | — | **Not imported**: the machine-level `pre-push` delegates to a repository's own gate |
 | `hooks/post-edit-dispatcher.sh` | `claude/hooks/` | Shim |
 | `scripts/cache-ttl-kv.sh` (+README) | `scripts/` | Import; cache under `~/.agents/cache` |
 | `scripts/claude-work-folder-create.sh` | `scripts/work-folder-create.sh` | Import; `local_user_files` |
@@ -156,7 +156,9 @@ agent-skills/
   output-style/          # one target: ~/.agents/AGENTS.md
 ```
 
-Consumer repositories receive `.githooks/pre-commit` and `.githooks/pre-push`, not the shim.
+Consumer repositories receive neither hook file: the global `core.hooksPath` runs the canonical
+`.githooks/pre-commit` and `.githooks/pre-push` through `~/.agents/githooks`, so a repository carries no
+`.githooks/` and no local `core.hooksPath`.
 
 Outside the repository, `~/.agents/AGENTS.md` receives the shared block and the style block. The
 `agent-skills` repository carries no `AGENTS.md`; a future repository-specific instruction file would be a
