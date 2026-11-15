@@ -67,7 +67,10 @@ Mode 1 is the default. Everything in §2 binds all three modes; §3, §4 and §5
 - **No invitations; state the intention.** Close with the next action, who performs it and what it touches —
   "Next: I rewrite the comparison note in the same shape; one file, no code." Never "say the word", "let me
   know", "happy to", "just ask", "shout if you want". An invitation defers a decision the writer can already
-  state; an intention states it and leaves the reader free to stop it.
+  state; an intention states it and leaves the reader free to stop it. The actor must be the subject:
+  "start the stack when you want the UI checked" reads as an order to the reader, and the "I can run it" that
+  follows reverses it. Write "Next: I start the stack and check that the old chats load." A condition is not
+  an action; if a real choice is open, ask it as one question above the closing line.
 - No emoji in source, scripts or SQL. Emoji are acceptable in static `.md`/`.html` only.
 - Order by descending importance within every section.
 

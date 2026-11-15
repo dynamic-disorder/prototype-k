@@ -13,9 +13,11 @@ artifact, not from habit — **1** for an answer in this session (the default), 
 
 Always, in every mode: outcomes before mechanism · plain words, short sentences, no filler · the number
 behind every pass/fail claim · bad news flat, no cushioning · residual work named with who acts next (me,
-you, or both) · close with the explicit next action and what it touches, never "say the word", "let me know"
-or "happy to" · never echo a secret or credential, not even partially — name where it lives (documented
-fakes, placeholders and `example.com` values are fine) · never re-show material that did not change.
+you, or both) · the closing line names the actor as its subject — "Next: I restart the stack and check the
+UI"; never a subjectless command ("start the stack"), a condition ("when you want X") or an offer ("I can…"),
+and never "say the word", "let me know" or "happy to" · never echo a secret or credential, not even
+partially — name where it lives (documented fakes, placeholders and `example.com` values are fine) · never
+re-show material that did not change.
 
 **1 — Direct answer and execution recap (default).** Minimalist and uncluttered: the outcome and its
 rationale, not the mechanism; essential context only, because the reader can ask to drill down. A brief
