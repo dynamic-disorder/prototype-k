@@ -1,0 +1,89 @@
+# DSH model tiers — the one tracked source for the profile patch layer.
+#
+# `scripts/install-dsh.mjs` merges the entries below into the running profile's patch file
+# (`~/.dsh/profiles/<profile>/cordis.patch.yml`). Edit this file, never the copy in $HOME, so
+# both machines are rendered from one source and `--check` can prove they agree.
+#
+# Tokens the installer resolves before merging:
+#   {{localModels}}   `localModels` below, filtered to what `ollama list` actually reports
+#   {{visionModel}}   the first of `visionModels` present, or the entry is left alone
+#
+# Ownership: entries are matched and replaced by `id`. Every other entry in the patch file — the
+# `ui-*` rows the desktop app writes when a setting changes — is left byte-identical, because the
+# app rewrites this file through a comment-preserving YAML AST and owns only the entry it edits.
+#
+# Nothing machine-specific belongs in this file. The Ollama endpoint is loopback on both machines;
+# the model store path and the local context length are per-machine service settings, documented in
+# the machine notes, not here.
+
+# The local tier the model picker offers, in the order it should be tried. A model listed here but
+# not installed is simply not declared — declaring it would put a row in the picker that answers 404.
+localModels:
+  - qwen3.8:27b
+  - gemma4:12b
+  - qwen3.5:9b
+
+# Vision fallback for the vision-toolkit, in preference order.
+visionModels:
+  - qwen3.5:9b
+
+patches:
+  # The providers map is declared in FULL, so the entry is a complete statement of what the picker
+  # offers. Adding a provider in the app's settings UI therefore has to be mirrored here, or the
+  # next --write removes it — which is what --check is for.
+  #
+  # `apiKeyEnv` names a variable, never holds the key: the value lives in the machine's own
+  # environment and is never committed.
+  - id: llm-pi-ai
+    name: "@deepseek-ai/dsh-llm-pi-ai"
+    config:
+      providers:
+        openrouter:
+          apiKeyEnv: OPENROUTER_API_KEY
+          models:
+            - id: deepseek/deepseek-chat
+              name: deepseek/deepseek-chat
+        ollama:
+          displayName: Ollama
+          apiKeyEnv: OLLAMA_LOCAL_KEY
+          api: openai-completions
+          baseURL: http://127.0.0.1:11434/v1
+          models: "{{localModels}}"
+
+  # The default tier. Flash at high effort is the general workhorse; the Pro tier is a deliberate
+  # per-session switch, not a default, because it costs more per turn than this one.
+  - id: agent-default-model
+    name: "@deepseek-ai/dsh-agent-default-model"
+    config:
+      provider: deepseek-official
+      model: deepseek-flash
+      reasoningEffort: high
+
+  # Subagent delegation is refused until this entry authorizes a route: with no policy recorded, a
+  # child may only reuse the parent's own route. The shipped default is `enabled: false`, which is
+  # why an authorized local model is not enough on its own — the route list is the permission.
+  #
+  # No local route is listed. All three tiered models passed the raw tool-call and second-turn
+  # criteria on 2026-11-15, but failed criterion 3: a local child's first turn does not receive its
+  # task, so it answers with "I don't see a task yet" and edits nothing until a second message
+  # arrives. Cloud children pass the same test in the same conditions, so the fault is in this
+  # harness build's local path, not in the models. Re-run the gate before adding a route back;
+  # the evidence is under local_user_files/gates/2026-11-15/.
+  - id: subagent-model-selection-settings
+    config:
+      enabled: true
+      allowedModels:
+        - provider: deepseek-official
+          model: deepseek-flash
+        - provider: deepseek-official
+          model: deepseek-v4-pro
+
+  # Vision and OCR ride the local store; the credential reference matches the provider above.
+  - id: vision-toolkit
+    config:
+      provider:
+        protocol: openai
+        baseUrl: http://127.0.0.1:11434/v1
+        model: "{{visionModel}}"
+        credential: OLLAMA_LOCAL_KEY
+      timeoutMs: 120000

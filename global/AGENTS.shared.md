@@ -326,4 +326,28 @@ hypothesis to test, not an instruction to agree with.
   another path. Match depth to stakes.
 - **Monthly self-check:** review recent shell calls that should have been a read or a search instead.
 
+### Model tiers: plan on the strong model, implement on the default, bulk-work locally
+
+Binding, adopted 2026-11-15 after measuring the local GPU box. Three tiers, one job each; a session
+that runs every task on one model either overspends on trivia or underthinks the plan.
+
+- **Plan on the strong tier.** Architecture, root-cause analysis, and any design where a wrong answer
+  becomes a rewrite: switch the session's model to the reasoning tier before the first tool call, and
+  say in the reply that you did. Do not plan on the default tier and hope.
+- **Implement on the default tier.** Ordinary edits, tests, refactors and reviews run on the default
+  model at high effort. Escalation is for the plan, not for a hard afternoon.
+- **Bulk text work belongs to a local model.** Classification, extraction, translation, per-file
+  summaries and log triage — fixed input, checkable output — go to a local model called directly. Not
+  through an agent loop.
+- **A local model joins an agent loop only after it passes the gate.** It emits a valid tool call,
+  keeps the schema across turns, makes a two-file edit, and passes the build. Until it does, it is a
+  text function, not a worker.
+- **Local models are small-context.** Keep each one inside the VRAM it holds entirely: a hybrid CPU/GPU
+  split is slower than either extreme, and a context larger than the card's remaining budget buys that
+  split for free.
+- **The tiers are rendered, not hand-edited.** They live in `dsh/dsh_profile_patch.yaml`; `node
+  scripts/install-dsh.mjs --write` renders that into the running profile, and `--check` exits 1 the
+  moment the profile drifts from the template. A model added through the app's settings UI is drift,
+  not configuration.
+
 <!-- END managed: shared-agent-notes -->
