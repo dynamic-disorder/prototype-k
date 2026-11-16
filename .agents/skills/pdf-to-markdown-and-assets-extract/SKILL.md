@@ -177,6 +177,20 @@ It renders the pages, crops every figure, emitted equation and table, and writes
 
 Write one folder per document — `<source input path>/<name>/` — or the project's documented per-document folder when it names one. Never put two documents in one folder; an output directory passed as the second argument overrides the layout and does exactly that, so use it only for a single document. Keep extracted images under `<name>.assets/` and reference each from the `.md`.
 
+**When the source is already Markdown.** A scraped article or a print-to-Markdown export arrives as `Article.md` beside `Article.Picture1.webp`, with the prose referencing those siblings. `scripts/bundle-markdown.mjs` puts it into the shape extraction writes — one folder, the Markdown renamed, the images under `<id>.assets/`, every reference rewritten and counted — without editing a word of the prose. It reads no PDF and writes no index, so it is a separate entry point, not a mode of extraction.
+
+```bash
+node scripts/bundle-markdown.mjs "<file.md or folder>" --name <id> [--move] [--out <dir>]
+```
+
+| Flag | Effect |
+| :--- | :--- |
+| `--name <id>` | Document id, made portable by the same rule extraction uses (`lib/folder-name.mjs`). Without it the Markdown's basename is the id, so `…_Part_2` becomes `…-p2` only when passed. |
+| `--move` | Removes the original Markdown and its assets after a successful write. Off by default; ask before using it. |
+| `--out <dir>` | Writes every document into one folder instead of one folder per document beside the source. |
+
+A companion is a sibling whose name continues the Markdown's stem after a separator (`Article.Picture1.webp`, `Article - notes.txt`); another `.md` or `.pdf` is a document in its own right and stays put. Each run writes `<id>.metadata.json` and `<id>.extraction-summary.json` with `kind: "markdown"`, the asset count and `referencesRewritten`.
+
 **Moving the original files — ask first.** `--move-source` moves the source PDF and its companions into the document folder, so the folder holds the paper it was extracted from. It is off by default because it changes where the user's own files live. Before passing it, list the exact files that would move and get an explicit yes; never move a source file on your own initiative, and never treat the flag as permission for a later run. A companion is a regular file in the PDF's own folder whose name starts with the PDF's stem followed by a non-alphanumeric character — `… - abstract.txt`, `….notes.md` — while another PDF, a lookalike such as `paper2.txt` and anything inside a subfolder stay where they are. The move runs after the Markdown is written, refuses to overwrite an existing file, and the run reports how many files moved.
 
 ### 5. Inspect the run
