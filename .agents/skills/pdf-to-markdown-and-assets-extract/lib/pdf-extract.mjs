@@ -75,7 +75,11 @@ export function readObjects(text) {
     let start = streamAt + "stream".length;
     if (text.slice(start, start + 2) === "\r\n") start += 2;
     else if (text[start] === "\n" || text[start] === "\r") start += 1;
-    const lengthMatch = /\/Length\s+(\d+)/.exec(dict);
+    // `/Length 1178 0 R` is a reference, not a byte count. Read as one, it
+    // advanced the scan 1178 bytes past the stream and swallowed whatever
+    // object followed — in one thesis, an object stream holding ten pages.
+    const indirectLength = /\/Length\s+\d+\s+0\s+R/.test(dict);
+    const lengthMatch = indirectLength ? null : /\/Length\s+(\d+)/.exec(dict);
     const end = lengthMatch ? start + Number(lengthMatch[1]) : text.indexOf("endstream", start);
     objects.set(number, { dict, stream: text.slice(start, end) });
     header.lastIndex = Math.max(header.lastIndex, end);
@@ -116,7 +120,8 @@ export function expandObjectStreams(objects) {
         objects.set(pairs[index].number, { dict: body.slice(start, end), stream: null });
       }
     }
-  }}
+  }
+}
 
 /**
  * Page object numbers in document order.
