@@ -8,11 +8,11 @@
  * the characters Windows rejects and the leading or trailing dots and spaces
  * it silently strips, rename the reserved device names, and cap the length.
  *
- * The cap is 100 characters, set by the longest artifact the extractor writes:
- * `<name>.extraction-summary.json` adds 24 characters, so the file path is at
- * most 124 characters and the source folder may spend 135 of the 259-character
- * Windows path. A longer name keeps its first 91 characters and gains `-` plus
- * 8 hex digits of its own digest, so two names that share a prefix stay apart.
+ * The cap is 50 characters, set by readability rather than by path length: a
+ * name longer than that is cut at the last separator that fits, before the word
+ * that would cross the cap. Two names that share a 50-character prefix therefore
+ * map to one folder, which is the documented collision case — the CLI refuses it
+ * and `--name` settles it.
  *
  * A name that differs only in case, accents, spaces or punctuation maps to the
  * same folder. That is deliberate on a case-insensitive filesystem, and it is
@@ -21,10 +21,9 @@
  *
  * @module folder-name
  */
-import { createHash } from "node:crypto";
 
 /** Longest folder name this module emits, in ASCII characters. */
-export const MAX_FOLDER_NAME_LENGTH = 100;
+export const MAX_FOLDER_NAME_LENGTH = 50;
 
 /** Windows device names, reserved with or without an extension. */
 const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
@@ -45,19 +44,34 @@ export function folderNameFor(source) {
     .normalize("NFKD")
     .replace(/\p{M}+/gu, "");
 
-  let name = original
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
+  let name = original.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
+
+  // A scraped page puts its subtitle after a double underscore:
+  // `title__the_short_story_about_…`. The title alone names the folder, so the
+  // second half never repeats itself at length in the path. A single underscore
+  // stays, because it is legal everywhere and often part of the title.
+  const split = name.search(/_{2,}/);
+  if (split >= 3) name = name.slice(0, split);
+
+  name = name
     .replace(/-{2,}/g, "-")
+    .replace(/_{2,}/g, "_")
     .replace(/^[._-]+|[._-]+$/g, "");
 
   if (name === "") name = "document";
   if (RESERVED.test(name)) name = `${name}-doc`;
 
   if (name.length > MAX_FOLDER_NAME_LENGTH) {
-    const suffix = createHash("sha256").update(original).digest("hex").slice(0, 8);
-    const keep = MAX_FOLDER_NAME_LENGTH - suffix.length - 1;
-    name = `${name.slice(0, keep).replace(/[._-]+$/g, "")}-${suffix}`;
+    // Cut before the word that would cross the cap, never through it: a name
+    // that ends `…et_harvest` stays readable, where `…et_harv` is a fragment.
+    const window = name.slice(0, MAX_FOLDER_NAME_LENGTH + 1);
+    const boundary = Math.max(
+      window.lastIndexOf("-"),
+      window.lastIndexOf("_"),
+      window.lastIndexOf("."),
+    );
+    name = (boundary > 0 ? window.slice(0, boundary) : window.slice(0, MAX_FOLDER_NAME_LENGTH))
+      .replace(/[._-]+$/g, "");
   }
 
   return name;

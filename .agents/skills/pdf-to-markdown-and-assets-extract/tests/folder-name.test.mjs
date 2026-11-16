@@ -32,10 +32,29 @@ test("keeps an already portable document name unchanged", () => {
   assert.equal(folderNameFor("phonebot-2610.08737v1"), "phonebot-2610.08737v1");
 });
 
+test("keeps the title and drops a double-underscore subtitle", () => {
+  assert.equal(
+    folderNameFor(
+      "Something_Ends_Something_Begins__The_short_story_about_the_wedding_of_Geralt_and_Yennefer",
+    ),
+    "something_ends_something_begins",
+  );
+  assert.equal(folderNameFor("Paper__A subtitle that goes on and on"), "paper");
+});
+
+test("keeps a single underscore and a double dash inside a title", () => {
+  assert.equal(folderNameFor("my_paper"), "my_paper");
+  assert.equal(folderNameFor("paper--v2"), "paper-v2");
+});
+
+test("does not cut a name whose title is shorter than three characters", () => {
+  assert.equal(folderNameFor("a__b"), "a_b");
+});
+
 test("turns a paper title into a readable lowercase folder", () => {
   assert.equal(
     folderNameFor("PhoneBot - A Low-Cost Open Humanoid Robot Platform (2610.08737v1)"),
-    "phonebot-a-low-cost-open-humanoid-robot-platform-2610.08737v1",
+    "phonebot-a-low-cost-open-humanoid-robot-platform",
   );
 });
 
@@ -64,16 +83,25 @@ test("uses a fallback when nothing usable is left", () => {
   }
 });
 
-test("caps a long name and keeps two long names apart", () => {
-  const prefix = "a-very-long-document-title-".repeat(6);
-  const first = folderNameFor(`${prefix}first`);
-  const second = folderNameFor(`${prefix}second`);
+test("caps a long name at 50 characters and ends before the word that crosses it", () => {
+  const long = "the-harvest-of-sorrows-and-other-stories-from-the-northern-kingdoms";
+  const name = folderNameFor(long);
 
-  assert.ok(first.length <= MAX_FOLDER_NAME_LENGTH);
-  assert.ok(Buffer.byteLength(first, "utf8") <= MAX_FOLDER_NAME_LENGTH);
-  assert.match(first, /-[0-9a-f]{8}$/);
-  assert.notEqual(first, second);
-  assert.equal(folderNameFor(`${prefix}first`), first, "the name is deterministic");
+  assert.ok(name.length <= MAX_FOLDER_NAME_LENGTH);
+  assert.ok(Buffer.byteLength(name, "utf8") <= MAX_FOLDER_NAME_LENGTH);
+  assert.equal(name, "the-harvest-of-sorrows-and-other-stories-from-the");
+  assert.equal(folderNameFor(long), name, "the name is deterministic");
+  assert.doesNotMatch(name, /[._-]$/);
+});
+
+test("keeps a whole word when the last one would cross the cap", () => {
+  const name = folderNameFor("a".repeat(20) + "-" + "b".repeat(40));
+  assert.equal(name, "a".repeat(20));
+});
+
+test("cuts a single unbroken word at the cap", () => {
+  const name = folderNameFor("x".repeat(80));
+  assert.equal(name, "x".repeat(MAX_FOLDER_NAME_LENGTH));
 });
 
 test("documentName prefers --name over the PDF basename", () => {

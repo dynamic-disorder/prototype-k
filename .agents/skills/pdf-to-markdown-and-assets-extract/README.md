@@ -94,7 +94,7 @@ The bundled CLI derives the name from the PDF's basename, or from `--name` when 
 | No leading or trailing dot, dash or space | Windows silently strips a trailing dot or space, so the folder that lands on disk differs from the one reported | `.report name. ` → `report-name` |
 | Accents folded to ASCII | `Résumé` and `Resume` would otherwise be two folders on Linux and one on Windows | `Résumé` → `resume` |
 | Reserved device names renamed | `CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9` and `LPT1`–`LPT9` cannot be created on Windows | `CON` → `con-doc` |
-| Capped at 100 characters; a longer name keeps 91 and gains `-` plus 8 hex digits | `<name>.extraction-summary.json` stays 124 characters, under the 260-character Windows path with 135 characters to spare for the source folder; the digest keeps two long names apart | a 150-character title → 100 characters, ending `-1a2b3c4d` |
+| Capped at 50 characters; a longer name is cut at the last separator that fits, before the word that crosses it | A folder never ends mid-word and stays readable in a path; a title split by `__` keeps only its title, so a scraped page's repeated subtitle never enters the name | a 60-character title → 48 characters, ending on a whole word |
 
 Two documents whose names map to the same folder — `A B.pdf` and `A-B.pdf` — are refused before anything is written, because the second would overwrite the first. `--name` resolves it. An explicit output-directory argument overrides the layout and writes every document straight into that one folder.
 
@@ -254,10 +254,10 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `tests/extraction.test.mjs` | Output-contract tests for every fixture: page counts, page order, one marker per page, line counts, sidecar and manifest, page-image references; layout assertions (kerning, paragraph breaks, isolated vertical text); the generated multi-page case and the no-image case. |
 | `tests/cid.test.mjs` | The case that used to extract as blank pages: a generated one-page `Type0`/`Identity-H` PDF, `/ToUnicode` `bfchar` and `bfrange` maps, both `/W` width forms, hex-string operands, and a font with no map recording `unmappedGlyphs` instead of inventing letters. |
 | `tests/urls.test.mjs` | `--drop-relative-urls`: a scraped page's `URL:` block and `file://` link target are removed and counted, an address inside a sentence or printed on its own line by the author stays. |
-| `tests/folder-name.test.mjs` | Per-document folder tests: the portable-name rules (case, accents, Windows-forbidden characters, reserved names, length cap and digest), the CLI's `<pdf dir>/<name>/` layout, the explicit-output override, and the collision refusal. |
+| `tests/folder-name.test.mjs` | Per-document folder tests: the portable-name rules (case, accents, Windows-forbidden characters, reserved names, the 50-character cap and its word boundary, the `__` subtitle cut), the CLI's `<pdf dir>/<name>/` layout, the explicit-output override, and the collision refusal. |
 | `tests/move-source.test.mjs` | Move-source tests: companion matching (separator, lookalike, another PDF, subfolder), opt-in parsing, the move into the document folder, the overwrite refusal, the same-folder no-op, and the command-line run. |
 | `lib/pdf-extract.mjs` | The extractor: page tree, text layout, font-encoding decode, script and word-gap handling, display-equation detection and emission, fenced tables, image and figure boxes, Markdown writer. |
-| `lib/folder-name.mjs` | The portable per-document folder name: lowercase ASCII, Windows-legal, no reserved device name, capped at 100 characters with a digest suffix past the cap. |
+| `lib/folder-name.mjs` | The portable per-document folder name: lowercase ASCII, Windows-legal, no reserved device name, the title before a `__` subtitle, capped at 50 characters on a word boundary. |
 | `lib/math.mjs` | The TeX math-font slot tables (CMSY, CMMI, CMEX, MSAM), the Unicode-to-LaTeX mapping, and the reconstruction of scripts, accents and fractions from run positions. |
 | `lib/png.mjs` | Minimal PNG decode/encode/crop used by the figure step; 8-bit RGB and RGBA, no external library. |
 | `lib/figures.mjs` | Maps a PDF-point box onto a page render and crops it — the same call writes `figure-<n>.png` and `equation-<n>.png`. |
