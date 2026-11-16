@@ -49,7 +49,13 @@ export const INSTALL_DIRS = {
     "%USERPROFILE%\\scoop\\apps\\tesseract\\current",
   ],
   darwin: ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"],
-  linux: ["/usr/bin", "/usr/local/bin", "/snap/bin", "/var/lib/flatpak/exports/bin"],
+  linux: [
+    "/usr/bin",
+    "/usr/local/bin",
+    "/snap/bin",
+    "/var/lib/flatpak/exports/bin",
+    "%HOME%/.local/bin",
+  ],
 };
 
 /** Case-insensitive environment lookup: Windows variable names are not case-sensitive. */

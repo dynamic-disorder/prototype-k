@@ -1,14 +1,14 @@
 {
   "name": "pdf-to-markdown-and-assets-extract",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Guard a PDF input path, extract project PDFs to page-marked Markdown and assets, and prove the run repeatable.",
+  "description": "Guard a PDF input path, extract project PDFs to page-marked Markdown and assets, and prove the run repeatable. Decodes CID/Type0 text layers through /ToUnicode.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/check_input.test.mjs tests/extraction.test.mjs tests/folder-name.test.mjs tests/move-source.test.mjs tests/math.test.mjs tests/raster.test.mjs tests/ocr.test.mjs tests/figures.test.mjs tests/run-steps.test.mjs tests/png.test.mjs tests/layout.test.mjs",
+    "test": "node --test tests/check_input.test.mjs tests/extraction.test.mjs tests/cid.test.mjs tests/urls.test.mjs tests/folder-name.test.mjs tests/move-source.test.mjs tests/math.test.mjs tests/raster.test.mjs tests/ocr.test.mjs tests/figures.test.mjs tests/run-steps.test.mjs tests/png.test.mjs tests/layout.test.mjs",
     "e2e": "node scripts/run_tests.mjs",
     "extract": "node scripts/extract-pdf.mjs",
     "raster": "node scripts/rasterise.mjs",

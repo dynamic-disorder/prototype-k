@@ -48,6 +48,10 @@ export const INSTALL_RULES = {
     { folder: "%USERPROFILE%\\scoop\\shims", tools: ["pdftoppm", "mutool", "magick"] },
     { folder: "%USERPROFILE%\\scoop\\apps\\poppler\\current\\bin", tools: ["pdftoppm"] },
     { folder: "%LOCALAPPDATA%\\Microsoft\\WinGet\\Links", tools: ["pdftoppm", "mutool", "magick"] },
+    // Git for Windows ships poppler's tools in its own tree, so a renderer can
+    // be on disk without poppler ever being installed separately.
+    { folder: "%ProgramFiles%\\Git\\mingw64\\bin", tools: ["pdftoppm"] },
+    { folder: "%ProgramFiles%\\Git\\usr\\bin", tools: ["pdftoppm"] },
   ],
   darwin: [
     { folder: "/opt/homebrew/bin", tools: ["pdftoppm", "mutool", "magick"] },
@@ -59,6 +63,7 @@ export const INSTALL_RULES = {
     { folder: "/usr/local/bin", tools: ["pdftoppm", "mutool", "magick"] },
     { folder: "/snap/bin", tools: ["pdftoppm", "mutool", "magick"] },
     { folder: "/var/lib/flatpak/exports/bin", tools: ["pdftoppm", "mutool", "magick"] },
+    { folder: "%HOME%/.local/bin", tools: ["pdftoppm", "mutool", "magick"] },
   ],
 };
 

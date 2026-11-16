@@ -320,13 +320,38 @@ function glyphToUnicode(name) {
   if (/^uni[0-9A-F]{4}$/i.test(name)) return String.fromCharCode(Number.parseInt(name.slice(3), 16));
   return "";}
 
+/**
+ * A bracketed dictionary, matching nested `<<`/`>>` pairs.
+ *
+ * A page writes `/Resources << /ExtGState << … >> /Font << … >> >>`; a
+ * non-greedy `<<[\s\S]*?>>` stops at the first nested close and hides `/Font`,
+ * which is how a page's text lost its font and decoded as raw bytes.
+ * @param {string} text
+ * @param {number} openAt index of the opening `<<`
+ * @returns {string} the dictionary, delimiters included
+ */
+function balancedDictionary(text, openAt) {
+  let depth = 0;
+  for (let index = openAt; index < text.length - 1; index += 1) {
+    if (text[index] === "<" && text[index + 1] === "<") {
+      depth += 1;
+      index += 1;
+    } else if (text[index] === ">" && text[index + 1] === ">") {
+      depth -= 1;
+      index += 1;
+      if (depth === 0) return text.slice(openAt, index + 1);
+    }
+  }
+  return text.slice(openAt);}
+
 /** Resolve a dictionary value that may be inline or an indirect reference.
  */
 function resolveDict(objects, dict, key) {
   const ref = new RegExp(`/${key}\\s+(\\d+)\\s+0\\s+R`).exec(dict);
   if (ref) return objects.get(Number(ref[1]));
-  const inline = new RegExp(`/${key}\\s*(<<[\\s\\S]*?>>)`).exec(dict);
-  return inline ? { dict: inline[1] } : null;}
+  const inline = new RegExp(`/${key}\\s*(?=<<)`).exec(dict);
+  if (!inline) return null;
+  return { dict: balancedDictionary(dict, dict.indexOf("<<", inline.index)) };}
 
 /** TeX family of a base font name: the font decides how its bytes decode.
  */
@@ -349,6 +374,7 @@ export function fontFamily(base) {
  */
 function fontDecoder(objects, dict) {
   const base = (/\/BaseFont\s*\/([^\s/>]+)/.exec(dict)?.[1] ?? "").replace(/^[A-Z]{6}\+/, "");
+  if (/\/Subtype\s*\/Type0\b/.test(dict)) return cidFontDecoder(objects, dict, base);
   const family = fontFamily(base);
   const differences = new Map();
   const encodingRef = /\/Encoding\s+(\d+)\s+0\s+R/.exec(dict);
@@ -379,6 +405,187 @@ function fontDecoder(objects, dict) {
         .map(Number)
     : [];
   return { base, family, differences, firstChar, widths };}
+
+/**
+ * The body of the bracketed array that opens at `openAt`, matching nesting.
+ *
+ * `/W` holds nested arrays — `[ 0 [500 600] 3 5 700 ]` — so a regex that stops
+ * at the first `]` reads the widths of one code and drops the rest.
+ * @param {string} text
+ * @param {number} openAt index of the opening `[`
+ * @returns {string} the text between the brackets
+ */
+function balancedArray(text, openAt) {
+  let depth = 0;
+  for (let index = openAt; index < text.length; index += 1) {
+    if (text[index] === "[") depth += 1;
+    else if (text[index] === "]") {
+      depth -= 1;
+      if (depth === 0) return text.slice(openAt + 1, index);
+    }
+  }
+  return text.slice(openAt + 1);}
+
+/**
+ * Read one number at or after `from`, with the index just past it.
+ * @param {string} text
+ * @param {number} from
+ * @returns {{ value: number, end: number } | null}
+ */
+function numberAt(text, from) {
+  const match = /-?\d*\.?\d+/.exec(text.slice(from));
+  if (!match) return null;
+  return { value: Number(match[0]), end: from + match.index + match[0].length };}
+
+/**
+ * A CID font's advance widths, in thousandths of an em, from `/W`.
+ *
+ * Two forms are allowed: `c [w1 w2 …]` gives consecutive codes from `c`, and
+ * `first last w` repeats one width across a range. Codes with no entry fall
+ * back to `/DW`.
+ * @param {string} dict the CIDFont dictionary
+ * @returns {Map<number, number>}
+ */
+export function parseCidWidths(dict) {
+  const widths = new Map();
+  const body = dict.trimStart().startsWith("[")
+    ? balancedArray(dict, dict.indexOf("["))
+    : (() => {
+        const at = dict.search(/\/W\s*\[/);
+        return at < 0 ? "" : balancedArray(dict, dict.indexOf("[", at));
+      })();
+  if (!body) return widths;
+  let index = 0;
+  while (index < body.length) {
+    const first = numberAt(body, index);
+    if (!first) break;
+    index = first.end;
+    const next = body.slice(index).trimStart();
+    if (next.startsWith("[")) {
+      const open = body.indexOf("[", index);
+      const inner = balancedArray(body, open);
+      index = open + inner.length + 2;
+      const list = (inner.match(/-?\d*\.?\d+/g) ?? []).map(Number);
+      list.forEach((width, offset) => widths.set(first.value + offset, width));
+      continue;
+    }
+    const last = numberAt(body, index);
+    if (!last) break;
+    const width = numberAt(body, last.end);
+    if (!width) break;
+    index = width.end;
+    for (let code = first.value; code <= last.value && code - first.value < 65536; code += 1) {
+      widths.set(code, width.value);
+    }
+  }
+  return widths;}
+
+/**
+ * Decode a `ToUnicode` destination: UTF-16BE when it is two-byte clean,
+ * otherwise one byte per code.
+ * @param {string} hex the hex digits, spaces allowed
+ * @returns {string}
+ */
+export function hexToText(hex) {
+  const clean = hex.replace(/\s+/g, "");
+  if (clean.length === 0) return "";
+  let out = "";
+  if (clean.length % 4 === 0) {
+    for (let index = 0; index < clean.length; index += 4) {
+      out += String.fromCharCode(Number.parseInt(clean.slice(index, index + 4), 16));
+    }
+    return out;
+  }
+  for (let index = 0; index + 1 < clean.length; index += 2) {
+    out += String.fromCharCode(Number.parseInt(clean.slice(index, index + 2), 16));
+  }
+  return out;}
+
+/**
+ * A CID font's code → Unicode map, from its `/ToUnicode` CMap.
+ *
+ * `bfchar` maps one code at a time; `bfrange` maps a run, either by counting
+ * the destination up or by listing one destination per code. Without this map a
+ * CID font's two-byte codes have no meaning, which is why a `Type0` document
+ * used to extract as blank pages.
+ * @param {Map<number, object>} objects
+ * @param {string} dict the Type0 font dictionary
+ * @returns {Map<number, string>}
+ */
+export function toUnicodeMap(objects, dict) {
+  const map = new Map();
+  const ref = /\/ToUnicode\s+(\d+)\s+0\s+R/.exec(dict);
+  const object = ref ? objects.get(Number(ref[1])) : null;
+  if (!object?.stream) return map;
+  let raw = Buffer.from(object.stream, "latin1");
+  if (object.dict.includes("/FlateDecode")) {
+    try {
+      raw = inflateSync(raw);
+    } catch {
+      return map;
+    }
+  }
+  const text = raw.toString("latin1");
+  for (const block of text.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+    for (const pair of block[1].matchAll(/<([0-9A-Fa-f\s]*)>\s*<([0-9A-Fa-f\s]*)>/g)) {
+      map.set(Number.parseInt(pair[1].replace(/\s+/g, ""), 16), hexToText(pair[2]));
+    }
+  }
+  for (const block of text.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+    for (const entry of block[1].matchAll(
+      /<([0-9A-Fa-f\s]*)>\s*<([0-9A-Fa-f\s]*)>\s*(<[0-9A-Fa-f\s]*>|\[[^\]]*\])/g,
+    )) {
+      const low = Number.parseInt(entry[1].replace(/\s+/g, ""), 16);
+      const high = Number.parseInt(entry[2].replace(/\s+/g, ""), 16);
+      if (!Number.isFinite(low) || !Number.isFinite(high) || high < low) continue;
+      if (entry[3].startsWith("[")) {
+        const targets = [...entry[3].matchAll(/<([0-9A-Fa-f\s]*)>/g)].map((target) => hexToText(target[1]));
+        for (let code = low; code <= high && code - low < targets.length; code += 1) {
+          map.set(code, targets[code - low]);
+        }
+        continue;
+      }
+      const start = hexToText(entry[3].slice(1, -1));
+      if (!start) continue;
+      const base = start.codePointAt(start.length - 1);
+      for (let code = low; code <= high && code - low < 65536; code += 1) {
+        map.set(code, start.slice(0, -1) + String.fromCodePoint(base + (code - low)));
+      }
+    }
+  }
+  return map;}
+
+/**
+ * A `Type0`/CID font: two-byte codes, a `/ToUnicode` CMap and `/W` widths.
+ *
+ * Its glyphs are addressed by CID, not by a byte of an encoding, so
+ * `/Differences` never applies and a missing map is a recorded loss rather than
+ * an invented letter.
+ * @param {Map<number, object>} objects
+ * @param {string} dict
+ * @param {string} base base font name, subset prefix removed
+ */
+function cidFontDecoder(objects, dict, base) {
+  const ref = /\/DescendantFonts\s*\[\s*(\d+)\s+0\s+R/.exec(dict);
+  const descendant = ref ? objects.get(Number(ref[1])) : null;
+  const descendantDict = descendant?.dict ?? "";
+  // `/W` is usually an indirect array (`/W 985 0 R`), and an inline array when
+  // the writer chose to keep it; both forms are read.
+  const widthRef = /\/W\s+(\d+)\s+0\s+R\s*$/.exec(descendantDict.trimEnd()) ??
+    /\/W\s+(\d+)\s+0\s+R/.exec(descendantDict);
+  const widthSource = widthRef ? (objects.get(Number(widthRef[1]))?.dict ?? "") : descendantDict;
+  return {
+    base,
+    family: fontFamily(base),
+    cid: true,
+    differences: new Map(),
+    firstChar: 0,
+    widths: [],
+    cidWidths: parseCidWidths(widthSource),
+    defaultWidth: Number(/\/DW\s+(-?\d*\.?\d+)/.exec(descendantDict)?.[1] ?? 1000),
+    toUnicode: toUnicodeMap(objects, dict),
+    unmapped: 0,
+  };}
 
 /** Advance width of one character, in points, from the font's `/Widths`.
  */
@@ -429,6 +636,58 @@ function decodeBytes(text, font) {
   }
   return out;}
 
+/**
+ * Glyphs of a two-byte CID string, with each glyph's advance in points.
+ *
+ * A code the `/ToUnicode` map does not name keeps no character and is counted
+ * as unmapped, so the run records a loss instead of inventing a letter.
+ * @param {string} bytes one character per byte
+ * @param {object} font the CID decoder
+ * @param {number} size font size in page points
+ * @returns {{ text: string, advance: number }[]}
+ */
+function cidGlyphs(bytes, font, size) {
+  const glyphs = [];
+  for (let index = 0; index + 1 < bytes.length; index += 2) {
+    const code = (bytes.charCodeAt(index) << 8) | bytes.charCodeAt(index + 1);
+    const width = font.cidWidths.get(code) ?? font.defaultWidth;
+    const decoded = font.toUnicode.get(code);
+    if (decoded === undefined) font.unmapped = (font.unmapped ?? 0) + 1;
+    glyphs.push({ text: decoded ?? "", advance: (width / 1000) * size });
+  }
+  return glyphs;}
+
+/**
+ * Glyphs of one string operand, decoded through the font in force.
+ * @param {string} bytes the operand's bytes, one character each
+ * @param {object | null} font
+ * @param {number} size font size in page points
+ * @returns {{ text: string, advance: number }[]}
+ */
+function glyphsFor(bytes, font, size) {
+  if (font?.cid) return cidGlyphs(bytes, font, size);
+  const glyphs = [];
+  for (const character of bytes) {
+    glyphs.push({ text: decodeBytes(character, font), advance: charWidth(font, character, size) });
+  }
+  return glyphs;}
+
+/** Decode a PDF string operand — a literal or a hex string — to its bytes.
+ *
+ * A hex string carries the same bytes with two digits each: `<0001>` is the
+ * two-byte code 1, which only a font's own map can turn into a character.
+ * @param {string} operand the operand exactly as the content stream spells it
+ * @returns {string} one character per byte
+ */
+export function stringBytes(operand) {
+  if (!operand.startsWith("<")) return decodeString(operand);
+  const clean = operand.slice(1, -1).replace(/\s+/g, "");
+  let out = "";
+  for (let index = 0; index + 1 < clean.length; index += 2) {
+    out += String.fromCharCode(Number.parseInt(clean.slice(index, index + 2), 16));
+  }
+  return out;}
+
 /** Decode a PDF string literal, including octal and backslash escapes.
  */
 function decodeString(literal) {
@@ -460,16 +719,16 @@ export const TJ_GAP = "\uE000";
  * run look wider than it is and swallowed the space before the next math run.
  */
 export function showText(arrayLiteral) {
-  if (arrayLiteral.startsWith("(")) {
-    const text = decodeString(arrayLiteral);
+  if (arrayLiteral.startsWith("(") || arrayLiteral.startsWith("<")) {
+    const text = stringBytes(arrayLiteral);
     return { text, advance: 0, pieces: [{ text }] };
   }
   let text = "";
   let advance = 0;
   const pieces = [];
-  for (const part of arrayLiteral.matchAll(/\((?:[^()\\]|\\.)*\)|-?\d*\.?\d+/g)) {
-    if (part[0].startsWith("(")) {
-      const literal = decodeString(part[0]);
+  for (const part of arrayLiteral.matchAll(/\((?:[^()\\]|\\.)*\)|<[0-9A-Fa-f\s]*>|-?\d*\.?\d+/g)) {
+    if (part[0].startsWith("(") || part[0].startsWith("<")) {
+      const literal = stringBytes(part[0]);
       text += literal;
       pieces.push({ text: literal });
       continue;
@@ -482,7 +741,7 @@ export function showText(arrayLiteral) {
   return { text, advance, pieces };}
 
 const CONTENT_TOKEN =
-  /\((?:[^()\\]|\\.)*\)|\[(?:[^\]\\]|\\.)*\]|\/[^\s/\[\]()<>{}%]*|-?\d*\.?\d+|[A-Za-z'"*]+/g;
+  /\((?:[^()\\]|\\.)*\)|<[0-9A-Fa-f\s]*>|\[(?:[^\]\\]|\\.)*\]|\/[^\s/\[\]()<>{}%]*|-?\d*\.?\d+|[A-Za-z'"*]+/g;
 /**
  * Walk one content stream, collecting text runs with their positions and the
  * stroked horizontal rules that separate the two halves of a fraction.
@@ -500,7 +759,7 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
   let size = 10;
   let font = fonts?.get("") ?? null;
   let path = null;
-  const rotation = () => Math.round((Math.atan2(matrix[1], matrix[0]) * 180) / Math.PI);
+  const rotation = (m = matrix) => Math.round((Math.atan2(m[1], m[0]) * 180) / Math.PI);
   /**  
  * Record one text run: its decoded text, its advance, and its words with the  
  * position each one starts at. A table's columns are only recoverable from  
@@ -508,14 +767,23 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
  * offset of each number says which column it belongs to.
  */
   const emit = (pieces) => {
+    // A run's position is the page transform composed with the text matrix:
+    // a page that draws through `0 0.06 -0.06 0` would otherwise place its text
+    // in an unscaled coordinate space, hundreds of points outside the page.
+    // `multiplyMatrix(left, right)` applies `right` first, so the text matrix
+    // is the left operand and the transform the right one.
+    const effective = multiplyMatrix(matrix, ctm);
+    const scale =
+      Math.sqrt(Math.abs(effective[0] * effective[3] - effective[1] * effective[2])) || 1;
+    const em = size * scale;
     let text = "";
     let offset = 0;
     const words = [];
     let word = null;
     for (const piece of pieces) {
       if (piece.gap !== undefined) {
-        const advance = piece.gap * size;
-       if (advance >= size * 0.15 && word) {
+        const advance = piece.gap * em;
+        if (advance >= em * 0.15 && word) {
           words.push(word);
           word = null;
           text += " ";
@@ -523,9 +791,9 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
         offset += advance;
         continue;
       }
-      for (const character of piece.text) {
-        const decoded = decodeBytes(character, font);
-        const advance = charWidth(font, character, size);
+      for (const glyph of glyphsFor(piece.text, font, em)) {
+        const decoded = glyph.text;
+        const advance = glyph.advance;
         if (!decoded || /^\s$/.test(decoded)) {
           if (word) {
             words.push(word);
@@ -546,10 +814,10 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
     runs.push({
-      x: matrix[4],
-      y: matrix[5],
-      size,
-      rotation: rotation(),
+      x: effective[4],
+      y: effective[5],
+      size: em,
+      rotation: rotation(effective),
       text: clean,
       width: offset,
       family: font?.family ?? "other",
@@ -593,7 +861,7 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
   const numbers = () => operands.filter((value) => typeof value === "number");
   for (const token of content.matchAll(CONTENT_TOKEN)) {
     const value = token[0];
-    if (value.startsWith("(") || value.startsWith("[") || value.startsWith("/")) {
+    if (value.startsWith("(") || value.startsWith("<") || value.startsWith("[") || value.startsWith("/")) {
       operands.push(value);
       continue;
     }
@@ -693,7 +961,9 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
       }
       case "Tj": {
         const literal = operands.at(-1);
-        if (typeof literal === "string" && literal.startsWith("(")) emit([{ text: decodeString(literal) }]);
+        if (typeof literal === "string" && /^[<(]/.test(literal)) {
+          emit([{ text: stringBytes(literal) }]);
+        }
         break;
       }
       case "TJ": {
@@ -705,7 +975,9 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
       case '"': {
         move(0, -leading);
         const literal = operands.at(-1);
-        if (typeof literal === "string" && literal.startsWith("(")) emit([{ text: decodeString(literal) }]);
+        if (typeof literal === "string" && /^[<(]/.test(literal)) {
+          emit([{ text: stringBytes(literal) }]);
+        }
         break;
       }
       default:
@@ -801,6 +1073,10 @@ export function needsSpace(previous, next, gap, size) {
   if (!previous) return false;
   if (gap > Math.max(1, size * 0.25)) return true;
   if (gap <= -size * 0.35) return false;
+  // Two neighbouring glyph runs that abut within a rounding error are one
+  // word: a page that writes every glyph as its own `Tj` leaves a gap of a
+  // fraction of a point between them, which is not a space.
+  if (Math.abs(gap) <= Math.max(0.2, size * 0.12)) return false;
   return /[A-Za-z0-9).,:;]$/.test(previous) && /^[A-Za-z0-9(]/.test(next);}
 
 /** Join runs of one line, inserting a space only across a visible gap.
@@ -831,6 +1107,7 @@ export function listPages(data) {
     const runs = [];
     const rules = [];
     const verticals = [];
+    let unmapped = 0;
     if (page) {
       const fonts = pageFonts(objects, page.dict);
       for (const ref of contentRefs(page.dict)) {
@@ -846,6 +1123,7 @@ export function listPages(data) {
         }
         parseContent(raw.toString("latin1"), runs, fonts, rules, verticals);
       }
+      for (const decoder of fonts.values()) unmapped += decoder.unmapped ?? 0;
     }
     const lines = groupLines(runs);
     const equations = page ? findEquations(lines, rules, pageSize(page.dict)) : [];
@@ -858,6 +1136,7 @@ export function listPages(data) {
       tables,
       rules,
       verticals,
+      unmapped,
     };
   });}
 
@@ -1032,6 +1311,33 @@ function findEquations(lines, rules, size) {
  */
 export function findTables(lines, size, equations = [], rules = [], verticals = []) {
   const tables = [];
+  /**
+   * How many of a candidate's cells sit in columns shared by several rows.
+   *
+   * A justified paragraph in a narrow measure splits into cells at its word
+   * gaps, so cell counts alone made every page of prose a table. A real table
+   * repeats each column's start across its rows; prose repeats only the left
+   * margin, and the rest of its cells land wherever the line broke.
+   * @param {{ x: number }[][]} rows one entry per row, each holding its cells
+   * @returns {{ columns: number, coverage: number }}
+   */
+  const columnAlignment = (rows) => {
+    const clusters = [];
+    rows.forEach((cells, rowIndex) => {
+      for (const cell of cells) {
+        let cluster = clusters.find((entry) => Math.abs(entry.x - cell.x) <= 2);
+        if (!cluster) {
+          cluster = { x: cell.x, rows: new Set() };
+          clusters.push(cluster);
+        }
+        cluster.rows.add(rowIndex);
+      }
+    });
+    const shared = clusters.filter((cluster) => cluster.rows.size >= 3);
+    const total = rows.reduce((sum, cells) => sum + cells.length, 0);
+    const covered = shared.reduce((sum, cluster) => sum + cluster.rows.size, 0);
+    return { columns: shared.length, coverage: total ? covered / total : 0 };
+  };
   const inEquation = (index) =>
     equations.some((equation) => index >= equation.start && index <= equation.end);
   const claimed = (index) => tables.some((table) => index >= table.start && index <= table.end);
@@ -1103,11 +1409,12 @@ export function findTables(lines, size, equations = [], rules = [], verticals = 
   const isCaption = (line) => CAPTION.test(line.text.trim());
   for (let index = 0; index < lines.length; index += 1) {
     if (inEquation(index) || claimed(index)) continue;
-    const cells = lineCells(lines[index]);
+    const cells = lineCellEntries(lines[index]);
     if (!cells) continue;
     let multiCell = 1;
     let wideRows = cells.length >= 3 ? 1 : 0;
     let rows = 1;
+    const cellRows = [cells];
     let top = lines[index].y;
     let bottom = lines[index].y;
     // A group label sits in a wider gap than a row does, and the table goes on
@@ -1120,11 +1427,12 @@ export function findTables(lines, size, equations = [], rules = [], verticals = 
       const candidate = lines[next];
      if (isCaption(candidate)) break;
       if (!inside(candidate)) break;
-      const candidateCells = lineCells(candidate);
+      const candidateCells = lineCellEntries(candidate);
       if (candidateCells) {
         multiCell += 1;
         if (candidateCells.length >= 3) wideRows += 1;
         rows += 1;
+        cellRows.push(candidateCells);
         top = Math.max(top, candidate.y);
         bottom = Math.min(bottom, candidate.y);
         next += 1;
@@ -1146,6 +1454,30 @@ export function findTables(lines, size, equations = [], rules = [], verticals = 
       next += 1;
     }
     if (rows < 3 || multiCell < 3 || wideRows < 2) continue;
+    const alignment = columnAlignment(cellRows);
+    if (alignment.columns < 3 || alignment.coverage < 0.5) continue;
+    // A table carries evidence of being one: rules that frame or separate it,
+    // or a `Table N` label. Without either, a justified paragraph in a narrow
+    // measure satisfies every geometric test and is still a paragraph.
+    const blockParts = lines.slice(index, next).flatMap((line) => line.parts ?? []);
+    const blockLeft = Math.min(...blockParts.map((part) => part.x), ...cellRows.flat().map((cell) => cell.x));
+    const blockRight = Math.max(...blockParts.map((part) => part.x + part.width), ...cellRows.flat().map((cell) => cell.x));
+    const framed =
+      rules.some(
+        (rule) =>
+          rule.y <= top + 2 &&
+          rule.y >= bottom - 2 &&
+          rule.width >= Math.max(40, (blockRight - blockLeft) * 0.5),
+      ) ||
+      verticals.some((line) => line.y + line.height >= bottom && line.y <= top);
+      rules.some((rule) => rule.y <= top + 2 && rule.y >= bottom - 2) ||
+      verticals.some((line) => line.y + line.height >= bottom && line.y <= top);
+    const labelled =
+      /^Table\s+\d+/.test((lines[next]?.text ?? "").trim()) ||
+      lines
+        .slice(Math.max(0, index - 10), next)
+        .some((line) => /^Table\s+\d+/.test(line.text.trim()));
+    if (!framed && !labelled) continue;
     record(index, next - 1);
     index = next - 1;
   }
@@ -1754,7 +2086,44 @@ function findImages(outDir, name, prefix) {
  * @param {string} outDir the directory to write into
  * @param {string} name document basename; defaults to the embedded fixture
  */
-export function writeExtraction(data, outDir, name = FIXTURE_NAME) {
+/**
+ * Remove web addresses from written Markdown, counting what was removed.
+ *
+ * A page scraped from a wiki prints its own `URL:` line and download stamp in
+ * the body. Dropping them is opt-in (`--drop-relative-urls`) because it changes the
+ * text; the count is recorded so the loss is never silent. Only a line that is
+ * wholly a URL, and a bare `URL:`/`Source:`/`Link:` label directly above it,
+ * are removed — an address inside a sentence stays.
+ * @param {string} markdown
+ * @returns {{ markdown: string, dropped: number }}
+ */
+export function stripRelativeUrls(markdown) {
+  let dropped = 0;
+  const kept = [];
+  const lines = markdown.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const previous = kept.at(-1);
+    const labelled =
+      previous !== undefined && /^[ \t]*(?:URL|Source|Link|Downloaded)[ \t]*:[ \t]*$/i.test(previous);
+    const linkTarget = /^[ \t]*file:\/\/\S+[ \t]*$/i.test(line);
+    const address = /^[ \t]*(?:https?:\/\/|www\.)\S+[ \t]*$/i.test(line);
+    // A scraped page prints its own address under a bare label, and a wiki
+    // link names its target as a `file://` path. An address the author printed
+    // on its own line — a publisher's site in the front matter — stays.
+    if (!(linkTarget || (address && labelled))) {
+      kept.push(line);
+      continue;
+    }
+    dropped += 1;
+    if (labelled) kept.pop();
+    // A removed address takes the blank line that followed it with it.
+    if (lines[index + 1] !== undefined && lines[index + 1].trim() === "") index += 1;
+  }
+  return { markdown: kept.join("\n"), dropped };
+}
+
+export function writeExtraction(data, outDir, name = FIXTURE_NAME, { dropRelativeUrls = false } = {}) {
   const pages = listPages(data);
   const image = extractImage(data);
   let imagePath = null;
@@ -1765,34 +2134,50 @@ export function writeExtraction(data, outDir, name = FIXTURE_NAME) {
     writeFileSync(imagePath, image.bytes);
   }
   const md = path.join(outDir, `${name}.md`);
-  writeFileSync(
-    md,
-    pageMarkedMarkdown(
-      pages,
-      name,
-      image !== null,
-      findImages(outDir, name, "page"),
-      findImages(outDir, name, "figure"),
-      findImages(outDir, name, "equation"),
-      findImages(outDir, name, "table"),
-      ["csv", "pipe"].includes(process.env.PDF_TABLE_FORMAT) ? process.env.PDF_TABLE_FORMAT : "ascii",
-    ),
-    "utf8",
+  const written = pageMarkedMarkdown(
+    pages,
+    name,
+    image !== null,
+    findImages(outDir, name, "page"),
+    findImages(outDir, name, "figure"),
+    findImages(outDir, name, "equation"),
+    findImages(outDir, name, "table"),
+    ["csv", "pipe"].includes(process.env.PDF_TABLE_FORMAT) ? process.env.PDF_TABLE_FORMAT : "ascii",
   );
+  const stripped = dropRelativeUrls ? stripRelativeUrls(written) : { markdown: written, dropped: 0 };
+  writeFileSync(md, stripped.markdown, "utf8");
   const images = image ? 1 : 0;
+  const unmappedGlyphs = pages.reduce((total, page) => total + (page.unmapped ?? 0), 0);
   const emitted = pages.map((page) => emittedBlocks(page));
   const equations = emitted.reduce((total, page) => total + page.equations.length, 0);
   const tables = emitted.reduce((total, page) => total + page.tables.length, 0);
+  const urlsDropped = stripped.dropped;
   const meta = path.join(outDir, `${name}.metadata.json`);
   writeFileSync(
     meta,
-    JSON.stringify({ docId: name, pages: pages.length, images, equations, tables }),
+    JSON.stringify({
+      docId: name,
+      pages: pages.length,
+      images,
+      equations,
+      tables,
+      unmappedGlyphs,
+      urlsDropped,
+    }),
     "utf8",
   );
   const summary = path.join(outDir, `${name}.extraction-summary.json`);
   writeFileSync(
     summary,
-    JSON.stringify({ documents: [{ name, pages: pages.length, images, equations, tables }] }, null, 2),
+    JSON.stringify(
+      {
+        documents: [
+          { name, pages: pages.length, images, equations, tables, unmappedGlyphs, urlsDropped },
+        ],
+      },
+      null,
+      2,
+    ),
     "utf8",
   );
   return { md, meta, summary, imagePath };}

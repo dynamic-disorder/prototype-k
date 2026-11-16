@@ -203,9 +203,9 @@ Install-folder scan, in this order after `PATH`:
 
 | OS | Folders searched |
 | :--- | :--- |
-| Windows | `%ProgramFiles%\poppler*\Library\bin`, `%ProgramFiles%\poppler*\bin`, `%ProgramFiles%\ImageMagick*`, `%ProgramFiles%\MuPDF*`, `%ProgramData%\chocolatey\bin`, `%USERPROFILE%\scoop\shims`, `%USERPROFILE%\scoop\apps\poppler\current\bin`, `%LOCALAPPDATA%\Microsoft\WinGet\Links` |
+| Windows | `%ProgramFiles%\poppler*\Library\bin`, `%ProgramFiles%\poppler*\bin`, `%ProgramFiles%\ImageMagick*`, `%ProgramFiles%\MuPDF*`, `%ProgramData%\chocolatey\bin`, `%USERPROFILE%\scoop\shims`, `%USERPROFILE%\scoop\apps\poppler\current\bin`, `%LOCALAPPDATA%\Microsoft\WinGet\Links`, `%ProgramFiles%\Git\mingw64\bin`, `%ProgramFiles%\Git\usr\bin` |
 | macOS | `/opt/homebrew/bin`, `/usr/local/bin`, `/opt/local/bin` |
-| Linux | `/usr/bin`, `/usr/local/bin`, `/snap/bin`, `/var/lib/flatpak/exports/bin` |
+| Linux | `/usr/bin`, `/usr/local/bin`, `/snap/bin`, `/var/lib/flatpak/exports/bin`, `~/.local/bin` |
 
 The `*` matches a versioned folder such as `ImageMagick-7.1.1`. Disable the Windows fallback with `PDF_NO_WINDOWS_RASTER=1`, and the install-folder scan with `PDF_NO_RASTER_INSTALL=1`. A missing renderer is a recorded skip (`status: "skipped"`, `source` absent), never a silent success; a renderer that exits non-zero, or returns a page count other than the expected one, fails the run.
 
@@ -229,7 +229,7 @@ Install-folder scan, in this order after `PATH`:
 | :--- | :--- |
 | Windows | `%ProgramFiles%\Tesseract-OCR`, `%ProgramFiles(x86)%\Tesseract-OCR`, `%LOCALAPPDATA%\Programs\Tesseract-OCR`, `%LOCALAPPDATA%\Tesseract-OCR`, `%ProgramData%\chocolatey\bin`, `%USERPROFILE%\scoop\shims`, `%USERPROFILE%\scoop\apps\tesseract\current` |
 | macOS | `/opt/homebrew/bin`, `/usr/local/bin`, `/opt/local/bin` |
-| Linux | `/usr/bin`, `/usr/local/bin`, `/snap/bin`, `/var/lib/flatpak/exports/bin` |
+| Linux | `/usr/bin`, `/usr/local/bin`, `/snap/bin`, `/var/lib/flatpak/exports/bin`, `~/.local/bin` |
 
 Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on Ubuntu with `apt-get install tesseract-ocr tesseract-ocr-eng`, on macOS with `brew install tesseract`. No `PATH` edit is needed: on 2026-11-10 the shell's `PATH` did not carry Tesseract, the end-to-end run found 5.4.0.20240606 in `%ProgramFiles%\Tesseract-OCR`, read all 14 images, and wrote `source: "install"` with the executable path into `ocr.json`.
 
@@ -241,7 +241,7 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `README.md` | This import, rules and test guide. |
 | `package.json` | `npm test` (unit suite), `npm run e2e` (artifacts, marker, figure and equation verification, raster, crop and OCR steps), `npm run extract` (one PDF or a folder to Markdown), `npm run raster` (page rendering), `npm run ocr` (page and figure reading), `npm run test:python` (optional reference); no dependencies. |
 | `scripts/check_input.mjs` | The input guard, primary runtime — exits `0` with `input ok: N PDF(s)`, exits `1` with `ERROR: ... names no PDF; extraction not started.` |
-| `scripts/extract-pdf.mjs` | The document CLI: renders, crops and writes <name>.md, the sidecar and <name>.extraction-summary.json into one folder per document (`<pdf dir>/<name>/`); --no-raster, --dpi, --name, --move-source and --table-format; refuses two documents that would share a folder. |
+| `scripts/extract-pdf.mjs` | The document CLI: renders, crops and writes <name>.md, the sidecar and <name>.extraction-summary.json into one folder per document (`<pdf dir>/<name>/`); `--no-raster`, `--dpi`, `--name`, `--drop-relative-urls`, `--move-source` and `--table-format`; refuses two documents that would share a folder. |
 | `scripts/check_input.py` | The same guard in Python, for hosts without Node 20+; identical output and exit codes. |
 | `scripts/run_tests.mjs` | Thin end-to-end CLI: runs the steps, writes `unit.txt`, `extraction-<fixture>.txt` and `run.json`, prints the run folder, exits with the combined status. |
 | `scripts/run-steps.mjs` | The steps as testable functions: run-folder creation, stamp and count parsing, page-render lookup, figure, equation and table cropping, raster, OCR and marker verification. |
@@ -252,6 +252,8 @@ Install Tesseract on Windows with `winget install UB-Mannheim.TesseractOCR`, on 
 | `scripts/run_tests.py` | The Python equivalent, kept for parity. |
 | `tests/check_input.test.mjs` | Node guard tests: single PDF, uppercase `.PDF`, recursive folder, non-PDF, missing path, empty folder, usage, CLI run, Python parity. |
 | `tests/extraction.test.mjs` | Output-contract tests for every fixture: page counts, page order, one marker per page, line counts, sidecar and manifest, page-image references; layout assertions (kerning, paragraph breaks, isolated vertical text); the generated multi-page case and the no-image case. |
+| `tests/cid.test.mjs` | The case that used to extract as blank pages: a generated one-page `Type0`/`Identity-H` PDF, `/ToUnicode` `bfchar` and `bfrange` maps, both `/W` width forms, hex-string operands, and a font with no map recording `unmappedGlyphs` instead of inventing letters. |
+| `tests/urls.test.mjs` | `--drop-relative-urls`: a scraped page's `URL:` block and `file://` link target are removed and counted, an address inside a sentence or printed on its own line by the author stays. |
 | `tests/folder-name.test.mjs` | Per-document folder tests: the portable-name rules (case, accents, Windows-forbidden characters, reserved names, length cap and digest), the CLI's `<pdf dir>/<name>/` layout, the explicit-output override, and the collision refusal. |
 | `tests/move-source.test.mjs` | Move-source tests: companion matching (separator, lookalike, another PDF, subfolder), opt-in parsing, the move into the document folder, the overwrite refusal, the same-folder no-op, and the command-line run. |
 | `lib/pdf-extract.mjs` | The extractor: page tree, text layout, font-encoding decode, script and word-gap handling, display-equation detection and emission, fenced tables, image and figure boxes, Markdown writer. |

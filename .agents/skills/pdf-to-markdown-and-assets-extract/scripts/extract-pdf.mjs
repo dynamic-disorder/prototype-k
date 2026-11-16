@@ -15,6 +15,9 @@
  *                            and its prefix-matched non-PDF companions into the
  *                            document's folder. Ask the user before using it
  *     --table-format <f>     ascii (default), csv or pipe
+ *     --drop-relative-urls            remove a line that is only a web address (and a
+ *                            bare `URL:` label above it), recording the count;
+ *                            off by default because it changes the text
  *
  * Each document gets a folder of its own beside the PDF, named after the
  * portable document name: `docs/phonebot-2610.08737v1/` holding
@@ -52,14 +55,14 @@ import { cropEquations, cropFigures, cropTables } from "./run-steps.mjs";
 
 const USAGE =
   "usage: extract-pdf.mjs <pdf or folder> [output dir] [--name <basename>] [--dpi <n>] " +
-  "[--no-raster] [--move-source] [--table-format ascii|csv|pipe]";
+  "[--no-raster] [--move-source] [--drop-relative-urls] [--table-format ascii|csv|pipe]";
 
 const TABLE_FORMATS = ["ascii", "csv", "pipe"];
 
 /**
  * @param {string[]} argv arguments after the script name
  * @returns {{ input: string, out: string | null, name: string | null, dpi: number,
- *   raster: boolean, tableFormat: string }}
+ *   raster: boolean, moveSource: boolean, dropRelativeUrls: boolean, tableFormat: string }}
  */
 export function parseArgs(argv) {
   const options = {
@@ -69,6 +72,7 @@ export function parseArgs(argv) {
     dpi: 150,
     raster: true,
     moveSource: false,
+    dropRelativeUrls: false,
     tableFormat: "ascii",
   };
 
@@ -84,6 +88,7 @@ export function parseArgs(argv) {
     else if (arg === "--dpi") options.dpi = Number(value());
     else if (arg === "--no-raster") options.raster = false;
     else if (arg === "--move-source") options.moveSource = true;
+    else if (arg === "--drop-relative-urls") options.dropRelativeUrls = true;
     else if (arg === "--table-format") options.tableFormat = value();
     else if (arg.startsWith("--")) throw new Error(`unknown option: ${arg}`);
     else if (options.input === null) options.input = arg;
@@ -228,7 +233,7 @@ function writeManifest(assetsDir, label, name, entries) {
  */
 export function extractOne(
   pdf,
-  { out, name, dpi = 150, raster = true, moveSource = false, tableFormat = "ascii" } = {},
+  { out, name, dpi = 150, raster = true, moveSource = false, dropRelativeUrls = false, tableFormat = "ascii" } = {},
 ) {
   const docName = documentName(pdf, name);
   // One folder per document; an explicit output directory overrides the layout.
@@ -280,7 +285,7 @@ export function extractOne(
   const previousFormat = process.env.PDF_TABLE_FORMAT;
   process.env.PDF_TABLE_FORMAT = tableFormat;
   try {
-    writeExtraction(data, outDir, docName);
+    writeExtraction(data, outDir, docName, { dropRelativeUrls });
   } finally {
     if (previousFormat === undefined) delete process.env.PDF_TABLE_FORMAT;
     else process.env.PDF_TABLE_FORMAT = previousFormat;
@@ -364,6 +369,7 @@ export function main(argv) {
         dpi: options.dpi,
         raster: options.raster,
         moveSource: options.moveSource,
+        dropRelativeUrls: options.dropRelativeUrls,
         tableFormat: options.tableFormat,
       });
       console.log(report(result, options.dpi));
