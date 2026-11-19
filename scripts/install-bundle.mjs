@@ -25,6 +25,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { checkBash, describeBash, gitBashDir } from './lib/bash-check.mjs';
 import { applyBlock, validateBlockText } from './lib/managed-block.mjs';
 import {
   STATE_FILE,
@@ -260,6 +261,17 @@ function hooksPathStatus() {
   return { ok: false, status: `would set ${want}` };
 }
 
+// The same interpreter check the linked installer runs, from the same module: a bundled machine has no
+// checkout to compare against, so the gate's own dependency has to be verified here as well.
+function bashStatus() {
+  const state = checkBash();
+  return {
+    ok: state.status === 'ok',
+    status: state.status === 'ok' ? state.found : `${state.status}, ${state.found || 'not found'}`,
+    state,
+  };
+}
+
 out(`bundle : ${root}`);
 out(`agents : ${agentsHome}`);
 out(`mode   : ${mode}\n`);
@@ -294,9 +306,12 @@ if (mode === 'write') {
   hooks = hooksPathStatus();
 }
 
+const bash = bashStatus();
 out(`\n  AGENTS.md  ${agentsResult.status}`);
 out(`  settings   ${settingsResult}`);
 out(`  hooksPath  ${hooks.status}`);
+out(`  bash       ${bash.status}`);
+if (!bash.ok) out(`\n${describeBash(bash.state, gitBashDir())}`);
 
 const drift = plan.add.length + plan.change.length + plan.remove.length;
 if (plan.conflicts.length > 0) {
@@ -308,6 +323,10 @@ if (mode === 'write') {
     fail(`the gate is not wired: ${hooks.status}`);
     process.exit(1);
   }
+  if (!bash.ok) {
+    fail('the gate cannot be run by hand here: fix the bash check above, then re-run --check');
+    process.exit(1);
+  }
   out('\nApplied. Re-run with --check: it must print `Up to date.`');
   process.exit(0);
 }
@@ -315,5 +334,6 @@ if (drift > 0 || agentsResult.status === 'stale' || agentsResult.status === 'wou
   out('\nOut of date — run `node install.mjs --write`.');
   process.exit(1);
 }
-out('\nUp to date.');
-process.exit(hooks.ok ? 0 : 1);
+if (bash.ok) out('\nUp to date.');
+else out('\nFiles are up to date; the bash check is not.');
+process.exit(hooks.ok && bash.ok ? 0 : 1);

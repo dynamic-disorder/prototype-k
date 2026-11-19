@@ -69,7 +69,9 @@ Copy that folder to ~/\.agents on the receiving machine and point git at its hoo
 git config --global core.hooksPath "$HOME/.agents/githooks"
 ```
 
-`export/README.md` carries the full install steps, what the bundle holds, and the files it refuses.
+`export/README.md` carries the full install steps, what the bundle holds, and the files it refuses. The
+bundle's own installer runs the same hooks-path and bash checks as the linked one, so a bundled machine is
+held to the same gate rather than an assumed one.
 
 ## Projects
 
