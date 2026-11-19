@@ -19,16 +19,13 @@ launchSettings.json
 # layer. `**/.agents/*` rather than `.agents/` is deliberate: git cannot re-include a file whose parent
 # directory is excluded, so the directory stays un-ignored and only its contents are ignored. The
 # `**/` prefix keeps one rule working for the root and for any nested project directory. The shared
-# and tracked set is hooks/, commands/, rules/, skills/ and bin/ —
+# and tracked set is hooks/, commands/, rules/ and skills/ —
 # see local_dev/git-ignored-local-files.md.
 **/.agents/*
 !**/.agents/commands/
 !**/.agents/hooks/
 !**/.agents/rules/
 !**/.agents/skills/
-# The PATH-facing shims. `bin/` also matches the build-artifact rule above, so this negation carries
-# both: the directory comes back, and the file inside it becomes trackable.
-!**/.agents/bin/
 AGENTS.local.md
 CLAUDE.local.md
 # settings.local.json is the *personal* overlay; keep this rule even though `**/.agents/*` above

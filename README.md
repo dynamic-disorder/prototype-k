@@ -18,7 +18,6 @@ There is no application code here. What lives in this checkout:
 | :--- | :--- |
 | `.agents/skills/` | The canonical agent skills — one copy, linked into `~/.agents/skills/<name>` |
 | `.agents/hooks/`, `.githooks/` | The build gate and the two git gates |
-| `.agents/bin/` | The `bash` shim the Windows PATH points at, so a hand-run `bash <hook>` is Git Bash, not the WSL launcher |
 | `global/`, `output-style/` | The shared rules and the style block, with the installers that upsert them into `~/.agents/AGENTS.md` |
 | `scripts/` | `install-global.mjs` (links and `core.hooksPath`), `export-agents.mjs` (the portable bundle), `scan-publication-leaks.sh`, and the shared libraries |
 | `export/` | The portable bundle's own inputs: `settings.json`, its `README.md`, the `project-seed/` templates |
@@ -40,20 +39,23 @@ node output-style/install.mjs             # the style block
 That done, every repository on the machine is gated on commit by the one checkout: the publication scan
 runs first, then the build gate when C# is staged.
 
-A hand-run `bash <hook>` needs a `bash` that can open a drive-letter path. On Windows
-`%SystemRoot%\System32\bash.exe` is the WSL launcher and cannot, so the shim directory must come first on
-the machine PATH; the installer reports `bash-wsl` until it does. Run once in an elevated PowerShell, and
-start a new shell afterwards:
+A git hook names its interpreter in its first line, and a git build that resolves that name through PATH
+runs the first `bash` it finds. On Windows that is the WSL launcher, which cannot open a drive-letter
+path, so the hook never starts — GitHub Desktop's bundled git does exactly this. Git's own `bin`
+directory must come first on the machine PATH; the installer reports `bash-wsl` until it does. Run once
+in an elevated PowerShell, and start a new shell afterwards:
 
 ```powershell
-cd $HOME\.agents\bin
+$bin = (git --exec-path).Replace('/mingw64/libexec/git-core', '/bin')
+cd $bin
 $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Session Manager\Environment', $true)
 $raw = [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
 if (-not ($raw -split ';').Contains($PWD.Path)) { $key.SetValue('Path', (@($PWD.Path) + ($raw -split ';' | Where-Object { $_ -ne '' })) -join ';', $key.GetValueKind('Path')) }
 $key.Close()
 ```
 
-Linux and macOS need nothing: `bash` there is the interpreter the check reads.
+Linux and macOS need nothing: `bash` there is the interpreter the check reads, and the installer verifies
+it with the same command.
 
 A machine that cannot see this checkout uses the portable bundle instead. Generate it here:
 

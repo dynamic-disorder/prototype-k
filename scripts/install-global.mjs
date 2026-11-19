@@ -60,7 +60,6 @@ const directoryLinks = [
   ['hooks', path.join(root, '.agents', 'hooks')],
   ['scripts', path.join(root, 'scripts')],
   ['githooks', path.join(root, '.githooks')],
-  ['bin', path.join(root, '.agents', 'bin')],
 ];
 
 const linkType = process.platform === 'win32' ? 'junction' : 'dir';
@@ -149,12 +148,26 @@ function applyHooksPath() {
   return { status: current === '' ? 'created' : 'updated', current };
 }
 
-// Bash resolution — the gate is also run by hand as `bash <hook>`, and that must be a real bash.
-// Windows carries two: the WSL launcher under the Windows directory, which rejects a drive-letter
-// path, and Git Bash. Which one a shell finds is decided by PATH order, and a user PATH cannot beat
-// the machine PATH, so the shim directory is placed first by one elevated step this installer
-// reports but never runs. Elsewhere the check is the interpreter itself.
-const shimDir = path.join(agentsHome, 'bin');
+// Bash resolution — a git hook names its interpreter in its first line, and a git build that resolves
+// that name through PATH runs the first `bash` it finds. On Windows the first one is the WSL launcher,
+// which cannot open a drive-letter path, so the hook never starts; GitHub Desktop ships such a git.
+// A `.cmd` shim does not help: the lookup appends only `.exe`. The repair is Git's own `bin` directory
+// first on the machine PATH — one elevated step this installer reports but never runs. On POSIX the
+// check is the interpreter itself, so the two machines are held to the same guarantee.
+function gitBashDir() {
+  if (process.platform !== 'win32') return '';
+  try {
+    const execPath = execFileSync('git', ['--exec-path'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    // <root>/mingw64/libexec/git-core -> <root>/bin
+    const bin = path.resolve(execPath, '..', '..', '..', 'bin');
+    return fs.existsSync(path.join(bin, 'bash.exe')) ? bin : '';
+  } catch {
+    return '';
+  }
+}
 
 function firstOnPath(names) {
   for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
@@ -169,7 +182,8 @@ function firstOnPath(names) {
 
 function checkBash() {
   if (process.platform === 'win32') {
-    const found = firstOnPath(['bash.cmd', 'bash.bat', 'bash.exe']);
+    // `.exe` only: a `bash.cmd` earlier on PATH is still bypassed by a lookup that appends `.exe`.
+    const found = firstOnPath(['bash.exe']);
     if (found === '') return { status: 'missing', found };
     const windowsRoot = (process.env.SystemRoot ?? 'C:\\Windows').toLowerCase();
     const lower = found.toLowerCase();
@@ -192,12 +206,13 @@ function checkBash() {
 function reportBash(state) {
   if (state.status === 'ok') return;
   if (state.status === 'wsl') {
+    const wanted = gitBashDir() || "the directory holding Git's bash.exe";
     process.stdout.write(
       `\nbash resolves to ${state.found}\n` +
-        '  That is the WSL launcher: it cannot open a drive-letter path, so a hand-run\n' +
-        '  `bash <hook>` fails before the gate starts. Git itself runs the gate through its\n' +
-        '  own shell and is unaffected.\n' +
-        `  Put ${shimDir} first on the machine PATH (README, "Install it on a machine"),\n` +
+        '  That is the WSL launcher: it cannot open a drive-letter path, so a hook that names\n' +
+        '  `bash` in its first line never starts. Git itself is unaffected unless its build\n' +
+        '  resolves the interpreter through PATH, which GitHub Desktop ships.\n' +
+        `  Put ${wanted} first on the machine PATH (README, "Install it on a machine"),\n` +
         '  start a new shell, then re-run this check.\n',
     );
     return;
@@ -205,7 +220,7 @@ function reportBash(state) {
   process.stdout.write(
     '\nbash not found on PATH — the gate cannot be run by hand.\n' +
       (process.platform === 'win32'
-        ? `  Install Git for Windows, then put ${shimDir} first on the machine PATH.\n`
+        ? "  Install Git for Windows; its `bin` directory must come first on the machine PATH.\n"
         : '  Install bash: pacman -S bash (Arch), apt install bash (Debian), brew install bash (macOS).\n'),
   );
 }
