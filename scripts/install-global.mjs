@@ -60,6 +60,7 @@ const directoryLinks = [
   ['hooks', path.join(root, '.agents', 'hooks')],
   ['scripts', path.join(root, 'scripts')],
   ['githooks', path.join(root, '.githooks')],
+  ['bin', path.join(root, '.agents', 'bin')],
 ];
 
 const linkType = process.platform === 'win32' ? 'junction' : 'dir';
@@ -148,6 +149,67 @@ function applyHooksPath() {
   return { status: current === '' ? 'created' : 'updated', current };
 }
 
+// Bash resolution — the gate is also run by hand as `bash <hook>`, and that must be a real bash.
+// Windows carries two: the WSL launcher under the Windows directory, which rejects a drive-letter
+// path, and Git Bash. Which one a shell finds is decided by PATH order, and a user PATH cannot beat
+// the machine PATH, so the shim directory is placed first by one elevated step this installer
+// reports but never runs. Elsewhere the check is the interpreter itself.
+const shimDir = path.join(agentsHome, 'bin');
+
+function firstOnPath(names) {
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    if (dir.trim() === '') continue;
+    for (const name of names) {
+      const candidate = path.join(dir, name);
+      if (fs.existsSync(candidate)) return candidate;
+    }
+  }
+  return '';
+}
+
+function checkBash() {
+  if (process.platform === 'win32') {
+    const found = firstOnPath(['bash.cmd', 'bash.bat', 'bash.exe']);
+    if (found === '') return { status: 'missing', found };
+    const windowsRoot = (process.env.SystemRoot ?? 'C:\\Windows').toLowerCase();
+    const lower = found.toLowerCase();
+    const launcher =
+      lower.startsWith(path.join(windowsRoot, 'system32').toLowerCase()) ||
+      lower.includes(`${path.sep}windowsapps${path.sep}`);
+    return { status: launcher ? 'wsl' : 'ok', found };
+  }
+  try {
+    const version = execFileSync('bash', ['-c', 'printf %s "$BASH_VERSION"'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    return { status: version === '' ? 'missing' : 'ok', found: 'bash' };
+  } catch {
+    return { status: 'missing', found: '' };
+  }
+}
+
+function reportBash(state) {
+  if (state.status === 'ok') return;
+  if (state.status === 'wsl') {
+    process.stdout.write(
+      `\nbash resolves to ${state.found}\n` +
+        '  That is the WSL launcher: it cannot open a drive-letter path, so a hand-run\n' +
+        '  `bash <hook>` fails before the gate starts. Git itself runs the gate through its\n' +
+        '  own shell and is unaffected.\n' +
+        `  Put ${shimDir} first on the machine PATH (README, "Install it on a machine"),\n` +
+        '  start a new shell, then re-run this check.\n',
+    );
+    return;
+  }
+  process.stdout.write(
+    '\nbash not found on PATH — the gate cannot be run by hand.\n' +
+      (process.platform === 'win32'
+        ? `  Install Git for Windows, then put ${shimDir} first on the machine PATH.\n`
+        : '  Install bash: pacman -S bash (Arch), apt install bash (Debian), brew install bash (macOS).\n'),
+  );
+}
+
 const skills = fs
   .readdirSync(skillsSource, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(skillsSource, entry.name, 'SKILL.md')))
@@ -186,6 +248,15 @@ for (const [name, target] of directoryLinks) {
 const hooksPathState = applyHooksPath();
 record(hooksPathState.status, `core.hooksPath = ${hooksPathValue}`);
 
+// Removal leaves the interpreter alone: the machine had a bash before this installer existed.
+const bashState = mode === 'remove' ? { status: 'ok', found: '' } : checkBash();
+if (mode !== 'remove') {
+  record(
+    bashState.status === 'ok' ? 'ok' : `bash-${bashState.status}`,
+    `bash = ${bashState.found || 'not found'}`,
+  );
+}
+
 process.stdout.write(`source : ${root}\n`);
 process.stdout.write(`agents : ${agentsHome}\n`);
 process.stdout.write(`mode   : ${mode}\n\n`);
@@ -194,6 +265,10 @@ for (const [status, count] of Object.entries(counts)) process.stdout.write(`  ${
 if (hooksPathState.current && hooksPathState.current !== hooksPathValue) {
   process.stdout.write(`\ncore.hooksPath was ${hooksPathState.current}\n`);
 }
+
+reportBash(bashState);
+
+const bashOk = mode === 'remove' || bashState.status === 'ok';
 
 if (problems.length > 0) {
   process.stdout.write('\n');
@@ -214,5 +289,13 @@ if (mode === 'check') {
     process.stdout.write('\nSome links or the hooks path are not in place — run with --write.\n');
     process.exit(1);
   }
+  if (!bashOk) {
+    process.stdout.write('\nLinks and the hooks path are in place; the bash check is not.\n');
+    process.exit(1);
+  }
   process.stdout.write('\nAll links and the machine-level hooks path are in place.\n');
 }
+
+// The Windows PATH step needs elevation, so --write stops short of claiming success rather than
+// leaving a machine where the gate cannot be run by hand.
+if (!bashOk) process.exit(1);
