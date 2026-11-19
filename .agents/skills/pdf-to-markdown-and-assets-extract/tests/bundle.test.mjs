@@ -21,6 +21,18 @@ import {
   rewriteReferences,
 } from "../scripts/bundle-markdown.mjs";
 
+test("a README beside the documents is documentation, not a document", () => {
+  withTemp((root) => {
+    writeFileSync(path.join(root, "Done.md"), "# Done\n", "utf8");
+    writeFileSync(path.join(root, "README.md"), "# About this folder\n", "utf8");
+    mkdirSync(path.join(root, "nested"));
+    writeFileSync(path.join(root, "nested", "ReadMe.MD"), "# also documentation\n", "utf8");
+
+    assert.deepEqual(findMarkdown(root), [path.join(root, "Done.md")]);
+    assert.deepEqual(findMarkdown(path.join(root, "README.md")), []);
+  });
+});
+
 function withTemp(body) {
   const root = mkdtempSync(path.join(tmpdir(), "bundle-markdown-"));
   try {

@@ -50,21 +50,32 @@ export function parseArgs(argv) {
   return options;
 }
 
-/** Every Markdown file under a folder, in path order, or the file itself. */
+/**
+ * Every Markdown file under a folder, in path order, or the file itself.
+ *
+ * A README is documentation about the folder, not a document inside it, so it is never bundled into a folder
+ * of its own.
+ */
 export function findMarkdown(input) {
   if (statSync(input).isFile()) {
-    return path.extname(input).toLowerCase() === ".md" ? [input] : [];
+    return path.extname(input).toLowerCase() === ".md" && !isDocumentation(input) ? [input] : [];
   }
   const found = [];
   const walk = (directory) => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const child = path.join(directory, entry.name);
       if (entry.isDirectory()) walk(child);
-      else if (entry.isFile() && path.extname(child).toLowerCase() === ".md") found.push(child);
+      else if (entry.isFile() && path.extname(child).toLowerCase() === ".md" && !isDocumentation(child)) {
+        found.push(child);
+      }
     }
   };
   walk(input);
   return found.sort();
+}
+
+function isDocumentation(file) {
+  return path.basename(file).toLowerCase() === "readme.md";
 }
 
 /**
