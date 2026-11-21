@@ -326,6 +326,24 @@ hypothesis to test, not an instruction to agree with.
   another path. Match depth to stakes.
 - **Monthly self-check:** review recent shell calls that should have been a read or a search instead.
 
+### Engineering concepts: choose the mechanism, not the habit
+
+Binding, adopted 2026-11-21 after digesting the engineering corpus. The rules say how to write code; this
+says when a heavier mechanism is justified at all.
+
+- **The smallest thing that works stays.** A branch is cheap; an engine is a deployment, a schema and an
+  owner. Adopt the heavier mechanism only when a named gate is true, and say which one.
+- **Before hard-coding a rule that will change, ask four questions** — does it change between releases,
+  does a second caller need it, must someone else author or audit it, can you name the decision
+  afterwards? Two or more yes means extract the decision; none means keep the branch.
+- **The same gate shape covers identity, data and process** — claims only across a trust boundary you do
+  not control; event sourcing only when history or replay is a requirement; Scrum only with a team that
+  can commit to a sprint, Kanban otherwise.
+- **The guide is shared and exists once:** `~/.agents/skills/engineering-concepts/`, linked from the
+  umbrella checkout. Read one reference, not all of them.
+- **Every recommendation carries its counter-case,** and a project rule always wins. "Use X" without
+  "do not use X when" is incomplete.
+
 ### Model tiers: plan on the strong model, implement on the default, bulk-work locally
 
 Binding, adopted 2026-11-15 after measuring the local GPU box. Three tiers, one job each; a session

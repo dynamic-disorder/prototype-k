@@ -99,6 +99,7 @@ repository with no staged C# costs a scan only; the gate exits 0 and prints `PAS
 - **Installing or repairing a machine**: `scripts/install-global.mjs` and the `global/` and `output-style/` installers; the machine notes in `~/.agents/AGENTS.md` cover what differs per box.
 - **The portable bundle**: `export/README.md` — what it holds, what it refuses, and how to install it.
 - **Skill authoring**: `docs/agents/README.md` — the four specs, not a paraphrase.
+- **Engineering concepts**: `.agents/skills/engineering-concepts/SKILL.md` — the rules-engine, identity, event-sourcing, fitness-function and process-model decisions, each with its counter-case.
 - **The split and its rationale**: `local_dev/plans/2026-10-15_consolidation-and-multi-repo-plan.md`.
 - **The merge, the export and the move**: `docs/plans/2026-11-11_umbrella-to-template-and-agents-export-plan.md` and its neighbours in `docs/plans/`.
 - **Cross-platform build facts**: `local_dev/analyses/linux-build-audit.md`.

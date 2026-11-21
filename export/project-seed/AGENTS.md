@@ -40,6 +40,9 @@ carries one; an unredirected restore fails on a read-only NuGet cache.
 - **A commit message is public text**: no drive letter, home or profile path, account, user or host name,
   and no description of content that was removed.
 - **No document records how many tests exist** — the test command is the number.
+- **Choose mechanisms from the shared guide** — `~/.agents/skills/engineering-concepts/SKILL.md` answers
+  "rules engine or hard-coded?", "event sourcing or state?" and "claims or local users?" before the code
+  answers it by accident.
 
 ## The commit gate
 
