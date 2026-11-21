@@ -109,7 +109,7 @@ repository with no staged C# costs a scan only; the gate exits 0 and prints `PAS
 
 ## Environment & style
 
-- **Platforms**: Omarchy Linux (Arch-based, primary since Oct 2026) and Windows 11.
+- **Platforms**: Omarchy Linux (Arch-based, primary since Oct 2026) and Windows 10.
 - **SDK**: .NET 10.0.x. The templates target `net10.0`; the project repositories carry their own target frameworks.
 - **Shell**: bash on Linux; PowerShell (preferred) or Git Bash on Windows. Every installer here is Node, so it runs in any of them.
 - **Node**: 20 or newer — the installers, the exporter and the planner tests all use it.

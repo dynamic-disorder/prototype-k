@@ -2,7 +2,7 @@
 
 **Date**: 2026-10-10
 **Scope**: every .NET solution and project in the repository
-**Trigger**: development moved from Windows 11 to Omarchy Linux; `FilenameSanitizerCli.csproj`
+**Trigger**: development moved from Windows 10 to Omarchy Linux; `FilenameSanitizerCli.csproj`
 had already failed once on case-sensitive project references.
 
 > **Partly superseded, 2026-10-18.** Several findings below were fixed by the Piper-on-Linux
