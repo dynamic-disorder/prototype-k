@@ -83,7 +83,7 @@ This is where the Clean Code survey lands: its blockers were the old codebase an
 ## Applying it here
 
 - **Already fitness functions:** the pre-commit gate, the publication scan, the test suites, and the warning policy. Keep them.
-- **First additions worth the cost:** a dependency-direction check over the projects (no cycles, dependencies point at the stable core) and a public API compatibility check for the packable retrieval package. Both are deterministic, both have a zero threshold, and both would be expensive to unwind if they regressed.
+- **First additions now in place:** the architecture suite fails on a reference cycle or a layer violation, and the retrieval suite fails on a removed, renamed or unrecorded public member. Both are deterministic with a zero threshold; keep them green and regenerate the public-API baseline deliberately.
 - **Comprehension assets already present:** `AGENTS.md`, the plan set, the architecture diagrams and the manual. The check is whether a fresh session can use them; when it cannot, the document is the defect.
 - **Guardrails already present:** the project templates, the link-based install and the export. A new repository inherits the gate without deciding to.
 
