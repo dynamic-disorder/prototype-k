@@ -1,13 +1,14 @@
 # TODOS — release follow-ups
 
-Follow-ups from the `DynamicDisorder.CliUtils` 0.1.1 release. Two are closed; the last is fixed and only
-waits on the next release to confirm it, so nothing here blocks the repository.
+Follow-ups from the `DynamicDisorder.CliUtils` 0.1.1 release. Two are closed; the last is fixed and
+measured, and its release-log confirmation now rides on the next real release, so nothing here blocks the
+repository.
 
 | | |
 | :--- | :--- |
 | **Problem** | Nothing is broken. One fix — the symbols double push — is waiting on the next release to be confirmed. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `AGENTS.md`'s figure is now measured rather than assumed. |
-| **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed the same day in **cliutils** (`653ecfe`), two-push log still to confirm. |
+| **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed the same day in **cliutils** (`653ecfe`), and its log confirmation folded into the next real release on 2026-11-21. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Trusting the registration index minutes after a listing change — it caches, the package page does not. |
 
@@ -135,6 +136,29 @@ push of the released 0.1.1 nupkg to a local folder source with the flag succeeds
 endpoint, so the local run shows the flag is accepted and the push works, not the suppression itself.
 
 **Owner: me, on request.** The release that prompted it is already complete.
+
+### Decided 2026-11-21 — folded into the next real release
+
+No release is cut for the confirmation alone: `0.1.2` would publish with no functional change since `v0.1.1`
+— the diff is agent configuration, docs and this workflow, with no `.cs` and no `.csproj` — and a nuget.org
+version cannot be withdrawn. The log check rides on the next release that carries a real change.
+
+The mechanic is no longer unmeasured, and the 2026-10-31 local run could not have measured it. A folder source
+ignores symbol packages entirely: pushing the nupkg with and without the flag moved the same single file, and
+an explicit `.snupkg` push moved nothing, so that run showed the flag was accepted, never that it suppressed
+anything. A local v3 endpoint that advertises a `SymbolPackagePublish` resource does distinguish it, measured
+on Windows 10 with .NET SDK 10.0.301:
+
+| Push | PUT requests |
+| :--- | :--- |
+| nupkg with `--no-symbols` — the shipped shape | 1, package endpoint only |
+| nupkg without the flag — the pre-fix shape | 2, package and symbol |
+| explicit `.snupkg` — the workflow's second step | 1, symbol endpoint |
+
+Two uploads, not three. What a release adds is the nuget.org log line, not the behaviour.
+
+**Closing it:** on the next release, read the publish run log. Expect two upload lines — one package, one
+symbol — and no `Conflict`. Delete this entry then, and record the release beside it.
 
 ---
 
