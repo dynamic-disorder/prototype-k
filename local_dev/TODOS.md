@@ -1,14 +1,13 @@
 # TODOS — release follow-ups
 
-Follow-ups from the `DynamicDisorder.CliUtils` 0.1.1 release. Two are closed; the last is fixed and
-measured, and its release-log confirmation now rides on the next real release, so nothing here blocks the
-repository.
+Follow-ups from the `DynamicDisorder.CliUtils` 0.1.1 release. All three are closed: item 3 was confirmed by
+the `0.1.2` release on 2026-11-21, so nothing here blocks the repository.
 
 | | |
 | :--- | :--- |
-| **Problem** | Nothing is broken. One fix — the symbols double push — is waiting on the next release to be confirmed. |
+| **Problem** | Nothing is broken. The symbols double push was confirmed fixed by the `0.1.2` release log. |
 | **Value** | Item 1 (the Linux gate) closed 2026-10-31 with 280 of 280 tests passing, so `AGENTS.md`'s figure is now measured rather than assumed. |
-| **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed the same day in **cliutils** (`653ecfe`), and its log confirmation folded into the next real release on 2026-11-21. |
+| **Change** | Items 1 and 2 closed 2026-10-31; item 3 fixed in **cliutils** (`653ecfe`) and closed by the `0.1.2` release of 2026-11-21. |
 | **Verify** | Delete an entry only after the command beside it has been run and its output recorded here. |
 | **Top risk** | Trusting the registration index minutes after a listing change — it caches, the package page does not. |
 
@@ -112,7 +111,7 @@ Operational notes — how it was unlisted, and how to reverse it:
 
 **Owner: you.** Done 2026-10-31. The same manage page re-lists it if that is ever wanted.
 
-## 3. `publish.yml` pushed the symbols twice — fixed 2026-10-31, awaiting the next release
+## 3. `publish.yml` pushed the symbols twice — closed 2026-11-21
 
 `dotnet nuget push` already pushes the `.snupkg` sitting beside the `.nupkg`. The workflow then pushed
 that same `.snupkg` explicitly, which always answered `Conflict`. `--skip-duplicate` kept the step
@@ -137,28 +136,38 @@ endpoint, so the local run shows the flag is accepted and the push works, not th
 
 **Owner: me, on request.** The release that prompted it is already complete.
 
-### Decided 2026-11-21 — folded into the next real release
+### Closed 2026-11-21 — released as 0.1.2, and the log shows two uploads
 
-No release is cut for the confirmation alone: `0.1.2` would publish with no functional change since `v0.1.1`
-— the diff is agent configuration, docs and this workflow, with no `.cs` and no `.csproj` — and a nuget.org
-version cannot be withdrawn. The log check rides on the next release that carries a real change.
+The release was cut for the confirmation itself, at the owner's decision. `0.1.2` carries no functional change
+since `v0.1.1` — agent configuration, docs and this workflow; no `.cs` and no `.csproj` build property — so the
+version buys the log line and nothing else. Tag `v0.1.2` on `09e42f5`; publish run `44925629349`, green.
 
-The mechanic is no longer unmeasured, and the 2026-10-31 local run could not have measured it. A folder source
-ignores symbol packages entirely: pushing the nupkg with and without the flag moved the same single file, and
-an explicit `.snupkg` push moved nothing, so that run showed the flag was accepted, never that it suppressed
-anything. A local v3 endpoint that advertises a `SymbolPackagePublish` resource does distinguish it, measured
-on Windows 10 with .NET SDK 10.0.301:
+The push step logged exactly two uploads, both created, and no conflict:
 
-| Push | PUT requests |
-| :--- | :--- |
-| nupkg with `--no-symbols` — the shipped shape | 1, package endpoint only |
-| nupkg without the flag — the pre-fix shape | 2, package and symbol |
-| explicit `.snupkg` — the workflow's second step | 1, symbol endpoint |
+```
+Pushing DynamicDisorder.CliUtils.0.1.2.nupkg to 'https://www.nuget.org/api/v2/package'...
+  PUT https://www.nuget.org/api/v2/package/
+  Created https://www.nuget.org/api/v2/package/ 330ms
+Pushing DynamicDisorder.CliUtils.0.1.2.snupkg to 'https://www.nuget.org/api/v2/symbolpackage'...
+  PUT https://www.nuget.org/api/v2/symbolpackage/
+  Created https://www.nuget.org/api/v2/symbolpackage/ 251ms
+```
 
-Two uploads, not three. What a release adds is the nuget.org log line, not the behaviour.
+One package, one symbol package. The third push and its `Conflict` are gone.
 
-**Closing it:** on the next release, read the publish run log. Expect two upload lines — one package, one
-symbol — and no `Conflict`. Delete this entry then, and record the release beside it.
+Verified before the tag went up: a Release build with 0 warnings and 0 errors, both local archives declaring
+`0.1.2`, the DLL's CodeView record reading `/_/obj/Release/net10.0/CliUtils.pdb`, and neither archive holding
+an absolute path. Verified after: the published nupkg downloads (sha256 `2906c721…`), its entries carry no
+absolute path, the package page serves the symbols download (10.83 KB), and `0.1.2` sits listed in the
+registration index beside `0.1.1`. The flat container served it about four and a half minutes after the push —
+the indexing lag this file records under item 2.
+
+The mechanic behind the fix, measured rather than assumed on Windows 10 with .NET SDK 10.0.301: a local v3
+endpoint advertising a `SymbolPackagePublish` resource takes two PUTs from the nupkg push without
+`--no-symbols`, and one with it. The 2026-10-31 folder-source run could not show this, because a folder feed
+ignores symbol packages entirely.
+
+**Owner: me, on request.** Closed by the `0.1.2` release; nothing left to confirm.
 
 ---
 
