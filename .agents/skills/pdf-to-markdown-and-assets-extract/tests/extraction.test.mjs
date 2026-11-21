@@ -307,9 +307,16 @@ for (const [name, expected] of Object.entries(EXPECTED)) {
         const metadata = JSON.parse(readFileSync(meta, "utf8"));
         const manifest = JSON.parse(readFileSync(summary, "utf8"));
 
+        const metaText = readFileSync(meta, "utf8");
+        assert.match(metaText, /^\{\n  "docId"/, "metadata must be pretty-printed");
         assert.equal(metadata.pages, expected.pages);
         assert.equal(manifest.documents[0].pages, expected.pages);
         assert.equal(manifest.documents[0].name, name);
+        assert.equal(metadata.extractorVersion, "1.14.0");
+        assert.match(metadata.sourceHash, /^[a-f0-9]{64}$/);
+        assert.equal(typeof metadata.quality.spacePer100Letters, "number");
+        assert.ok(Array.isArray(metadata.warnings));
+        assert.ok("raster" in manifest.documents[0]);
       });
     });
   });

@@ -13,6 +13,7 @@
  * Tables are not reconstructed into Markdown tables: their rows survive as text
  * lines, which is the limit of a fixture-grade extractor.
  */
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, writeFileSync }
 
  from "node:fs";
@@ -44,6 +45,9 @@ export const RESOURCE_DIR = path.join(HERE, "..", "tests", "resources");
 export const PDF_PATH = path.join(RESOURCE_DIR, "embedded-images-tables.pdf");
 
 export const FIXTURE_NAME = path.basename(PDF_PATH, path.extname(PDF_PATH));
+
+/** Written into every sidecar and summary so a run can be attributed. */
+export const EXTRACTOR_VERSION = "1.14.0";
 
 /** Absolute path to a fixture PDF in tests/resources.
  */
@@ -755,9 +759,10 @@ const CONTENT_TOKEN =
  * @param {Map<string, object> | undefined} fonts resource name → decoder
  * @param {object[]} [rules] collected horizontal rules in page points
  */
-function parseContent(content, runs, fonts, rules = [], verticals = []) {
+export function parseContent(content, runs, fonts, rules = [], verticals = []) {
   const operands = [];
   let matrix = [1, 0, 0, 1, 0, 0];
+  let lineMatrix = [1, 0, 0, 1, 0, 0];
   let ctm = [1, 0, 0, 1, 0, 0];
   const ctmStack = [];
   let leading = 0;
@@ -788,10 +793,15 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
     for (const piece of pieces) {
       if (piece.gap !== undefined) {
         const advance = piece.gap * em;
-        if (advance >= em * 0.15 && word) {
-          words.push(word);
-          word = null;
-          text += " ";
+        // A leading gap is still a word gap: the fixture writes `[-276(2017)]`
+        // as its own `TJ`, and dropping it fused the citation number into the
+        // page marker.
+        if (advance >= em * 0.15) {
+          if (word) {
+            words.push(word);
+            word = null;
+          }
+          if (!text || !/\s$/.test(text)) text += " ";
         }
         offset += advance;
         continue;
@@ -816,8 +826,13 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
       }
     }
     if (word) words.push(word);
-    const clean = text.replace(/\s+/g, " ").trim();
-    if (!clean) return;
+    // Keep the run's own edge spaces: this PDF starts a word with `( Pa)` or
+    // ends one with `(ns )`, and trimming either fuses it into its neighbour.
+    // The finished line is trimmed and its runs collapsed by `joinRuns`.
+    const clean = text.replace(/\s+/g, " ");
+    // A run of only spaces records no text, but its advance still moves the
+    // text matrix — that is the space between two words drawn as `( ) Tj`.
+    if (!clean.trim()) return offset;
     runs.push({
       x: effective[4],
       y: effective[5],
@@ -828,6 +843,7 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
       family: font?.family ?? "other",
       words,
     });
+    return offset;
   };
   /**
    * Record a stroked path when it is one straight line: a fraction bar, a table
@@ -853,15 +869,38 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
     }
     path = null;
   };
-  const move = (tx, ty) => {
+  /**
+   * Advance the text matrix after a `Tj` or `TJ`, along the run's own
+   * direction. The offset is already in page points, so the matrix axes are
+   * normalized first: a scaled text matrix must not scale the advance twice.
+   */
+  const advanceText = (distance) => {
+    if (!distance) return;
+    const norm = Math.hypot(matrix[0], matrix[1]) || 1;
     matrix = [
       matrix[0],
       matrix[1],
       matrix[2],
       matrix[3],
-      matrix[4] + matrix[0] * tx + matrix[2] * ty,
-      matrix[5] + matrix[1] * tx + matrix[3] * ty,
+      matrix[4] + (matrix[0] / norm) * distance,
+      matrix[5] + (matrix[1] / norm) * distance,
     ];
+  };
+  /**
+   * `Td` is relative to the text line matrix, not to the current text matrix:
+   * a `Td` after a `Tj` starts from the line origin, otherwise the glyph
+   * advance is counted twice.
+   */
+  const move = (tx, ty) => {
+    lineMatrix = [
+      lineMatrix[0],
+      lineMatrix[1],
+      lineMatrix[2],
+      lineMatrix[3],
+      lineMatrix[4] + lineMatrix[0] * tx + lineMatrix[2] * ty,
+      lineMatrix[5] + lineMatrix[1] * tx + lineMatrix[3] * ty,
+    ];
+    matrix = [...lineMatrix];
   };
   const numbers = () => operands.filter((value) => typeof value === "number");
   for (const token of content.matchAll(CONTENT_TOKEN)) {
@@ -932,10 +971,14 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
         break;
       case "BT":
         matrix = [1, 0, 0, 1, 0, 0];
+        lineMatrix = [1, 0, 0, 1, 0, 0];
         break;
       case "Tm": {
         const last = numbers().slice(-6);
-        if (last.length === 6) matrix = last;
+        if (last.length === 6) {
+          matrix = last;
+          lineMatrix = [...last];
+        }
         break;
       }
       case "Td":
@@ -967,13 +1010,15 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
       case "Tj": {
         const literal = operands.at(-1);
         if (typeof literal === "string" && /^[<(]/.test(literal)) {
-          emit([{ text: stringBytes(literal) }]);
+          advanceText(emit([{ text: stringBytes(literal) }]));
         }
         break;
       }
       case "TJ": {
         const array = operands.at(-1);
-        if (typeof array === "string" && array.startsWith("[")) emit(showText(array).pieces);
+        if (typeof array === "string" && array.startsWith("[")) {
+          advanceText(emit(showText(array).pieces));
+        }
         break;
       }
       case "'":
@@ -981,7 +1026,7 @@ function parseContent(content, runs, fonts, rules = [], verticals = []) {
         move(0, -leading);
         const literal = operands.at(-1);
         if (typeof literal === "string" && /^[<(]/.test(literal)) {
-          emit([{ text: stringBytes(literal) }]);
+          advanceText(emit([{ text: stringBytes(literal) }]));
         }
         break;
       }
@@ -1031,8 +1076,19 @@ export function groupLines(runs) {
     lines.push(row);
   }
   return lines.map((line) => {
-    const parts = [...line.parts]
-      .sort((left, right) => left.x - right.x)
+    const ordered = [...line.parts];
+    // A same-size x inversion inside one line is a broken text matrix, not a
+    // column order: keep the stream order that the page drew. A smaller run
+    // that moves left is a superscript or footnote marker, which x still places.
+    const inverted = ordered.some((part, index) => {
+      const previous = ordered[index - 1];
+      return (
+        previous !== undefined &&
+        Math.abs(part.size - previous.size) < 0.01 &&
+        part.x < previous.x - 0.5
+      );
+    });
+    const parts = (inverted ? ordered : ordered.sort((left, right) => left.x - right.x))
       .map((part) => ({
         x: part.x,
         y: part.y,
@@ -1084,6 +1140,27 @@ export function needsSpace(previous, next, gap, size) {
   if (Math.abs(gap) <= Math.max(0.2, size * 0.12)) return false;
   return /[A-Za-z0-9).,:;]$/.test(previous) && /^[A-Za-z0-9(]/.test(next);}
 
+/**
+ * Recompose a diaeresis the PDF draws as its own spacing glyph.
+ *
+ * `Sipil¨a` is not a UTF-8 failure: the file is UTF-8 and the bytes decode to
+ * U+00A8 followed by `a`. The text layer stores the diaeresis as a separate
+ * glyph, so NFC alone cannot compose it. A combining mark is handled by NFC;
+ * the spacing form is mapped for the Finnish/German vowels that use it.
+ */
+export function normalizeText(text) {
+  const vowels = { a: "ä", o: "ö", u: "ü", A: "Ä", O: "Ö", U: "Ü" };
+  return String(text)
+    .normalize("NFC")
+    .replace(/[ \t]*\u00a8[ \t]*([aou])/g, (_, vowel) => vowels[vowel])
+    .replace(/\u00a8([AOU])/g, (_, vowel) => vowels[vowel])
+    // A diaeresis followed by whitespace has no vowel to compose; it is a stray
+    // mark from the text layer, not a character of its own.
+    .replace(/[ \t]*\u00a8(?=\s|$)/g, "")
+    // The text layer drops a citation's closing bracket at some line ends.
+    .replace(/(\[[A-Za-zÄÖÅ][A-Za-z0-9+._-]*\d{2,4})$/g, "$1]");
+}
+
 /** Join runs of one line, inserting a space only across a visible gap.
  */
 function joinRuns(parts) {
@@ -1095,7 +1172,7 @@ function joinRuns(parts) {
     text += part.text;
     cursor = part.x + part.width;
   }
-  return text.replace(/\s+/g, " ").trim();}
+  return normalizeText(text.replace(/\s+/g, " ").trim());}
 
 /**
  * Read every page in document order, with its text laid out line by line and
@@ -1518,8 +1595,8 @@ export function findTables(lines, size, equations = [], rules = [], verticals = 
  * @returns {{ page: number, x: number, y: number, width: number, height: number,
  *   pageWidth: number, pageHeight: number }[]}
  */
-export function tableBoxes(data) {
-  return listPages(data).flatMap((page) =>
+export function tableBoxes(data, pages = listPages(data)) {
+  return pages.flatMap((page) =>
     emittedBlocks(page).tables.map((table) => ({ page: page.number, ...table.box })),
   );}
 
@@ -1528,8 +1605,8 @@ export function tableBoxes(data) {
  * @returns {{ page: number, x: number, y: number, width: number, height: number,
  *   pageWidth: number, pageHeight: number, latex: string, tag: string | null }[]}
  */
-export function equationBoxes(data) {
-  return listPages(data).flatMap((page) =>
+export function equationBoxes(data, pages = listPages(data)) {
+  return pages.flatMap((page) =>
     emittedBlocks(page).equations.map((equation) => ({
       page: page.number,
       ...equation.box,
@@ -1679,6 +1756,91 @@ export function extractText(data) {
     .filter(Boolean)
     .join(" ");}
 
+/**
+ * Cheap evidence that the text layer may have lost word boundaries.
+ *
+ * A text layer can carry every letter and still omit the spaces — the
+ * 431-page run that prompted this check produced `Aswewerewriting` and
+ * `manydifferent`. The check does not edit the prose and does not fail a run:
+ * it counts the two shapes that defect makes (a long token with no space, and a
+ * long line with no space at all) and puts them in the sidecar and summary.
+ * A legitimate code-heavy document can trip the long-token count, which is why
+ * it is a warning, not an error.
+ *
+ * @param {{ text: string }[]} pages
+ * @returns {{ lines: number, characters: number, spaces: number,
+ *   spacePer100Letters: number, longTokens: number, noSpaceLines: number,
+ *   samples: string[], warnings: string[] }}
+ */
+export function textQuality(pages) {
+  let lines = 0;
+  let characters = 0;
+  let spaces = 0;
+  let letters = 0;
+  let longTokens = 0;
+  let noSpaceLines = 0;
+  const samples = [];
+
+  for (const page of pages) {
+    for (const line of page.lines ?? []) {
+      const text = line.text.trim();
+      if (!text) continue;
+      lines += 1;
+      characters += text.length;
+      spaces += (text.match(/ /g) ?? []).length;
+      letters += (text.match(/\p{L}/gu) ?? []).length;
+
+      // A table of contents prints a dot leader and a page number with no
+      // space; it is not fused prose and must not become a warning.
+      const dotLeader = /\.{5,}|\u2026{2,}/.test(text);
+      // A code line legitimately has no spaces; its punctuation is the marker.
+      const codeLike = /[{};()[\]=<>_]|->|::|https?:\/\/|www\./i.test(text);
+      if (!dotLeader && !codeLike && text.length >= 40 && !/\s/.test(text)) {
+        noSpaceLines += 1;
+        if (samples.length < 5) samples.push(text.slice(0, 100));
+      }
+
+      for (const token of text.split(" ")) {
+        // CamelCase is an identifier (`SimpleLayoutStrategy`), not evidence of
+        // a missing space; a long all-lowercase token is the fused shape.
+        if (/^[a-z]{20,}$/.test(token)) {
+          longTokens += 1;
+          if (samples.length < 5) samples.push(token);
+        }
+      }
+    }
+  }
+
+  const spacePer100Letters = letters === 0 ? 0 : Number(((spaces / letters) * 100).toFixed(2));
+  const warnings = [];
+  if (noSpaceLines > 0) {
+    warnings.push(
+      `${noSpaceLines} long line(s) carry no space; the text layer may have lost word boundaries`,
+    );
+  }
+  if (longTokens > 10) {
+    warnings.push(
+      `${longTokens} token(s) are longer than 20 letters; long compounds are legitimate, so check the samples against the page images`,
+    );
+  }
+  if (spacePer100Letters > 0 && spacePer100Letters < 8) {
+    warnings.push(
+      `only ${spacePer100Letters} space(s) per 100 letters; the text layer may be compressed or fused`,
+    );
+  }
+
+  return {
+    lines,
+    characters,
+    spaces,
+    spacePer100Letters,
+    longTokens,
+    noSpaceLines,
+    samples,
+    warnings,
+  };
+}
+
 /** Read the first embedded image: its bytes, width and height.
  */
 export function extractImage(data) {
@@ -1723,8 +1885,13 @@ export function formatText(text, width = 100) {
 function lineWords(line) {
   return (line.parts ?? []).flatMap((part) =>
     part.words?.length
-      ? part.words.map((word) => ({ ...word, size: part.size }))
-      : [{ text: part.text, x: part.x, width: part.width ?? part.text.length * part.size * 0.5, size: part.size }],
+      ? part.words.map((word) => ({ ...word, text: normalizeText(word.text), size: part.size }))
+      : [{
+          text: normalizeText(part.text),
+          x: part.x,
+          width: part.width ?? part.text.length * part.size * 0.5,
+          size: part.size,
+        }],
   );}
 
 /**
@@ -1797,7 +1964,11 @@ export function layoutTable(lines) {
     }
     return out.replace(/\s+$/, "");
   });
-  return ["```text", ...rendered.filter((line) => line.length > 0), "```"].join("\n");}
+  return [
+    "```text",
+    ...rendered.filter((line) => line.length > 0).map((line) => normalizeText(line)),
+    "```",
+  ].join("\n");}
 
 /**
  * Place the cells of a table into a rectangular grid.
@@ -1919,7 +2090,7 @@ export function renderLine(line) {
     cursor = Math.max(...span.map((run) => run.x + run.width));
     index = end + 1;
   }
-  return pieces.join("").replace(/\s+/g, " ").trim();}
+  return normalizeText(pieces.join("").replace(/\s+/g, " ").trim());}
 
 /**
  * The equations and tables the page body actually emits, in emission order.
@@ -2128,8 +2299,16 @@ export function stripRelativeUrls(markdown) {
   return { markdown: kept.join("\n"), dropped };
 }
 
-export function writeExtraction(data, outDir, name = FIXTURE_NAME, { dropRelativeUrls = false } = {}) {
-  const pages = listPages(data);
+export function writeExtraction(
+  data,
+  outDir,
+  name = FIXTURE_NAME,
+  { dropRelativeUrls = false, pages: suppliedPages, run = {} } = {},
+) {
+  // The caller may have parsed the pages already (the CLI does, to count them
+  // and to find boxes); accepting them removes a second full parse of a large
+  // PDF.
+  const pages = suppliedPages ?? listPages(data);
   const image = extractImage(data);
   let imagePath = null;
   if (image) {
@@ -2138,15 +2317,19 @@ export function writeExtraction(data, outDir, name = FIXTURE_NAME, { dropRelativ
     imagePath = path.join(assets, "image-1.jpg");
     writeFileSync(imagePath, image.bytes);
   }
+  const pageImages = findImages(outDir, name, "page");
+  const figureImages = findImages(outDir, name, "figure");
+  const equationImages = findImages(outDir, name, "equation");
+  const tableImages = findImages(outDir, name, "table");
   const md = path.join(outDir, `${name}.md`);
   const written = pageMarkedMarkdown(
     pages,
     name,
     image !== null,
-    findImages(outDir, name, "page"),
-    findImages(outDir, name, "figure"),
-    findImages(outDir, name, "equation"),
-    findImages(outDir, name, "table"),
+    pageImages,
+    figureImages,
+    equationImages,
+    tableImages,
     ["csv", "pipe"].includes(process.env.PDF_TABLE_FORMAT) ? process.env.PDF_TABLE_FORMAT : "ascii",
   );
   const stripped = dropRelativeUrls ? stripRelativeUrls(written) : { markdown: written, dropped: 0 };
@@ -2157,33 +2340,39 @@ export function writeExtraction(data, outDir, name = FIXTURE_NAME, { dropRelativ
   const equations = emitted.reduce((total, page) => total + page.equations.length, 0);
   const tables = emitted.reduce((total, page) => total + page.tables.length, 0);
   const urlsDropped = stripped.dropped;
+  const quality = textQuality(pages);
+  const textPages = pages.filter((page) => page.text.trim().length > 0).length;
+  const characters = pages.reduce((total, page) => total + page.text.length, 0);
+  const sourceHash = createHash("sha256").update(data).digest("hex");
+  const document = {
+    name,
+    status: "ok",
+    pages: pages.length,
+    textPages,
+    characters,
+    spacePer100Letters: quality.spacePer100Letters,
+    images,
+    pageImages: pageImages.length,
+    figures: figureImages.length,
+    equations,
+    equationImages: equationImages.length,
+    tables,
+    tableImages: tableImages.length,
+    unmappedGlyphs,
+    urlsDropped,
+    sourceHash,
+    extractorVersion: EXTRACTOR_VERSION,
+    raster: run.raster ?? null,
+    ocr: run.ocr ?? {
+      status: "not-run",
+      reason: "the bundled extractor writes OCR beside an image, never into the Markdown",
+    },
+    quality,
+    warnings: quality.warnings,
+  };
   const meta = path.join(outDir, `${name}.metadata.json`);
-  writeFileSync(
-    meta,
-    JSON.stringify({
-      docId: name,
-      pages: pages.length,
-      images,
-      equations,
-      tables,
-      unmappedGlyphs,
-      urlsDropped,
-    }),
-    "utf8",
-  );
+  writeFileSync(meta, `${JSON.stringify({ docId: name, ...document }, null, 2)}\n`, "utf8");
   const summary = path.join(outDir, `${name}.extraction-summary.json`);
-  writeFileSync(
-    summary,
-    JSON.stringify(
-      {
-        documents: [
-          { name, pages: pages.length, images, equations, tables, unmappedGlyphs, urlsDropped },
-        ],
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
-  return { md, meta, summary, imagePath };}
+  writeFileSync(summary, JSON.stringify({ documents: [document] }, null, 2), "utf8");
+  return { md, meta, summary, imagePath, document };}
 

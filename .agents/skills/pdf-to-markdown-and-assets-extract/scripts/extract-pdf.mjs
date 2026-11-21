@@ -11,6 +11,14 @@
  *     --dpi <n>              page render resolution, default 150
  *     --no-raster            skip page renders, and the figure, equation and
  *                            table crops that need them
+ *     --no-reuse-raster      re-render every page even when an existing
+ *                            raster.json names the same source hash and dpi
+ *     --with-accessibility-assets
+ *                            write <name>-accessibility.md with page headings,
+ *                            inline captioned assets and descriptive file
+ *                            names; this is the default
+ *     --no-accessibility-assets
+ *                            write only the default Markdown and assets
  *     --move-source          after a successful extraction, move the source PDF
  *                            and its prefix-matched non-PDF companions into the
  *                            document's folder. Ask the user before using it
@@ -28,6 +36,7 @@
  * fails, or that renders a page count other than the document's, is an error
  * rather than a skip.
  */
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
   existsSync,
@@ -41,6 +50,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 
+import { writeAccessibilityAssets } from "../lib/accessibility-assets.mjs";
 import { folderNameFor } from "../lib/folder-name.mjs";
 import { invokedDirectly } from "../lib/invoked.mjs";
 import {
@@ -55,14 +65,17 @@ import { cropEquations, cropFigures, cropTables } from "./run-steps.mjs";
 
 const USAGE =
   "usage: extract-pdf.mjs <pdf or folder> [output dir] [--name <basename>] [--dpi <n>] " +
-  "[--no-raster] [--move-source] [--drop-relative-urls] [--table-format ascii|csv|pipe]";
+  "[--no-raster] [--no-reuse-raster] [--with-accessibility-assets] " +
+  "[--no-accessibility-assets] [--move-source] " +
+  "[--drop-relative-urls] [--table-format ascii|csv|pipe]";
 
 const TABLE_FORMATS = ["ascii", "csv", "pipe"];
 
 /**
  * @param {string[]} argv arguments after the script name
  * @returns {{ input: string, out: string | null, name: string | null, dpi: number,
- *   raster: boolean, moveSource: boolean, dropRelativeUrls: boolean, tableFormat: string }}
+ *   raster: boolean, reuseRaster: boolean, accessibilityAssets: boolean,
+ *   moveSource: boolean, dropRelativeUrls: boolean, tableFormat: string }}
  */
 export function parseArgs(argv) {
   const options = {
@@ -71,6 +84,8 @@ export function parseArgs(argv) {
     name: null,
     dpi: 150,
     raster: true,
+    reuseRaster: true,
+    accessibilityAssets: true,
     moveSource: false,
     dropRelativeUrls: false,
     tableFormat: "ascii",
@@ -87,6 +102,9 @@ export function parseArgs(argv) {
     if (arg === "--name") options.name = value();
     else if (arg === "--dpi") options.dpi = Number(value());
     else if (arg === "--no-raster") options.raster = false;
+    else if (arg === "--no-reuse-raster") options.reuseRaster = false;
+    else if (arg === "--with-accessibility-assets") options.accessibilityAssets = true;
+    else if (arg === "--no-accessibility-assets") options.accessibilityAssets = false;
     else if (arg === "--move-source") options.moveSource = true;
     else if (arg === "--drop-relative-urls") options.dropRelativeUrls = true;
     else if (arg === "--table-format") options.tableFormat = value();
@@ -227,13 +245,64 @@ function writeManifest(assetsDir, label, name, entries) {
 }
 
 /**
+ * An existing complete render for the same source and dpi.
+ *
+ * Re-rendering every page is the expensive part of a refresh; a 431-page
+ * document paid it twice in one session. The manifest names the source hash,
+ * the dpi and every page file, so reuse is proved rather than assumed. A
+ * missing file or a different hash/dpi returns null and the caller renders.
+ *
+ * @param {string} assetsDir
+ * @param {{ sourceHash: string, dpi: number, pageCount: number }} expected
+ * @returns {object | null}
+ */
+export function findReusableRaster(assetsDir, { sourceHash, dpi, pageCount }) {
+  const manifestPath = path.join(assetsDir, "raster.json");
+  if (!existsSync(manifestPath)) return null;
+
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch {
+    return null;
+  }
+  if (manifest.sourceHash !== sourceHash) return null;
+  if (Number(manifest.dpi) !== Number(dpi)) return null;
+
+  const files = Array.isArray(manifest.pages) ? manifest.pages : [];
+  if (files.length !== pageCount) return null;
+  const pages = files.map((file) => path.join(assetsDir, path.basename(file)));
+  if (!pages.every((file) => existsSync(file) && statSync(file).size > 0)) return null;
+
+  return {
+    status: "reused",
+    tool: manifest.tool,
+    source: manifest.source,
+    ...(manifest.executable === undefined ? {} : { executable: manifest.executable }),
+    ...(manifest.version === undefined ? {} : { version: manifest.version }),
+    dpi: Number(manifest.dpi),
+    pages,
+  };
+}
+
+/**
  * Render, crop and write one document.
  * @returns {{ name: string, pages: number, figures: number, equations: number,
  *   tables: number, raster: object | null, moved: string[] }}
  */
 export function extractOne(
   pdf,
-  { out, name, dpi = 150, raster = true, moveSource = false, dropRelativeUrls = false, tableFormat = "ascii" } = {},
+  {
+    out,
+    name,
+    dpi = 150,
+    raster = true,
+    reuseRaster = true,
+    accessibilityAssets = true,
+    moveSource = false,
+    dropRelativeUrls = false,
+    tableFormat = "ascii",
+  } = {},
 ) {
   const docName = documentName(pdf, name);
   // One folder per document; an explicit output directory overrides the layout.
@@ -241,18 +310,25 @@ export function extractOne(
   mkdirSync(outDir, { recursive: true });
 
   const data = readFileSync(pdf);
-  const pageCount = listPages(data).length;
+  const pages = listPages(data);
+  const pageCount = pages.length;
+  const sourceHash = createHash("sha256").update(data).digest("hex");
   const assetsDir = path.join(outDir, `${docName}.assets`);
 
   let outcome = null;
   if (raster) {
     mkdirSync(assetsDir, { recursive: true });
-    outcome = rasterise({ pdf, outDir: assetsDir, dpi });
+    outcome = reuseRaster
+      ? findReusableRaster(assetsDir, { sourceHash, dpi, pageCount })
+      : null;
+    if (!outcome) outcome = rasterise({ pdf, outDir: assetsDir, dpi });
     writeFileSync(
       path.join(assetsDir, "raster.json"),
       `${JSON.stringify(
         {
           name: docName,
+          sourceHash,
+          pageCount,
           ...outcome,
           // Names, not paths: the manifest is committed with the document.
           pages: outcome.pages.map((page) => path.basename(page)),
@@ -261,17 +337,24 @@ export function extractOne(
         2,
       )}\n`,
     );
-    if (outcome.status === "rendered" && outcome.pages.length !== pageCount) {
-      throw new Error(`rendered ${outcome.pages.length} page(s) for a ${pageCount}-page document`);
+    if (
+      (outcome.status === "rendered" || outcome.status === "reused") &&
+      outcome.pages.length !== pageCount
+    ) {
+      throw new Error(
+        `${outcome.status} ${outcome.pages.length} page(s) for a ${pageCount}-page document`,
+      );
     }
   }
 
   const counts = { figures: 0, equations: 0, tables: 0 };
-  if (outcome?.status === "rendered") {
+  if (outcome?.status === "rendered" || outcome?.status === "reused") {
+    // The page parse is reused for equations and tables; figures still walk the
+    // content streams for Form XObjects, which a page's text lines do not hold.
     const jobs = [
       { label: "figures", boxes: figureBoxes(data), crop: cropFigures },
-      { label: "equations", boxes: equationBoxes(data), crop: cropEquations },
-      { label: "tables", boxes: tableBoxes(data), crop: cropTables },
+      { label: "equations", boxes: equationBoxes(data, pages), crop: cropEquations },
+      { label: "tables", boxes: tableBoxes(data, pages), crop: cropTables },
     ];
 
     for (const job of jobs) {
@@ -284,18 +367,80 @@ export function extractOne(
 
   const previousFormat = process.env.PDF_TABLE_FORMAT;
   process.env.PDF_TABLE_FORMAT = tableFormat;
+  let written;
   try {
-    writeExtraction(data, outDir, docName, { dropRelativeUrls });
+    written = writeExtraction(data, outDir, docName, {
+      dropRelativeUrls,
+      pages,
+      run: {
+        raster: outcome
+          ? {
+              status: outcome.status,
+              tool: outcome.tool,
+              source: outcome.source,
+              ...(outcome.version === undefined ? {} : { version: outcome.version }),
+              ...(outcome.executable === undefined ? {} : { executable: outcome.executable }),
+              dpi: outcome.dpi,
+              pages: outcome.pages.length,
+              reused: outcome.status === "reused",
+            }
+          : null,
+      },
+    });
   } finally {
     if (previousFormat === undefined) delete process.env.PDF_TABLE_FORMAT;
     else process.env.PDF_TABLE_FORMAT = previousFormat;
+  }
+
+  let accessibility = null;
+  if (accessibilityAssets) {
+    accessibility = writeAccessibilityAssets({
+      outDir,
+      name: docName,
+      pages,
+      targetMd: path.join(outDir, `${docName}.md`),
+      targetAssets: assetsDir,
+    });
+    // Remove the old separate variant from the pre-merge layout.
+    for (const stale of [
+      path.join(outDir, `${docName}-accessibility.md`),
+      path.join(outDir, `${docName}-accessibility.assets`),
+    ]) {
+      if (existsSync(stale)) rmSync(stale, { recursive: true, force: true });
+    }
+    const summaryPath = path.join(outDir, `${docName}.extraction-summary.json`);
+    const metaPath = path.join(outDir, `${docName}.metadata.json`);
+    const accessibilityInfo = {
+      layout: "merged",
+      md: path.basename(accessibility.md),
+      assets: path.basename(accessibility.assetsDir),
+      omittedTableCandidates: accessibility.omittedTableCandidates,
+      warnings: accessibility.warnings,
+    };
+    for (const file of [summaryPath, metaPath]) {
+      const value = JSON.parse(readFileSync(file, "utf8"));
+      const document = file === summaryPath ? value.documents[0] : value;
+      document.accessibility = accessibilityInfo;
+      document.warnings = [...new Set([...(document.warnings ?? []), ...accessibility.warnings])];
+      writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+    }
   }
 
   // The move runs last: the Markdown is safe even when it fails, and the PDF
   // stays where a failed run can find it again.
   const moved = moveSource ? moveSourceFiles(pdf, outDir) : [];
 
-  return { name: docName, pages: pageCount, ...counts, raster: outcome, moved };
+  return {
+    name: docName,
+    pages: pageCount,
+    ...counts,
+    raster: outcome,
+    accessibility,
+    moved,
+    warnings: [
+      ...new Set([...written.document.warnings, ...(accessibility?.warnings ?? [])]),
+    ],
+  };
 }
 
 /** One line per document: what it holds and whether the pages were rendered. */
@@ -303,13 +448,21 @@ function report(result, dpi) {
   const raster = result.raster
     ? result.raster.status === "rendered"
       ? `${result.raster.pages.length} page(s) via ${toolLabel(result.raster)} at ${dpi} dpi`
-      : `skipped (${result.raster.reason})`
+      : result.raster.status === "reused"
+        ? `${result.raster.pages.length} page(s) reused (${toolLabel(result.raster)} at ${dpi} dpi)`
+        : `skipped (${result.raster.reason})`
     : "skipped (--no-raster)";
   const source =
     result.moved.length > 0 ? `, source: ${result.moved.length} file(s) moved in` : "";
+  const warnings =
+    (result.warnings?.length ?? 0) > 0 ? `, warnings: ${result.warnings.length}` : "";
+  const omitted = result.accessibility?.omittedTableCandidates
+    ? `, ${result.accessibility.omittedTableCandidates} table candidate(s) omitted`
+    : "";
+  const accessibility = result.accessibility ? `, accessibility: merged${omitted}` : "";
   return (
     `${result.name}: ${result.pages} page(s), ${result.figures} figure(s), ` +
-    `${result.equations} equation(s), ${result.tables} table(s), raster: ${raster}${source}`
+    `${result.equations} equation(s), ${result.tables} table(s), raster: ${raster}${source}${warnings}${accessibility}`
   );
 }
 
@@ -368,6 +521,8 @@ export function main(argv) {
         name,
         dpi: options.dpi,
         raster: options.raster,
+        reuseRaster: options.reuseRaster,
+        accessibilityAssets: options.accessibilityAssets,
         moveSource: options.moveSource,
         dropRelativeUrls: options.dropRelativeUrls,
         tableFormat: options.tableFormat,

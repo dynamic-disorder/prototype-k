@@ -5,7 +5,7 @@
       "pages": 1,
       "figures": 0,
       "equations": 0,
-      "tables": 0,
+      "tables": 1,
       "markdownLines": 60
     },
     "multi-column": {
@@ -13,7 +13,7 @@
       "figures": 1,
       "equations": 5,
       "tables": 7,
-      "markdownLines": 1393
+      "markdownLines": 1391
     }
   }
 }
