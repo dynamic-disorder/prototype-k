@@ -94,6 +94,9 @@ if (install.ok) {
   console.log('    Windows (scoop):   scoop install gh');
   console.log('    Windows (choco):   choco install gh');
   console.log('    Linux (apt):       sudo apt install gh');
+  // Provenance, so a platform sweep leaves this alone: the advice below was written on, and imported
+  // from, a Windows 11 machine. It is accurate for that box and is not a claim about the current
+  // workstation, which runs Windows 10 — do not "correct" the sentence to match this machine.
   console.log('\n  Corporate Windows machine, winget/scoop/choco all blocked by Group Policy?');
   console.log('    Download the .msi installer directly from https://github.com/cli/cli/releases');
   console.log('    (e.g. gh_<version>_windows_amd64.msi), run it, then CLOSE and REOPEN the');
