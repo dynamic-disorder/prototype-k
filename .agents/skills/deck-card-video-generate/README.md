@@ -55,8 +55,8 @@ npx playwright install chromium
 **Linux / macOS**
 
 ```bash
-cp -R "<path-to-this-folder>" "<project>/.agent/skills/deck-card-video-generate"
-cd "<project>/.agent/skills/deck-card-video-generate"
+cp -R "<path-to-this-folder>" "<project>/.agents/skills/deck-card-video-generate"
+cd "<project>/.agents/skills/deck-card-video-generate"
 npm install
 npx playwright install chromium
 ```
@@ -64,7 +64,7 @@ npx playwright install chromium
 **Windows 10 and 11 — PowerShell**
 
 ```powershell
-$dest = "<project>\.agent\skills\deck-card-video-generate"
+$dest = "<project>\.agents\skills\deck-card-video-generate"
 New-Item -ItemType Directory -Force $dest | Out-Null
 Copy-Item -Path "<path-to-this-folder>\*" -Destination $dest -Recurse -Force
 Set-Location $dest
@@ -75,7 +75,7 @@ npx playwright install chromium
 **Windows 10 and 11 — Command Prompt**
 
 ```bat
-set DEST=<project>\.agent\skills\deck-card-video-generate
+set DEST=<project>\.agents\skills\deck-card-video-generate
 if not exist "%DEST%" mkdir "%DEST%"
 xcopy "<path-to-this-folder>" "%DEST%" /E /I /H /Y
 cd /d "%DEST%"
@@ -92,8 +92,6 @@ A project copy takes precedence over the global copy. Start a new session after 
 - Quote both folder paths when either contains a space; every block above already quotes them.
 - Install in a shell started after the Node.js install, so `node` and `npm` resolve from `PATH`.
 - `npm test` and `npm run e2e` are identical on Windows 10 and 11; run them from the copied skill folder in either shell.
-
-A project copy takes precedence over the global copy. Start a new session after copying so the skill is discovered.
 
 ### Rules for the AI
 

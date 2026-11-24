@@ -42,20 +42,20 @@ xcopy /E /I "<path-to-this-folder>" "%USERPROFILE%\.dsh\skills\pdf-to-markdown-a
 Linux or macOS:
 
 ```bash
-mkdir -p "<project>/.agent/skills"
-cp -R "<path-to-this-folder>" "<project>/.agent/skills/pdf-to-markdown-and-assets-extract"
+mkdir -p "<project>/.agents/skills"
+cp -R "<path-to-this-folder>" "<project>/.agents/skills/pdf-to-markdown-and-assets-extract"
 ```
 
 Windows PowerShell:
 
 ```powershell
-Copy-Item -Recurse "<path-to-this-folder>" "<project>\.agent\skills\pdf-to-markdown-and-assets-extract"
+Copy-Item -Recurse "<path-to-this-folder>" "<project>\.agents\skills\pdf-to-markdown-and-assets-extract"
 ```
 
 Windows CMD:
 
 ```cmd
-xcopy /E /I "<path-to-this-folder>" "<project>\.agent\skills\pdf-to-markdown-and-assets-extract"
+xcopy /E /I "<path-to-this-folder>" "<project>\.agents\skills\pdf-to-markdown-and-assets-extract"
 ```
 
 **Requirements:** Node.js 20 or newer for the guard, the output-contract tests and `npm test` — no dependencies, so never run `npm install`. Python 3.9 or newer is optional and only backs the identical guard fallback (`scripts/check_input.py`) and the parity suite.

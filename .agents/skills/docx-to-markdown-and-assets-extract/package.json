@@ -1,0 +1,11 @@
+{
+  "name": "docx-to-markdown-and-assets-extract",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Extract Word documents into Markdown with a sidecar and extracted assets.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test"
+  }
+}
