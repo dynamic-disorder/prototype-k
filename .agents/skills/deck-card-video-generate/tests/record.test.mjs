@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { parseTargetSeconds, recordDemo } from '../scripts/record.mjs';
+import { parseTargetSeconds, recordDemo, launchBrowser, loadChromium } from '../scripts/record.mjs';
 
 const BASE_CONFIG = {
   baseUrl: 'about:blank',
@@ -279,4 +279,55 @@ test('a throwing beat fails the take and still closes the browser', async () => 
   assert.deepEqual(fake.state.closed, { context: 1, browser: 1 }, 'context and browser closed');
   assert.equal(fs.existsSync(path.join(root, 'timing.json')), false, 'no timing for a failed take');
   assert.equal(fs.existsSync(path.join(root, 'raw.webm')), false, 'no video for a failed take');
+});
+
+test('launchBrowser uses the bundled Chromium when it starts', async () => {
+  // Given: a Playwright module whose bundled Chromium launches
+  const calls = [];
+  const module = { async launch(options) { calls.push(options); return 'bundled'; } };
+
+  // When: the browser is launched
+  const browser = await launchBrowser(module, () => {});
+
+  // Then: no channel fallback is tried
+  assert.equal(browser, 'bundled');
+  assert.deepEqual(calls, [undefined]);
+});
+
+test('launchBrowser falls back to installed Edge when the bundled Chromium is missing', async () => {
+  // Given: a bundled Chromium that was never downloaded and a working Edge channel
+  const warnings = [];
+  const module = {
+    async launch(options) {
+      if (!options) throw new Error("Executable doesn't exist");
+      if (options.channel === 'msedge') return 'edge';
+      throw new Error('no chrome');
+    },
+  };
+
+  // When: the browser is launched
+  const browser = await launchBrowser(module, (message) => warnings.push(message));
+
+  // Then: Edge is used and the fallback is announced
+  assert.equal(browser, 'edge');
+  assert.match(warnings[0], /msedge/);
+});
+
+test('launchBrowser names the fix when no browser is available', async () => {
+  // Given: a Playwright module where every launch fails
+  const module = { async launch() { throw new Error('boom'); } };
+
+  // When/Then: the error tells how to install a browser behind a proxy
+  await assert.rejects(launchBrowser(module, () => {}), /playwright install chromium.*NODE_EXTRA_CA_CERTS/s);
+});
+
+test('loadChromium finds Playwright through the skill folder override', () => {
+  // Given: SKILL_DIR points at this skill, which has Playwright installed
+  const skillDir = path.resolve(import.meta.dirname, '..');
+
+  // When: the chromium module is loaded
+  const loaded = loadChromium({ SKILL_DIR: skillDir }, os.tmpdir());
+
+  // Then: it exposes launch()
+  assert.equal(typeof loaded.launch, 'function');
 });

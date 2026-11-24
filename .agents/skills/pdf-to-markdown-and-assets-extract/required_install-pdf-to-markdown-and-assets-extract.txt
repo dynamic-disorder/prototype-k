@@ -1,0 +1,35 @@
+INSTALL: pdf-to-markdown-and-assets-extract
+Converts PDFs to page-marked Markdown plus images (figures, equations, tables).
+You need: Windows, macOS or Linux, and permission to install software. No npm install is needed.
+Run each command in Git Bash (Windows) or a terminal (macOS/Linux).
+
+1. Check Node.js 20 or newer.
+   node -v
+   Check: prints v20 or higher.
+   If missing or older: install Node LTS from https://nodejs.org, open a new terminal, run the check again.
+
+2. Go to the skill folder.
+   cd ~/.agents/skills/pdf-to-markdown-and-assets-extract
+   Check: pwd prints a path ending in /skills/pdf-to-markdown-and-assets-extract.
+   If the folder does not exist: copy the skill folder you received to ~/.agents/skills/ first.
+
+3. Run the skill tests.
+   npm test
+   Check: "fail 0" (2 skipped tests are normal).
+
+4. OPTIONAL, for page images and figure, equation and table crops: install a PDF renderer.
+   Windows: nothing to install, the built-in renderer is used.
+   macOS:   brew install poppler
+   Linux:   sudo apt-get install poppler-utils
+   Check: pdftoppm -v prints a version (macOS/Linux).
+   Without it, text still extracts and the run records "raster: skipped".
+
+5. OPTIONAL, for text from scanned pages and figures: install Tesseract OCR.
+   Windows: winget install UB-Mannheim.TesseractOCR
+   macOS:   brew install tesseract
+   Linux:   sudo apt-get install tesseract-ocr tesseract-ocr-eng
+   Check: tesseract --version prints a version (Windows: a new terminal may be needed).
+   Without it, text still extracts and the run records "ocr: skipped".
+
+Done. Start with: /pdf-to-markdown-and-assets-extract
+Stuck at any step? Send Khoa Do a private message with the step number and the error text.

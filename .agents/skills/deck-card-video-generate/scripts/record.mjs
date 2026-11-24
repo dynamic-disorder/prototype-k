@@ -10,10 +10,58 @@
 // it imports nothing from `lib/`. Its planning helpers are exported so the unit
 // suite can drive them with a fake browser.
 
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const SKILL_FOLDER_NAME = "deck-card-video-generate";
+const BROWSER_CHANNELS = ["msedge", "chrome"];
+
+/**
+ * Playwright's `chromium`. This file is copied into a task folder, where a bare
+ * `import "playwright"` cannot resolve, so it also looks in the installed skill
+ * folder (`SKILL_DIR` overrides the default `~/.agents/skills/<name>`).
+ */
+export function loadChromium(env = process.env, home = os.homedir()) {
+  const skillDir = env.SKILL_DIR ?? path.join(home, ".agents", "skills", SKILL_FOLDER_NAME);
+  const require = createRequire(import.meta.url);
+  for (const paths of [undefined, [skillDir]]) {
+    try {
+      return require(require.resolve("playwright", paths && { paths })).chromium;
+    } catch {
+      // try the next location
+    }
+  }
+  throw new Error(
+    `playwright not found. Run \`npm install\` in ${skillDir} (or set SKILL_DIR to the skill folder).`,
+  );
+}
+
+/**
+ * Launch the bundled Chromium, else an installed Edge or Chrome. The bundled
+ * browser needs a download that a corporate proxy can block; Edge ships with Windows.
+ */
+export async function launchBrowser(chromiumModule, warn = console.warn) {
+  try {
+    return await chromiumModule.launch();
+  } catch (bundledError) {
+    for (const channel of BROWSER_CHANNELS) {
+      try {
+        const browser = await chromiumModule.launch({ channel });
+        warn(`bundled Chromium unavailable; using installed ${channel}`);
+        return browser;
+      } catch {
+        // try the next channel
+      }
+    }
+    throw new Error(
+      `no browser: bundled Chromium failed (${bundledError.message.split("\n")[0]}) and neither Edge nor Chrome is installed. ` +
+        "Run `npx playwright install chromium` (behind a proxy set NODE_EXTRA_CA_CERTS to its root certificate).",
+    );
+  }
+}
 
 /**
  * Length: `--seconds` beats `targetSeconds`, which beats the 120 s default.
@@ -63,7 +111,7 @@ export async function recordDemo({
   config,
   targetSeconds,
   outDir,
-  chromiumModule = chromium,
+  chromiumModule = loadChromium(),
   now = () => Date.now(),
   log = console.log,
   warn = console.warn,
@@ -73,7 +121,7 @@ export async function recordDemo({
   const raw = path.join(out, "raw");
   fs.mkdirSync(raw, { recursive: true });
 
-  const browser = await chromiumModule.launch();
+  const browser = await launchBrowser(chromiumModule, warn);
   const pageStart = now();
   const timing = [];
   let context;

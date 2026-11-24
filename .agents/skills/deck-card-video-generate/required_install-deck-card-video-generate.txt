@@ -1,0 +1,47 @@
+INSTALL: deck-card-video-generate
+Records a narrated, captioned MP4 of a web app or deck of cards.
+You need: Windows, macOS or Linux, internet access once, and permission to install software.
+Run each command in Git Bash (Windows) or a terminal (macOS/Linux). Replace nothing: the paths are literal.
+
+1. Check Node.js 20 or newer.
+   node -v
+   Check: prints v20 or higher.
+   If missing or older: install Node LTS from https://nodejs.org, open a new terminal, run the check again.
+
+2. Go to the skill folder.
+   cd ~/.agents/skills/deck-card-video-generate
+   Check: pwd prints a path ending in /skills/deck-card-video-generate.
+   If the folder does not exist: copy the skill folder you received to ~/.agents/skills/ first.
+
+3. Install the packages.
+   npm install
+   Check: the last lines say "added NN packages" and "found 0 vulnerabilities".
+   You can ignore: "npm warn install-scripts ... msedge-tts ... only-allow pnpm". It is harmless.
+
+4. Install FFmpeg with caption support (libass).
+   Windows: winget install Gyan.FFmpeg      (then open a new terminal)
+   macOS:   brew install ffmpeg
+   Linux:   sudo apt-get install ffmpeg
+   Check: ffmpeg -version     -> the output contains "enable-libass"
+   Check: ffprobe -version    -> prints a version
+   If ffmpeg is not found after install: set the ffmpeg and ffprobe paths in video.config.json instead.
+
+5. Make sure a browser is available. Use ONE of these.
+   a) Microsoft Edge or Google Chrome is installed: do nothing, the skill uses it.
+   b) Otherwise download Playwright's Chromium:
+      npx playwright install chromium
+      Check: the command ends without "Error".
+      Error "unable to get local issuer certificate": a company proxy re-signs HTTPS.
+      Fix: export the proxy root certificate as a .pem file, then run
+      NODE_EXTRA_CA_CERTS=/path/to/root-ca.pem npx playwright install chromium
+
+6. Run the skill tests.
+   npm test
+   Check: "fail 0". One skipped test is normal when Chromium is not downloaded.
+
+7. Check that narration can reach the internet (Edge text-to-speech is online).
+   node -e "fetch('https://speech.platform.bing.com').then(r=>console.log('reachable',r.status)).catch(e=>console.log('blocked',e.cause?.code||e.message))"
+   Check: prints "reachable". If "blocked": use a network without the proxy block, or ask your IT team.
+
+Done. Start with: /deck-card-video-generate
+Stuck at any step? Send Khoa Do a private message with the step number and the error text.

@@ -1,0 +1,28 @@
+INSTALL: docx-to-markdown-and-assets-extract
+Converts Word files (.docx, and .doc with LibreOffice) to section-marked Markdown plus images.
+You need: Windows, macOS or Linux, and permission to install software. No npm install is needed.
+Run each command in Git Bash (Windows) or a terminal (macOS/Linux).
+
+1. Check Node.js 20 or newer.
+   node -v
+   Check: prints v20 or higher.
+   If missing or older: install Node LTS from https://nodejs.org, open a new terminal, run the check again.
+
+2. Go to the skill folder.
+   cd ~/.agents/skills/docx-to-markdown-and-assets-extract
+   Check: pwd prints a path ending in /skills/docx-to-markdown-and-assets-extract.
+   If the folder does not exist: copy the skill folder you received to ~/.agents/skills/ first.
+
+3. Run the skill tests.
+   npm test
+   Check: "pass 8" and "fail 0".
+
+4. OPTIONAL, only for old .doc files: install LibreOffice.
+   Windows: winget install TheDocumentFoundation.LibreOffice
+   macOS:   brew install --cask libreoffice
+   Linux:   sudo apt-get install libreoffice
+   Check: soffice --version prints a version (open a new terminal first).
+   Without it, .doc files are refused with one line and .docx files still convert.
+
+Done. Start with: /docx-to-markdown-and-assets-extract
+Stuck at any step? Send Khoa Do a private message with the step number and the error text.
