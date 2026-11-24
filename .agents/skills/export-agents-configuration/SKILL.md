@@ -47,7 +47,7 @@ optionally a dated archive. The receiving machine ends with `~/.agents` installe
 | :--- | :--- |
 | `claude_placeholder_values.txt`, credential readers, the secret-scan allowlist | Identity and secret material |
 | `.credentials*`, `.claude.json`, `.env`, `*.key`, `*.pem`, `*.log` | Live state or secrets |
-| `local_dev/`, `local_user_files/`, `node_modules/`, `dist/`, `bin/`, `obj/` | Checkout-only or generated |
+| `local_dev/`, `local_user_files/`, `node_modules/`, `dist/`, `test-results/`, `bin/`, `obj/` | Checkout-only or generated |
 | A linked `~/.agents` | Two install models mixed; the installer exits 2 |
 | A skill whose target `SKILL.md` names another folder | Someone else's skill; the installer reports a conflict |
 
@@ -120,10 +120,12 @@ node scripts/check-skills.mjs
 Expected: the export prints `wrote <n> files` for the tree it found; `--check` prints
 `matches the checkout`; `verify-bundle` prints `Clean`; the rehearsal prints `PASS` for every step and
 exits 0; both test suites are green; `check-skills` reports 0 hard and 0 soft findings.
+`find dist/.agents-bundle -name test-results -print` prints nothing at any depth, because a skill's run
+output is generated, never configuration.
 
 **Exit criteria:** the stable path carries the same bytes on a second export; the bundle is clean; the
 rehearsal proves install, idempotency, delta, note survival, linked refusal and the gate; no credential,
-machine identifier or live state in the bundle.
+machine identifier or live state in the bundle; no `node_modules/` or `test-results/` folder at any depth.
 
 **Files:** `SKILL.md`, `README.md`, `scripts/verify-bundle.mjs` (the arrival check) and
 `scripts/verify-bundle.test.mjs`. The export and install themselves are

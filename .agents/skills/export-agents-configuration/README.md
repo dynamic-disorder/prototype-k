@@ -27,6 +27,8 @@ test -f ~/.agents/skills/export-agents-configuration/SKILL.md
 - **Export from a clean tree.** The bundle must describe a committed state; uncommitted work never travels.
 - **Never hand over a bundle with findings.** `verify-bundle` exits 1 means copy again, not install.
 - **Never edit `dist/`.** It is generated and git-ignored; edit the checkout and re-export.
+- **No run output travels.** `node_modules/`, `test-results/` and the checkout's build folders are excluded at
+  any depth, so a skill's own test run never enters the bundle.
 - **The installer owns its files.** Removal is limited to paths in `.agents-state.json`; a personal skill,
   machine notes and an existing `settings.json` stay.
 - **A linked machine is not a bundle machine.** `install.mjs` refuses it; use `install-global.mjs` there.

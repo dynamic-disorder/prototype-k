@@ -119,6 +119,18 @@ test('isExcluded_BuildAndScratchDirectories_ReturnTrue', () => {
   assert.deepEqual(excluded, [true, true, true, true, true]);
 });
 
+test('isExcluded_TestResultsFolder_ReturnsTrue', () => {
+  // Given: the run-output folder a skill's own test suite writes, and a file deep inside it
+  // When: each path is tested
+  const excluded = [
+    'skills/pdf-to-markdown-and-assets-extract/test-results',
+    'skills/pdf-to-markdown-and-assets-extract/test-results/2026-11-21_12-28.253/unit.txt',
+  ].map(isExcluded);
+
+  // Then: neither can enter a bundle
+  assert.deepEqual(excluded, [true, true]);
+});
+
 test('isExcluded_OrdinarySkillFile_ReturnsFalse', () => {
   // Given: a skill file that belongs in the bundle
   // When: it is tested
