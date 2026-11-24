@@ -7,6 +7,7 @@ prototype-k-specific C# standards for `csharp-code-reviewer`.
 - **Built-in type names** (IDE0049): `String.IsNullOrEmpty(value)`, `Int32.Parse(input)`, not the `string`/`int` aliases.
 - **No `Async` suffix**: `public async Task GetUser(int id)`.
 - **Usings** (IDE0055 / SonarQube): `System.*` first, then the rest sorted alphabetically, no blank line between groups, outside the namespace. The pre-commit hook enforces it.
+- **Modern C# & functional style**: when possible, adopt the latest C# version features and apply functional programming techniques (pure functions, immutability, side-effect-free idempotent transformations). Do not obsess over FP dogma or sacrifice readability/efficiency. Highlight opportunities to modernize or apply functional paradigms when reviewing code.
 
 ## Tests
 

@@ -11,6 +11,8 @@ silently unenforced, or were stated wrongly in the past.
 
 ## Tooling will not flag these
 
+**Latest C# features & functional style.** When possible, leverage the latest C# version features (e.g. collection expressions `[..items]`, primary constructors, pattern matching with switch expressions, records with `with`, `required` properties) and apply functional programming techniques (pure functions, immutability, side-effect-free idempotent transformations) where applicable to improve the codebase incrementally. Do not obsess or force FP dogma over clarity or performance: readability and pragmatism come first. Proactively highlight opportunities to apply functional paradigms or modern C# features when touching relevant code.
+
 **No expression-bodied members.** Every `csharp_style_expression_bodied_*` is `false:none`, so
 analyzers stay silent. Use block bodies even for one-liners. Lambdas (`x => x.Name`) are
 unaffected. An existing thin delegating wrapper is the one accepted exception; leave it alone.
